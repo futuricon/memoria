@@ -1,0 +1,10 @@
+# Сгенерированный EF-код миграций. Подавляем правила, которые не имеют смысла
+# для one-shot DDL-кода и которые мы всё равно не можем чинить (перегенерация
+# затрёт правки).
+[*.cs]
+# CA1861: Constant array args — миграция выполняется один раз, perf-выигрыша нет.
+dotnet_diagnostic.CA1861.severity = none
+# CA1062: Validate arguments — migrationBuilder в EF никогда не null.
+dotnet_diagnostic.CA1062.severity = none
+# CA1822: Mark members as static — Up/Down методы должны быть instance.
+dotnet_diagnostic.CA1822.severity = none

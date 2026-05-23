@@ -57,6 +57,7 @@ try
     using (var scope = app.Services.CreateScope())
     {
         await scope.ServiceProvider.MigrateUsersModuleAsync();
+        await scope.ServiceProvider.MigrateCardsModuleAsync();
     }
 
     app.UseSerilogRequestLogging();
