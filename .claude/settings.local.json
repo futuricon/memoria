@@ -6,7 +6,9 @@
       "Bash(curl -s http://localhost:5133/)",
       "Bash(ls \"C:\\\\Users\\\\Sukhrob.Kudratov\\\\.claude\\\\projects\\\\c--Users-Sukhrob-Kudratov-RiderProjects-Memoria\\\\MEMORY.md\" 2>&1)",
       "Read(//c/Users/Sukhrob.Kudratov/.claude/projects/c--Users-Sukhrob-Kudratov-RiderProjects-Memoria/**)",
-      "Bash(docker compose *)"
+      "Bash(docker compose *)",
+      "Bash(dotnet restore *)",
+      "Bash(dotnet test *)"
     ],
     "additionalDirectories": [
       "C:\\Users\\Sukhrob.Kudratov\\.claude\\projects\\c--Users-Sukhrob-Kudratov-RiderProjects-Memoria"

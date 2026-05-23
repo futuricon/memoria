@@ -22,4 +22,12 @@ internal sealed class RefreshToken
     public DateTime? RevokedAt { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public Guid? ReplacedByTokenId { get; private set; }
+
+    public void Revoke(DateTime utcNow, Guid? replacedBy = null)
+    {
+        RevokedAt = utcNow;
+        ReplacedByTokenId = replacedBy;
+    }
+
+    public bool IsActive(DateTime utcNow) => RevokedAt is null && utcNow < ExpiresAt;
 }

@@ -154,8 +154,7 @@ Use **file-scoped namespaces** (`namespace X;`), not block-scoped (`namespace X 
   "Configurations", "Features").
 - **Files** — PascalCase, matching the primary public type name.
 - **Test classes** — `<ClassUnderTest>Tests.cs`.
-- **Test methods** — `Method_WhenCondition_ShouldExpectedBehavior` or with
-  underscores like `Should_return_error_when_card_not_found`.
+- **Test methods** — `MethodWhenConditionShouldExpectedBehavior`.
 
 ---
 

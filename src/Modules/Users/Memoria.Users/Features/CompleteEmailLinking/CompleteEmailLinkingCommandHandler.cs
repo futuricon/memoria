@@ -1,0 +1,147 @@
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+
+using Memoria.Shared.Kernel.Results;
+using Memoria.Users.Contracts.Commands;
+using Memoria.Users.Contracts.Dtos;
+using Memoria.Users.Domain;
+using Memoria.Users.Options;
+using Memoria.Users.Persistence;
+using Memoria.Users.Services;
+
+namespace Memoria.Users.Features.CompleteEmailLinking;
+
+internal sealed class CompleteEmailLinkingCommandHandler
+    : IRequestHandler<CompleteEmailLinkingCommand, Result<JwtTokenPairDto>>
+{
+    private readonly UsersDbContext _db;
+    private readonly VerificationCodeService _codes;
+    private readonly JwtTokenIssuer _jwt;
+    private readonly TimeProvider _clock;
+    private readonly VerificationCodeOptions _options;
+
+    public CompleteEmailLinkingCommandHandler(
+        UsersDbContext db,
+        VerificationCodeService codes,
+        JwtTokenIssuer jwt,
+        TimeProvider clock,
+        IOptions<VerificationCodeOptions> options)
+    {
+        ArgumentNullException.ThrowIfNull(db);
+        ArgumentNullException.ThrowIfNull(codes);
+        ArgumentNullException.ThrowIfNull(jwt);
+        ArgumentNullException.ThrowIfNull(clock);
+        ArgumentNullException.ThrowIfNull(options);
+        _db = db;
+        _codes = codes;
+        _jwt = jwt;
+        _clock = clock;
+        _options = options.Value;
+    }
+
+    public async Task<Result<JwtTokenPairDto>> Handle(
+        CompleteEmailLinkingCommand request,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var now = _clock.GetUtcNow().UtcDateTime;
+
+        var candidates = await _db.VerificationCodes
+            .Where(c => c.Purpose == VerificationPurpose.LinkEmail
+                        && c.TargetIdentifier == request.Email
+                        && c.ConsumedAt == null
+                        && c.ExpiresAt > now)
+            .OrderByDescending(c => c.ExpiresAt)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var match = candidates.FirstOrDefault(c => _codes.Verify(request.Code, c.CodeHash));
+
+        if (match is null)
+        {
+            foreach (var stale in candidates)
+            {
+                stale.RegisterAttempt();
+                if (stale.AttemptCount >= _options.MaxAttempts)
+                {
+                    stale.MarkConsumed(now);
+                }
+            }
+            await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+            return Result<JwtTokenPairDto>.Failure(Error.Validation(
+                "users.email_code_invalid", "Email code is invalid or expired."));
+        }
+
+        if (match.AttemptCount >= _options.MaxAttempts)
+        {
+            return Result<JwtTokenPairDto>.Failure(Error.Forbidden(
+                "users.email_code_locked", "Too many failed attempts."));
+        }
+
+        var user = match.UserId is not null
+            ? await _db.Users.FirstOrDefaultAsync(u => u.Id == match.UserId.Value, cancellationToken)
+                .ConfigureAwait(false)
+            : null;
+
+        if (match.UserId is not null && user is null)
+        {
+            return Result<JwtTokenPairDto>.Failure(Error.NotFound(
+                "users.not_found", "User not found."));
+        }
+
+        if (user is null)
+        {
+            user = new User(
+                displayName: request.Email,
+                timeZoneId: "UTC",
+                createdAt: now);
+            user.SetEmail(request.Email);
+            _db.Users.Add(user);
+
+            var emailIdentity = new UserIdentity(
+                userId: user.Id,
+                provider: IdentityProvider.Email,
+                externalId: request.Email,
+                linkedAt: now);
+            _db.Identities.Add(emailIdentity);
+        }
+        else if (string.IsNullOrEmpty(user.Email))
+        {
+            user.SetEmail(request.Email);
+
+            var alreadyLinked = await _db.Identities
+                .AnyAsync(
+                    i => i.UserId == user.Id && i.Provider == IdentityProvider.Email,
+                    cancellationToken)
+                .ConfigureAwait(false);
+            if (!alreadyLinked)
+            {
+                _db.Identities.Add(new UserIdentity(
+                    userId: user.Id,
+                    provider: IdentityProvider.Email,
+                    externalId: request.Email,
+                    linkedAt: now));
+            }
+        }
+
+        match.MarkConsumed(now);
+        var pair = _jwt.Issue(user);
+        var refreshTokenEntity = new RefreshToken(
+            userId: user.Id,
+            tokenHash: _jwt.HashRefreshToken(pair.RefreshToken),
+            expiresAt: pair.RefreshExpiresAt,
+            createdAt: now);
+
+        _db.RefreshTokens.Add(refreshTokenEntity);
+        await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        return new JwtTokenPairDto(
+            pair.AccessToken,
+            pair.AccessExpiresAt,
+            pair.RefreshToken,
+            pair.RefreshExpiresAt);
+    }
+}

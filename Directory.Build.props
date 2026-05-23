@@ -16,8 +16,14 @@
 
   <PropertyGroup Label="Build behavior">
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <!-- CS1591 — missing XML doc; CA1716 — VB-keywords (нерелевантно); CA1000 — static на generic (идиоматично для Result/Either) -->
-    <NoWarn>$(NoWarn);CS1591;CA1716;CA1000</NoWarn>
+    <!--
+      CS1591 — missing XML doc;
+      CA1716 — VB-keywords (нерелевантно);
+      CA1000 — static на generic (идиоматично для Result/Either);
+      CA1822 — instance methods без state (мы хотим mockable DI-сервисы);
+      CA1848/CA1873 — LoggerMessage source-gen (overkill для одиночных вызовов).
+    -->
+    <NoWarn>$(NoWarn);CS1591;CA1716;CA1000;CA1822;CA1848;CA1873</NoWarn>
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
   </PropertyGroup>

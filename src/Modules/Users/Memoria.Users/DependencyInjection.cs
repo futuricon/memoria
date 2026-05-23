@@ -2,7 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+using Memoria.Users.Contracts.Abstractions;
+using Memoria.Users.Options;
 using Memoria.Users.Persistence;
+using Memoria.Users.Services;
 
 namespace Memoria.Users;
 
@@ -27,14 +30,32 @@ public static class DependencyInjection
                         schema: UsersDbContext.SchemaName))
                 .UseSnakeCaseNamingConvention());
 
+        services.AddOptions<JwtOptions>()
+            .Bind(configuration.GetSection(JwtOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddOptions<VerificationCodeOptions>()
+            .Bind(configuration.GetSection(VerificationCodeOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddOptions<TelegramOptions>()
+            .Bind(configuration.GetSection(TelegramOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddSingleton<VerificationCodeService>();
+        services.AddSingleton<JwtTokenIssuer>();
+        services.AddSingleton<IEmailSender, LoggingEmailSender>();
+
         return services;
     }
-    
+
     public static async Task MigrateUsersModuleAsync(this IServiceProvider services)
     {
         ArgumentNullException.ThrowIfNull(services);
         var db = services.GetRequiredService<UsersDbContext>();
         await db.Database.MigrateAsync();
     }
-
 }

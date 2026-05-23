@@ -22,4 +22,6 @@ internal sealed class User
     public TimeOnly? QuietHoursEnd { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? DeletedAt { get; private set; }
+
+    public void SetEmail(string email) => Email = email;
 }

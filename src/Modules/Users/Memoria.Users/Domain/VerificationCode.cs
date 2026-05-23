@@ -30,4 +30,10 @@ internal sealed class VerificationCode
     public DateTime ExpiresAt { get; private set; }
     public DateTime? ConsumedAt { get; private set; }
     public int AttemptCount { get; private set; }
+
+    public void RegisterAttempt() => AttemptCount++;
+
+    public void MarkConsumed(DateTime utcNow) => ConsumedAt = utcNow;
+
+    public bool IsActive(DateTime utcNow) => ConsumedAt is null && utcNow < ExpiresAt;
 }
