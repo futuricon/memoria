@@ -1,6 +1,0 @@
-@Memoria.Api_HostAddress = http://localhost:5084
-
-GET {{Memoria.Api_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

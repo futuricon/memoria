@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-    </PropertyGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\Shared\Memoria.Shared.Infrastructure\Memoria.Shared.Infrastructure.csproj" />
+      <ProjectReference Include="..\..\..\Shared\Memoria.Shared.Kernel\Memoria.Shared.Kernel.csproj" />
+      <ProjectReference Include="..\Memoria.Cards.Contracts\Memoria.Cards.Contracts.csproj" />
+    </ItemGroup>
 
 </Project>

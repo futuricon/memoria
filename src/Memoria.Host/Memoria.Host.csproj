@@ -1,9 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-    <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <ImplicitUsings>enable</ImplicitUsings>
-    </PropertyGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\Memoria.Api\Memoria.Api.csproj" />
+      <ProjectReference Include="..\Memoria.Bot\Memoria.Bot.csproj" />
+      <ProjectReference Include="..\Modules\Cards\Memoria.Cards.Contracts\Memoria.Cards.Contracts.csproj" />
+      <ProjectReference Include="..\Modules\Cards\Memoria.Cards\Memoria.Cards.csproj" />
+      <ProjectReference Include="..\Modules\Reviews\Memoria.Reviews\Memoria.Reviews.csproj" />
+      <ProjectReference Include="..\Modules\Reminders\Memoria.Reminders.Contracts\Memoria.Reminders.Contracts.csproj" />
+      <ProjectReference Include="..\Modules\Reminders\Memoria.Reminders\Memoria.Reminders.csproj" />
+      <ProjectReference Include="..\Modules\Reviews\Memoria.Reviews.Contracts\Memoria.Reviews.Contracts.csproj" />
+      <ProjectReference Include="..\Modules\Users\Memoria.Users.Contracts\Memoria.Users.Contracts.csproj" />
+      <ProjectReference Include="..\Modules\Users\Memoria.Users\Memoria.Users.csproj" />
+      <ProjectReference Include="..\Shared\Memoria.Shared.Infrastructure\Memoria.Shared.Infrastructure.csproj" />
+      <ProjectReference Include="..\Shared\Memoria.Shared.Kernel\Memoria.Shared.Kernel.csproj" />
+    </ItemGroup>
 
 </Project>

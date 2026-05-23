@@ -1,14 +1,15 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
-
-    <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <ImplicitUsings>enable</ImplicitUsings>
-    </PropertyGroup>
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.27"/>
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2"/>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Modules\Cards\Memoria.Cards.Contracts\Memoria.Cards.Contracts.csproj" />
+      <ProjectReference Include="..\Modules\Reminders\Memoria.Reminders.Contracts\Memoria.Reminders.Contracts.csproj" />
+      <ProjectReference Include="..\Modules\Reviews\Memoria.Reviews.Contracts\Memoria.Reviews.Contracts.csproj" />
+      <ProjectReference Include="..\Modules\Users\Memoria.Users.Contracts\Memoria.Users.Contracts.csproj" />
+      <ProjectReference Include="..\Shared\Memoria.Shared.Kernel\Memoria.Shared.Kernel.csproj" />
     </ItemGroup>
 
 </Project>
