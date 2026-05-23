@@ -16,7 +16,8 @@
 
   <PropertyGroup Label="Build behavior">
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <!-- CS1591 — missing XML doc; CA1716 — VB-keywords (нерелевантно); CA1000 — static на generic (идиоматично для Result/Either) -->
+    <NoWarn>$(NoWarn);CS1591;CA1716;CA1000</NoWarn>
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
   </PropertyGroup>

@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build *)",
+      "Bash(dotnet run *)",
+      "Bash(curl -s http://localhost:5133/)",
+      "Bash(ls \"C:\\\\Users\\\\Sukhrob.Kudratov\\\\.claude\\\\projects\\\\c--Users-Sukhrob-Kudratov-RiderProjects-Memoria\\\\MEMORY.md\" 2>&1)",
+      "Read(//c/Users/Sukhrob.Kudratov/.claude/projects/c--Users-Sukhrob-Kudratov-RiderProjects-Memoria/**)",
+      "Bash(docker compose *)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\Sukhrob.Kudratov\\.claude\\projects\\c--Users-Sukhrob-Kudratov-RiderProjects-Memoria"
+    ]
+  }
+}
