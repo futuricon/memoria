@@ -1,6 +1,6 @@
 namespace Memoria.Reminders.Domain;
 
-internal sealed class Reminder
+public sealed class Reminder
 {
     public Guid Id { get; private set; }
     public Guid CardId { get; private set; }

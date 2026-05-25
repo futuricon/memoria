@@ -1,6 +1,6 @@
 namespace Memoria.Reminders.Domain;
 
-internal enum ReminderStatus
+public enum ReminderStatus
 {
     Pending,
     Sending,
