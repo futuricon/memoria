@@ -16,7 +16,7 @@ namespace Memoria.Cards.Jobs;
 /// addendum §5.2, this is the second hard-delete path next to explicit
 /// <see cref="PermanentlyDeleteCardCommand"/>.
 /// </summary>
-internal sealed class PurgeExpiredSoftDeletesJob
+public sealed class PurgeExpiredSoftDeletesJob
 {
     private readonly CardsDbContext _db;
     private readonly IMediator _mediator;

@@ -9,10 +9,14 @@ using MediatR;
 using Serilog;
 
 using Memoria.Cards;
+using Memoria.Cards.Jobs;
+using Memoria.Cards.Options;
 using Memoria.Reminders;
 using Memoria.Reviews;
 using Memoria.Shared.Infrastructure.Behaviors;
 using Memoria.Users;
+
+using Microsoft.Extensions.Options;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture)
@@ -67,6 +71,18 @@ try
     {
         await scope.ServiceProvider.MigrateUsersModuleAsync();
         await scope.ServiceProvider.MigrateCardsModuleAsync();
+        await scope.ServiceProvider.MigrateRemindersModuleAsync();
+    }
+
+    using (var scope = app.Services.CreateScope())
+    {
+        var recurring = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
+        var cardsOptions = scope.ServiceProvider.GetRequiredService<IOptions<CardsOptions>>().Value;
+        recurring.AddOrUpdate<PurgeExpiredSoftDeletesJob>(
+            recurringJobId: "purge-expired-soft-deletes",
+            methodCall: j => j.ExecuteAsync(CancellationToken.None),
+            cronExpression: cardsOptions.PurgeCronExpression,
+            options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
     }
 
     app.UseSerilogRequestLogging();

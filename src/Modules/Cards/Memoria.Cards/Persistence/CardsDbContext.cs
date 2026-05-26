@@ -5,7 +5,7 @@ using Memoria.Shared.Infrastructure.Persistence;
 
 namespace Memoria.Cards.Persistence;
 
-internal sealed class CardsDbContext : DbContext
+public sealed class CardsDbContext : DbContext
 {
     public const string SchemaName = "cards";
 
@@ -13,9 +13,9 @@ internal sealed class CardsDbContext : DbContext
     {
     }
 
-    public DbSet<Card> Cards => Set<Card>();
-    public DbSet<Tag> Tags => Set<Tag>();
-    public DbSet<CardTag> CardTags => Set<CardTag>();
+    internal DbSet<Card> Cards => Set<Card>();
+    internal DbSet<Tag> Tags => Set<Tag>();
+    internal DbSet<CardTag> CardTags => Set<CardTag>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Memoria.Cards.Options;
 
-internal sealed class CardsOptions
+public sealed class CardsOptions
 {
     public const string SectionName = "Cards";
 

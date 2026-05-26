@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+using Memoria.Cards.Jobs;
+using Memoria.Cards.Options;
 using Memoria.Cards.Persistence;
 using Memoria.Cards.Services;
 
@@ -28,8 +30,14 @@ public static class DependencyInjection
                         schema: CardsDbContext.SchemaName))
                 .UseSnakeCaseNamingConvention());
 
+        services.AddOptions<CardsOptions>()
+            .Bind(configuration.GetSection(CardsOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         services.AddSingleton<TagNormalizer>();
         services.AddScoped<TagRepository>();
+        services.AddScoped<PurgeExpiredSoftDeletesJob>();
 
         return services;
     }

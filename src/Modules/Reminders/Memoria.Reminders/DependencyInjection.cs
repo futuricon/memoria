@@ -1,6 +1,8 @@
 using Hangfire;
 using Hangfire.PostgreSql;
 
+using Memoria.Reminders.Contracts.Abstractions;
+using Memoria.Reminders.Jobs;
 using Memoria.Reminders.Options;
 using Memoria.Reminders.Persistence;
 using Memoria.Reminders.Services;
@@ -18,7 +20,8 @@ public static class DependencyInjection
 {
     /// <summary>
     /// Добавляет в контейнер DI компоненты модуля Reminders: EF-контекст,
-    /// настройки, планировщик, Hangfire-storage (сервер регистрируется в Host).
+    /// настройки, планировщик, Hangfire-storage и job-классы. Hangfire-сервер
+    /// регистрируется в Host (см. <c>Program.cs</c>).
     /// </summary>
     public static IServiceCollection AddRemindersModule(this IServiceCollection services, IConfiguration configuration)
     {
@@ -40,6 +43,8 @@ public static class DependencyInjection
             .ValidateOnStart();
 
         services.AddSingleton<ReminderScheduler>();
+        services.AddScoped<IRemindersScheduler, RemindersScheduler>();
+        services.AddScoped<SendReminderJob>();
 
         services.AddHangfire(cfg =>
         {
@@ -50,5 +55,16 @@ public static class DependencyInjection
         });
 
         return services;
+    }
+
+    /// <summary>
+    /// Применяет ожидающие миграции <c>RemindersDbContext</c>. Вызывается из
+    /// <c>Program.cs</c> внутри scope сразу после построения хоста.
+    /// </summary>
+    public static async Task MigrateRemindersModuleAsync(this IServiceProvider services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        var db = services.GetRequiredService<RemindersDbContext>();
+        await db.Database.MigrateAsync();
     }
 }
