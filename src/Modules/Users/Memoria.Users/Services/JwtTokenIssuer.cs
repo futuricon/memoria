@@ -6,9 +6,9 @@ using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
+using Memoria.Shared.Infrastructure.Options;
 using Memoria.Shared.Kernel.Results;
 using Memoria.Users.Domain;
-using Memoria.Users.Options;
 
 namespace Memoria.Users.Services;
 

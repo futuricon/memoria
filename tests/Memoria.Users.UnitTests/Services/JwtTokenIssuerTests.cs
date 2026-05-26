@@ -5,8 +5,8 @@ using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 
+using Memoria.Shared.Infrastructure.Options;
 using Memoria.Users.Domain;
-using Memoria.Users.Options;
 using Memoria.Users.Services;
 
 namespace Memoria.Users.UnitTests.Services;

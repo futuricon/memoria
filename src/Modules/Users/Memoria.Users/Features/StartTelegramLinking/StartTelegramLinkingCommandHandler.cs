@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
+using Memoria.Shared.Infrastructure.Options;
 using Memoria.Shared.Kernel.Results;
 using Memoria.Users.Contracts.Commands;
 using Memoria.Users.Contracts.Dtos;

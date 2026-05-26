@@ -1,0 +1,101 @@
+using System.Globalization;
+
+using MediatR;
+
+using Memoria.Bot.Routing;
+using Memoria.Bot.Services;
+using Memoria.Cards.Contracts.Queries;
+
+using Telegram.Bot;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
+
+namespace Memoria.Bot.Commands;
+
+internal sealed class DeleteCommandHandler : ITextCommandHandler
+{
+    private readonly ITelegramBotClient _client;
+    private readonly IMediator _mediator;
+    private readonly CurrentUserResolver _resolver;
+    private readonly CardIdResolver _idResolver;
+
+    public DeleteCommandHandler(
+        ITelegramBotClient client,
+        IMediator mediator,
+        CurrentUserResolver resolver,
+        CardIdResolver idResolver)
+    {
+        ArgumentNullException.ThrowIfNull(client);
+        ArgumentNullException.ThrowIfNull(mediator);
+        ArgumentNullException.ThrowIfNull(resolver);
+        ArgumentNullException.ThrowIfNull(idResolver);
+        _client = client;
+        _mediator = mediator;
+        _resolver = resolver;
+        _idResolver = idResolver;
+    }
+
+    public string CommandName => "delete";
+
+    public async Task HandleAsync(Message message, string? payload, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(message);
+        if (message.From is null) return;
+
+        if (string.IsNullOrWhiteSpace(payload))
+        {
+            await _client.SendMessage(
+                message.Chat.Id, "Usage: /delete <8-char-id>", cancellationToken: ct).ConfigureAwait(false);
+            return;
+        }
+
+        var resolved = await _resolver.ResolveAsync(message.From.Id, ct).ConfigureAwait(false);
+        if (resolved.IsFailure)
+        {
+            await _client.SendMessage(
+                message.Chat.Id, "❌ Not linked yet.", cancellationToken: ct).ConfigureAwait(false);
+            return;
+        }
+
+        var userId = resolved.Value!.UserId;
+        var idResult = await _idResolver.ResolveAsync(userId, payload.Trim(), ct).ConfigureAwait(false);
+        if (idResult.IsFailure)
+        {
+            await _client.SendMessage(
+                message.Chat.Id, $"❌ {idResult.Error!.Message}", cancellationToken: ct).ConfigureAwait(false);
+            return;
+        }
+
+        var cardResult = await _mediator.Send(
+            new GetCardByIdQuery(userId, idResult.Value, IncludeDeleted: false), ct).ConfigureAwait(false);
+        if (cardResult.IsFailure)
+        {
+            await _client.SendMessage(
+                message.Chat.Id, $"❌ {cardResult.Error!.Message}", cancellationToken: ct).ConfigureAwait(false);
+            return;
+        }
+
+        var card = cardResult.Value!;
+        var tagsLine = card.Tags.Count > 0 ? "Tags: " + string.Join(" ", card.Tags.Select(t => "#" + t)) : null;
+        var preview =
+            "🗑 Delete this card?\n\n" +
+            $"Topic: {CardCommandHandler.Escape(card.Title)}\n" +
+            (tagsLine is null ? string.Empty : tagsLine + "\n") +
+            $"Created: {card.CreatedAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
+
+        var idN = card.Id.ToString("N", CultureInfo.InvariantCulture);
+        var keyboard = new InlineKeyboardMarkup(new[]
+        {
+            new[]
+            {
+                InlineKeyboardButton.WithCallbackData("❌ Delete", $"del:confirm:{idN}"),
+                InlineKeyboardButton.WithCallbackData("↩ Cancel", "del:cancel"),
+            },
+        });
+
+        await _client.SendMessage(
+            message.Chat.Id, preview, parseMode: ParseMode.Markdown,
+            replyMarkup: keyboard, cancellationToken: ct).ConfigureAwait(false);
+    }
+}

@@ -1,10 +1,32 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Telegram.Bot" Version="22.3.0" />
+        <PackageReference Include="MediatR" Version="12.4.1" />
+        <PackageReference Include="FluentValidation" Version="11.10.0" />
+        <PackageReference Include="Polly" Version="8.4.2" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.1" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="Memoria.Bot.UnitTests" />
+    </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\Modules\Cards\Memoria.Cards.Contracts\Memoria.Cards.Contracts.csproj" />
       <ProjectReference Include="..\Modules\Reminders\Memoria.Reminders.Contracts\Memoria.Reminders.Contracts.csproj" />
       <ProjectReference Include="..\Modules\Reviews\Memoria.Reviews.Contracts\Memoria.Reviews.Contracts.csproj" />
       <ProjectReference Include="..\Modules\Users\Memoria.Users.Contracts\Memoria.Users.Contracts.csproj" />
+      <ProjectReference Include="..\Shared\Memoria.Shared.Infrastructure\Memoria.Shared.Infrastructure.csproj" />
       <ProjectReference Include="..\Shared\Memoria.Shared.Kernel\Memoria.Shared.Kernel.csproj" />
     </ItemGroup>
 

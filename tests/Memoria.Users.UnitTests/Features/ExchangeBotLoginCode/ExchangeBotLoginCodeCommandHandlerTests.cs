@@ -7,6 +7,7 @@ using Microsoft.Extensions.Time.Testing;
 using Memoria.Shared.Kernel.Results;
 using Memoria.Users.Contracts.Commands;
 using Memoria.Users.Domain;
+using Memoria.Shared.Infrastructure.Options;
 using Memoria.Users.Features.ExchangeBotLoginCode;
 using Memoria.Users.Options;
 using Memoria.Users.Persistence;

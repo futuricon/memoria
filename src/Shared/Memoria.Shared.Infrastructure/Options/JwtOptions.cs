@@ -1,8 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Memoria.Users.Options;
+namespace Memoria.Shared.Infrastructure.Options;
 
-internal sealed class JwtOptions
+/// <summary>
+/// Конфигурация JWT-токенов. Используется одновременно несколькими местами:
+/// Memoria.Users эмитит токены через <c>JwtTokenIssuer</c>; Memoria.Api валидирует
+/// входящие Bearer-токены с теми же Issuer/Audience/SigningKey.
+/// </summary>
+public sealed class JwtOptions
 {
     public const string SectionName = "Jwt";
 

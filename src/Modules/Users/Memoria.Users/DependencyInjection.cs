@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+using Memoria.Shared.Infrastructure.Options;
 using Memoria.Users.Contracts.Abstractions;
 using Memoria.Users.Options;
 using Memoria.Users.Persistence;

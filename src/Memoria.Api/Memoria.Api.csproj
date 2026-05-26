@@ -1,7 +1,26 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
 
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MediatR" Version="12.4.1" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.10" />
+        <PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="8.0.2" />
+        <PackageReference Include="Hangfire.Core" Version="1.8.14" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="Memoria.Api.UnitTests" />
     </ItemGroup>
 
     <ItemGroup>
@@ -9,6 +28,7 @@
       <ProjectReference Include="..\Modules\Reminders\Memoria.Reminders.Contracts\Memoria.Reminders.Contracts.csproj" />
       <ProjectReference Include="..\Modules\Reviews\Memoria.Reviews.Contracts\Memoria.Reviews.Contracts.csproj" />
       <ProjectReference Include="..\Modules\Users\Memoria.Users.Contracts\Memoria.Users.Contracts.csproj" />
+      <ProjectReference Include="..\Shared\Memoria.Shared.Infrastructure\Memoria.Shared.Infrastructure.csproj" />
       <ProjectReference Include="..\Shared\Memoria.Shared.Kernel\Memoria.Shared.Kernel.csproj" />
     </ItemGroup>
 
