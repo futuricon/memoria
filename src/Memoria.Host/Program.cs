@@ -2,6 +2,8 @@ using System.Globalization;
 
 using FluentValidation;
 
+using Hangfire;
+
 using MediatR;
 
 using Serilog;
@@ -51,6 +53,13 @@ try
         .AddCardsModule(builder.Configuration)
         .AddRemindersModule(builder.Configuration)
         .AddReviewsModule(builder.Configuration);
+
+    string[] hangfireQueues = ["default", "reminders"];
+    builder.Services.AddHangfireServer(opts =>
+    {
+        opts.WorkerCount = 4;
+        opts.Queues = hangfireQueues;
+    });
 
     var app = builder.Build();
 
