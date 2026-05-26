@@ -1,3 +1,5 @@
+using Memoria.Reviews.Contracts.Dtos;
+
 namespace Memoria.Reviews.Domain;
 
 /// <summary>

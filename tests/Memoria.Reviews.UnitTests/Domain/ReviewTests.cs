@@ -1,5 +1,6 @@
 using FluentAssertions;
 
+using Memoria.Reviews.Contracts.Dtos;
 using Memoria.Reviews.Domain;
 
 namespace Memoria.Reviews.UnitTests.Domain;

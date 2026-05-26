@@ -12,6 +12,7 @@ using Memoria.Cards;
 using Memoria.Cards.Jobs;
 using Memoria.Cards.Options;
 using Memoria.Reminders;
+using Memoria.Reminders.Contracts.Abstractions;
 using Memoria.Reviews;
 using Memoria.Shared.Infrastructure.Behaviors;
 using Memoria.Users;
@@ -58,6 +59,14 @@ try
         .AddRemindersModule(builder.Configuration)
         .AddReviewsModule(builder.Configuration);
 
+    // Реальный адаптер (TelegramReminderNotificationSender) появится в Stage 9
+    // вместе с Memoria.Bot. До тех пор регистрируем заглушку через factory —
+    // ValidateOnBuild увидит дескриптор, но не вызовет lambda; реальный вызов
+    // случится только когда Hangfire попытается выполнить SendReminderJob.
+    builder.Services.AddScoped<IReminderNotificationSender>(_ =>
+        throw new InvalidOperationException(
+            "IReminderNotificationSender is not wired yet (expected in Stage 9, Memoria.Bot)."));
+
     string[] hangfireQueues = ["default", "reminders"];
     builder.Services.AddHangfireServer(opts =>
     {
@@ -72,6 +81,7 @@ try
         await scope.ServiceProvider.MigrateUsersModuleAsync();
         await scope.ServiceProvider.MigrateCardsModuleAsync();
         await scope.ServiceProvider.MigrateRemindersModuleAsync();
+        await scope.ServiceProvider.MigrateReviewsModuleAsync();
     }
 
     using (var scope = app.Services.CreateScope())
