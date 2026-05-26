@@ -19,6 +19,7 @@
 
         <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.10" />
         <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="8.10.0" />
+        <PackageReference Include="Microsoft.Extensions.Diagnostics.Testing" Version="8.10.0" />
     </ItemGroup>
 
     <ItemGroup>
