@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace Memoria.Reminders.Options;
 
 internal sealed class RemindersOptions
@@ -14,10 +12,4 @@ internal sealed class RemindersOptions
         TimeSpan.FromDays(18),
         TimeSpan.FromDays(75),
     };
-
-    [Range(1, 365)]
-    public int SoftDeleteRetentionDays { get; init; } = 90;
-
-    [Required]
-    public string PurgeCronExpression { get; init; } = "0 4 * * *";
 }
