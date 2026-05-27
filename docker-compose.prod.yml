@@ -38,5 +38,31 @@ services:
       retries: 3
       start_period: 30s
 
+  # Promtail ships Memoria/nginx/Postgres logs to Grafana Cloud Loki.
+  # If LOKI_URL/USER/PASSWORD are empty in /opt/memoria/.env the container
+  # will restart-loop (Promtail requires a valid clients[].url). Add the
+  # creds from grafana.com/orgs/<your-org>/stacks → Loki "Send Logs" wizard,
+  # then redeploy / `docker compose -f docker-compose.prod.yml up -d`.
+  promtail:
+    image: grafana/promtail:3.2.1
+    container_name: memoria-promtail
+    restart: unless-stopped
+    network_mode: host
+    command:
+      - -config.file=/etc/promtail/promtail.yml
+      - -config.expand-env=true
+    environment:
+      LOKI_URL: ${LOKI_URL:-}
+      LOKI_USER: ${LOKI_USER:-}
+      LOKI_PASSWORD: ${LOKI_PASSWORD:-}
+      HOSTNAME: ${LOG_HOSTNAME:-memoria-vps}
+    volumes:
+      - ./deploy/promtail-config.yml:/etc/promtail/promtail.yml:ro
+      - memoria-logs:/var/log/memoria:ro
+      - /var/log/nginx:/var/log/nginx:ro
+      - /var/log/postgresql:/var/log/postgresql:ro
+      - promtail-data:/var/lib/promtail
+
 volumes:
   memoria-logs:
+  promtail-data:

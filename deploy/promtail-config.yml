@@ -1,0 +1,80 @@
+# Promtail — log shipper to Grafana Cloud Loki.
+#
+# Sources:
+#   1. Memoria app    — JSON files from the memoria-logs Docker volume
+#                       (Serilog CompactJsonFormatter, daily-rolling).
+#   2. nginx          — access + error from /var/log/nginx on the host.
+#   3. PostgreSQL     — /var/log/postgresql/postgresql-*-main.log on the host.
+#
+# Credentials come from /opt/memoria/.env on the VPS (LOKI_URL, LOKI_USER,
+# LOKI_PASSWORD). Promtail expands ${VAR} at startup because we pass
+# `-config.expand-env=true`.
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /var/lib/promtail/positions.yaml
+
+clients:
+  - url: ${LOKI_URL}
+    basic_auth:
+      username: ${LOKI_USER}
+      password: ${LOKI_PASSWORD}
+    backoff_config:
+      min_period: 500ms
+      max_period: 5m
+      max_retries: 10
+    batchwait: 1s
+    batchsize: 102400  # 100 KiB
+
+scrape_configs:
+  # ─── Memoria app (Serilog JSON) ──────────────────────────────────────────
+  - job_name: memoria
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: memoria
+          host: ${HOSTNAME:-memoria-vps}
+          __path__: /var/log/memoria/*.log
+    pipeline_stages:
+      - json:
+          expressions:
+            ts: @t
+            level: @l
+            source_context: SourceContext
+
+      - labels:
+          level:
+          source_context:
+      - timestamp:
+          source: ts
+          format: RFC3339Nano
+          fallback_formats:
+            - RFC3339
+
+  # ─── nginx access + error ────────────────────────────────────────────────
+  - job_name: nginx
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: nginx
+          stream: access
+          host: ${HOSTNAME:-memoria-vps}
+          __path__: /var/log/nginx/access.log
+      - targets: [localhost]
+        labels:
+          job: nginx
+          stream: error
+          host: ${HOSTNAME:-memoria-vps}
+          __path__: /var/log/nginx/error.log
+
+  # ─── PostgreSQL ──────────────────────────────────────────────────────────
+  - job_name: postgres
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: postgres
+          host: ${HOSTNAME:-memoria-vps}
+          __path__: /var/log/postgresql/postgresql-*-main.log

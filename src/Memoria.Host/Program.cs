@@ -50,6 +50,17 @@ try
     builder.Services.AddValidatorsFromAssembly(
         typeof(Memoria.Users.DependencyInjection).Assembly);
 
+    // MediatR pipeline behaviors. Order = outermost-first: OperationContext sets
+    // logging/correlation tags around everything (CorrelationId, Module, UserId,
+    // TelegramUserId from OperationContextAccessor); Performance times the full
+    // request (Debug for normal, Warning when slow); Validation rejects bad
+    // input close to the handler.
+    builder.Services.AddTransient(
+        typeof(IPipelineBehavior<,>),
+        typeof(OperationContextBehavior<,>));
+    builder.Services.AddTransient(
+        typeof(IPipelineBehavior<,>),
+        typeof(PerformanceBehavior<,>));
     builder.Services.AddTransient(
         typeof(IPipelineBehavior<,>),
         typeof(ValidationBehavior<,>));

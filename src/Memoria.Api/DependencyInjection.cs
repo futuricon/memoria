@@ -88,14 +88,18 @@ public static class DependencyInjection
     }
 
     /// <summary>
-    /// Настраивает middleware-pipeline Api-слоя: глобальный exception-handler,
-    /// CORS, аутентификацию, авторизацию, rate-limiter и Swagger UI (только
-    /// в Development). Должен вызываться до <see cref="MapApiEndpoints"/>.
+    /// Настраивает middleware-pipeline Api-слоя в правильном порядке:
+    /// <c>OperationContext</c> (раньше всего — чтобы CorrelationId был на всех
+    /// последующих лог-строках, включая ExceptionHandler) →
+    /// <c>UseExceptionHandler</c> → CORS → Authentication → Authorization →
+    /// RateLimiter → Swagger UI (только Development).
+    /// Должен вызываться до <see cref="MapApiEndpoints"/>.
     /// </summary>
     public static WebApplication UseApiPipeline(this WebApplication app)
     {
         ArgumentNullException.ThrowIfNull(app);
 
+        app.UseMiddleware<OperationContextMiddleware>();
         app.UseExceptionHandler();
         app.UseCors(CorsConfiguration.PolicyName);
         app.UseAuthentication();

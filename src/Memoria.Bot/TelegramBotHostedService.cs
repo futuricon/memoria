@@ -1,3 +1,4 @@
+using Memoria.Bot.Observability;
 using Memoria.Bot.Routing;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -50,6 +51,8 @@ internal sealed class TelegramBotHostedService : BackgroundService
 
     private async Task HandleUpdateAsync(ITelegramBotClient client, Update update, CancellationToken ct)
     {
+        using var operationScope = BotOperationScope.Enter(update);
+
         await using var scope = _scopeFactory.CreateAsyncScope();
         var router = scope.ServiceProvider.GetRequiredService<BotMessageRouter>();
         try
