@@ -41,10 +41,13 @@ scrape_configs:
     pipeline_stages:
       - json:
           expressions:
-            ts: @t
-            level: @l
+            # jmespath: '"@t"' экранирует двойные кавычки → достаёт поле с
+            # именем "@t" из JSON. Без кавычек jmespath читает @ как "current
+            # node" и значение получается невалидным; плюс YAML вообще не
+            # парсит голый @ в начале plain scalar (зарезервированный символ).
+            ts: '"@t"'
+            level: '"@l"'
             source_context: SourceContext
-
       - labels:
           level:
           source_context:
