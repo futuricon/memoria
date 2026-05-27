@@ -12,8 +12,24 @@ public sealed class ReminderSchedulerTests
     private static readonly Guid CardId = Guid.NewGuid();
     private static readonly Guid UserId = Guid.NewGuid();
 
+    // Default 5-interval set mirroring appsettings.json:Reminders:Intervals.
+    // RemindersOptions itself no longer carries a default (see RemindersOptions
+    // doc-comment — .NET ConfigurationBinder appends instead of replacing on
+    // collection properties with defaults), so each test supplies its own.
+    private static RemindersOptions DefaultOptions() => new()
+    {
+        Intervals = new[]
+        {
+            TimeSpan.Zero,
+            TimeSpan.FromMinutes(25),
+            TimeSpan.FromDays(1),
+            TimeSpan.FromDays(18),
+            TimeSpan.FromDays(75),
+        },
+    };
+
     private static ReminderScheduler CreateSut(RemindersOptions? options = null) =>
-        new(Microsoft.Extensions.Options.Options.Create(options ?? new RemindersOptions()));
+        new(Microsoft.Extensions.Options.Options.Create(options ?? DefaultOptions()));
 
     private static UserPreferencesDto PrefsWith(
         string tzId = "UTC",
