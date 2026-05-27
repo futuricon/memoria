@@ -1,0 +1,42 @@
+# Production compose: Memoria runs on the host network stack (single container,
+# no extra layer of bridge networking), connects to PostgreSQL on 127.0.0.1:5432
+# of the host machine, and listens on 127.0.0.1:8080 (nginx reverse-proxies HTTPS
+# from memoria.futuricon.net → http://127.0.0.1:8080).
+#
+# Secrets are read from /opt/memoria/.env on the VPS (NEVER committed to git).
+# Image is pulled from ghcr.io/futuricon/memoria:latest, published by the
+# `Deploy` GitHub Actions workflow.
+
+services:
+  app:
+    image: ghcr.io/futuricon/memoria:latest
+    container_name: memoria-app
+    pull_policy: always
+    network_mode: host
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://127.0.0.1:8080
+      ConnectionStrings__Postgres: "Host=127.0.0.1;Port=5432;Database=${POSTGRES_DB:-memoria};Username=${POSTGRES_USER:-memoria};Password=${POSTGRES_PASSWORD}"
+      Jwt__Issuer: ${JWT_ISSUER:-memoria}
+      Jwt__Audience: ${JWT_AUDIENCE:-memoria-api}
+      Jwt__SigningKey: ${JWT_SIGNING_KEY}
+      Telegram__BotToken: ${TELEGRAM_BOT_TOKEN}
+      Telegram__BotUsername: ${TELEGRAM_BOT_USERNAME:-memoria_bot}
+      OAuth__Google__ClientId: ${GOOGLE_CLIENT_ID:-}
+      OAuth__Google__ClientSecret: ${GOOGLE_CLIENT_SECRET:-}
+      OAuth__GitHub__ClientId: ${GITHUB_CLIENT_ID:-}
+      OAuth__GitHub__ClientSecret: ${GITHUB_CLIENT_SECRET:-}
+      Cors__AllowedOrigins__0: ${SPA_ORIGIN:-https://memoria.futuricon.net}
+      Hangfire__AllowedEmails__0: ${HANGFIRE_ADMIN_EMAIL:-}
+    volumes:
+      - memoria-logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  memoria-logs:
