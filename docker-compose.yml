@@ -17,5 +17,36 @@ services:
       timeout: 3s
       retries: 5
 
+  app:
+    profiles: ["full"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: memoria:local
+    container_name: memoria-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ConnectionStrings__Postgres: "Host=postgres;Port=5432;Database=memoria;Username=memoria;Password=${POSTGRES_PASSWORD:-memoria_local}"
+      Jwt__SigningKey: ${JWT_SIGNING_KEY}
+      Telegram__BotToken: ${TELEGRAM_BOT_TOKEN}
+      Telegram__BotUsername: ${TELEGRAM_BOT_USERNAME:-memoria_bot}
+      OAuth__Google__ClientId: ${GOOGLE_CLIENT_ID:-}
+      OAuth__Google__ClientSecret: ${GOOGLE_CLIENT_SECRET:-}
+      OAuth__GitHub__ClientId: ${GITHUB_CLIENT_ID:-}
+      OAuth__GitHub__ClientSecret: ${GITHUB_CLIENT_SECRET:-}
+      Cors__AllowedOrigins__0: ${SPA_ORIGIN:-http://localhost:5173}
+      Hangfire__AllowedEmails__0: ${HANGFIRE_ADMIN_EMAIL:-}
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/healthz || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
 volumes:
   memoria-pg-data:

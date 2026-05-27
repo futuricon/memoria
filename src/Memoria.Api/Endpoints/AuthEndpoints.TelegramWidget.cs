@@ -21,7 +21,7 @@ internal static class AuthTelegramWidgetEndpoint
     {
         ArgumentNullException.ThrowIfNull(group);
 
-        group.MapPost("/telegram-widget", async (
+        group.MapPost("/api/v1/auth/telegram-widget", async (
                 [FromBody] Dictionary<string, string> body,
                 TelegramWidgetValidator validator,
                 IMediator mediator,

@@ -8,6 +8,7 @@ using MediatR;
 
 using Serilog;
 
+using Memoria.Api;
 using Memoria.Bot;
 using Memoria.Cards;
 using Memoria.Cards.Jobs;
@@ -58,7 +59,8 @@ try
         .AddCardsModule(builder.Configuration)
         .AddRemindersModule(builder.Configuration)
         .AddReviewsModule(builder.Configuration)
-        .AddBotModule(builder.Configuration);
+        .AddBotModule(builder.Configuration)
+        .AddApiModule(builder.Configuration);
 
     string[] hangfireQueues = ["default", "reminders"];
     builder.Services.AddHangfireServer(opts =>
@@ -88,7 +90,13 @@ try
             options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
     }
 
+    app.UseApiPipeline();
     app.UseSerilogRequestLogging();
+
+    app.UseHangfireChallenge();
+    app.MapHangfireDashboard();
+
+    app.MapApiEndpoints();
     app.MapGet("/", () => "Memoria 0.1.0");
 
     Log.Information("Memoria started, listening for requests");

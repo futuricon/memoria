@@ -11,6 +11,8 @@
 
     <ItemGroup>
         <PackageReference Include="coverlet.collector" Version="6.0.0"/>
+        <PackageReference Include="FluentAssertions" Version="7.0.0" />
+        <PackageReference Include="MediatR" Version="12.4.1" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0"/>
         <PackageReference Include="NetArchTest.Rules" Version="1.3.2" />
         <PackageReference Include="xunit" Version="2.5.3"/>
@@ -22,6 +24,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\src\Memoria.Api\Memoria.Api.csproj" />
       <ProjectReference Include="..\..\src\Memoria.Bot\Memoria.Bot.csproj" />
       <ProjectReference Include="..\..\src\Memoria.Host\Memoria.Host.csproj" />
       <ProjectReference Include="..\..\src\Modules\Cards\Memoria.Cards.Contracts\Memoria.Cards.Contracts.csproj" />
