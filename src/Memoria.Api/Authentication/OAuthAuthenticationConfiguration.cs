@@ -10,9 +10,16 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Memoria.Api.Authentication;
 
 /// <summary>
-/// Cookie + Google + GitHub auth-схемы для <c>/jobs</c> dashboard. Никакого
-/// пересечения с JWT-схемой, используемой API: разные cookie name, разные
-/// callback paths, разный sign-in scheme.
+/// Cookie + optional Google/GitHub auth schemes for the <c>/jobs</c> dashboard.
+/// Isolated from the JWT scheme used by the API: separate cookie name, separate
+/// callback paths, separate sign-in scheme.
+/// <para>
+/// Google and GitHub are registered ONLY when both ClientId and ClientSecret are
+/// supplied. Without them <c>OAuthOptions.Validate()</c> would lazily throw on every
+/// HTTP request, because the handler is invoked by <c>AuthenticationMiddleware</c>
+/// for every scheme that implements <c>IAuthenticationRequestHandler</c> — including
+/// unrelated paths like <c>/healthz</c>.
+/// </para>
 /// </summary>
 internal static class OAuthAuthenticationConfiguration
 {
@@ -26,9 +33,9 @@ internal static class OAuthAuthenticationConfiguration
         ArgumentNullException.ThrowIfNull(configuration);
 
         var oauth = configuration.GetSection(OAuthOptions.SectionName).Get<OAuthOptions>()
-            ?? throw new InvalidOperationException("OAuth configuration is missing.");
+            ?? new OAuthOptions();
 
-        services
+        var builder = services
             .AddAuthentication()
             .AddCookie(CookieScheme, o =>
             {
@@ -37,15 +44,22 @@ internal static class OAuthAuthenticationConfiguration
                 o.Cookie.Name = "memoria_hangfire";
                 o.ExpireTimeSpan = TimeSpan.FromHours(8);
                 o.SlidingExpiration = true;
-            })
-            .AddGoogle(GoogleDefaults.AuthenticationScheme, o =>
+            });
+
+        if (HasCredentials(oauth.Google))
+        {
+            builder.AddGoogle(GoogleDefaults.AuthenticationScheme, o =>
             {
                 o.SignInScheme = CookieScheme;
                 o.ClientId = oauth.Google.ClientId;
                 o.ClientSecret = oauth.Google.ClientSecret;
                 o.CallbackPath = "/jobs/signin-google";
-            })
-            .AddGitHub(GitHubAuthenticationDefaults.AuthenticationScheme, o =>
+            });
+        }
+
+        if (HasCredentials(oauth.GitHub))
+        {
+            builder.AddGitHub(GitHubAuthenticationDefaults.AuthenticationScheme, o =>
             {
                 o.SignInScheme = CookieScheme;
                 o.ClientId = oauth.GitHub.ClientId;
@@ -53,7 +67,12 @@ internal static class OAuthAuthenticationConfiguration
                 o.CallbackPath = "/jobs/signin-github";
                 o.Scope.Add("user:email");
             });
+        }
 
         return services;
     }
+
+    private static bool HasCredentials(OAuthProviderOptions provider) =>
+        !string.IsNullOrWhiteSpace(provider.ClientId)
+        && !string.IsNullOrWhiteSpace(provider.ClientSecret);
 }
