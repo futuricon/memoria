@@ -6,6 +6,10 @@
 # dotenv files
 .env
 
+# Claude Code — local context and per-machine settings, never share via git
+.claude/
+CLAUDE.md.user
+
 # User-specific files
 *.rsuser
 *.suo
