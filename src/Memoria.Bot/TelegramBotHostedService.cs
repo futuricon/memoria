@@ -40,6 +40,8 @@ internal sealed class TelegramBotHostedService : BackgroundService
             DropPendingUpdates = false,
         };
 
+        await RegisterCommandMenuAsync(stoppingToken).ConfigureAwait(false);
+
         _logger.LogInformation("Starting Telegram long polling…");
 
         await _client.ReceiveAsync(
@@ -47,6 +49,37 @@ internal sealed class TelegramBotHostedService : BackgroundService
             errorHandler: HandlePollingErrorAsync,
             receiverOptions: receiverOptions,
             cancellationToken: stoppingToken).ConfigureAwait(false);
+    }
+
+    // Populates the Telegram "Menu" button + the `/` autocomplete list. Failure
+    // here must not stop the bot — the commands still work without the menu.
+    private async Task RegisterCommandMenuAsync(CancellationToken ct)
+    {
+        BotCommand[] commands =
+        [
+            new() { Command = "menu", Description = "🏠 Open the menu" },
+            new() { Command = "add", Description = "➕ Create a new card" },
+            new() { Command = "due", Description = "⏰ Cards to review now" },
+            new() { Command = "list", Description = "📋 Show your cards" },
+            new() { Command = "card", Description = "🔍 View a card by id" },
+            new() { Command = "delete", Description = "🗑 Delete a card by id" },
+            new() { Command = "tags", Description = "🏷 List your tags" },
+            new() { Command = "timezone", Description = "🕘 Set your timezone" },
+            new() { Command = "me", Description = "👤 Your profile" },
+            new() { Command = "login", Description = "🔑 Sign in to the web app" },
+            new() { Command = "help", Description = "❓ Show help" },
+            new() { Command = "cancel", Description = "✖️ Cancel the current action" },
+        ];
+
+        try
+        {
+            await _client.SetMyCommands(commands, cancellationToken: ct).ConfigureAwait(false);
+            _logger.LogInformation("Registered {Count} bot commands with Telegram", commands.Length);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Failed to register bot command menu (commands still work)");
+        }
     }
 
     private async Task HandleUpdateAsync(ITelegramBotClient client, Update update, CancellationToken ct)

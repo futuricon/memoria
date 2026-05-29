@@ -67,7 +67,8 @@ internal sealed class StartCommandHandler : ITextCommandHandler
         {
             await _client.SendMessage(
                 message.Chat.Id,
-                $"👋 Welcome back, {resolved.Value!.DisplayName}! Use /help to see available commands.",
+                $"👋 Welcome back, {resolved.Value!.DisplayName}! Pick an action below or use /menu anytime.",
+                replyMarkup: MenuCommandHandler.HomeKeyboard,
                 cancellationToken: ct).ConfigureAwait(false);
             return;
         }
@@ -98,7 +99,8 @@ internal sealed class StartCommandHandler : ITextCommandHandler
 
         await _client.SendMessage(
             message.Chat.Id,
-            $"👋 Welcome to Memoria, {displayName}! Account created. Use /help to see commands.",
+            $"👋 Welcome to Memoria, {displayName}! Account created. Pick an action below or use /menu anytime.",
+            replyMarkup: MenuCommandHandler.HomeKeyboard,
             cancellationToken: ct).ConfigureAwait(false);
     }
 

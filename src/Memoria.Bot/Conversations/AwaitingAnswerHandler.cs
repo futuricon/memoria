@@ -12,6 +12,7 @@ using Memoria.Reviews.Contracts.Commands;
 using Microsoft.Extensions.Logging;
 
 using Telegram.Bot;
+using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
@@ -107,6 +108,13 @@ internal sealed class AwaitingAnswerHandler : IConversationContinuationHandler
 
         var card = cardResult.Value!;
 
+        // Instant feedback: the LLM call takes a few seconds, so acknowledge
+        // immediately and edit this same message with the verdict when done.
+        var thinking = await _client
+            .SendMessage(chatId, "⏳ Checking your answer…", cancellationToken: ct)
+            .ConfigureAwait(false);
+        var messageId = thinking.MessageId;
+
         var grade = await _grader
             .GradeAsync(new GradingRequest(card.Title, card.Body, answer), ct)
             .ConfigureAwait(false);
@@ -115,7 +123,7 @@ internal sealed class AwaitingAnswerHandler : IConversationContinuationHandler
             _logger.LogWarning(
                 "Grading unavailable for reminder {ReminderId} ({Code}); keeping awaiting state",
                 awaiting.ReminderId, grade.Error!.Code);
-            await Send(chatId, "⚠️ Couldn't grade your answer right now. Please try again in a moment.", ct)
+            await Edit(chatId, messageId, "⚠️ Couldn't grade your answer right now. Please try again in a moment.", ct)
                 .ConfigureAwait(false);
             return; // keep awaiting — transient
         }
@@ -138,13 +146,11 @@ internal sealed class AwaitingAnswerHandler : IConversationContinuationHandler
 
         _conversations.Clear(chatId);
 
-        if (record.IsFailure)
-        {
-            await Send(chatId, $"❌ {record.Error!.Message}", ct).ConfigureAwait(false);
-            return;
-        }
-
-        await Send(chatId, BuildResultText(result, card.Body), ct).ConfigureAwait(false);
+        await Edit(
+            chatId,
+            messageId,
+            record.IsFailure ? $"❌ {record.Error!.Message}" : BuildResultText(result, card.Body),
+            ct).ConfigureAwait(false);
     }
 
     private static string BuildResultText(GradingResult result, string referenceBody)
@@ -168,6 +174,20 @@ internal sealed class AwaitingAnswerHandler : IConversationContinuationHandler
     {
         await _client.SendMessage(chatId, text, parseMode: ParseMode.Markdown, cancellationToken: ct)
             .ConfigureAwait(false);
+    }
+
+    private async Task Edit(long chatId, int messageId, string text, CancellationToken ct)
+    {
+        try
+        {
+            await _client.EditMessageText(chatId, messageId, text, parseMode: ParseMode.Markdown, cancellationToken: ct)
+                .ConfigureAwait(false);
+        }
+        catch (ApiRequestException ex)
+        {
+            _logger.LogWarning(ex, "Failed to edit grading message {MessageId}; sending new", messageId);
+            await Send(chatId, text, ct).ConfigureAwait(false);
+        }
     }
 
     private static string Escape(string s) =>

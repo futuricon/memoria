@@ -51,6 +51,7 @@ public static class DependencyInjection
         services.AddScoped<ITextCommandHandler, HelpCommandHandler>();
         services.AddScoped<ITextCommandHandler, CancelCommandHandler>();
         services.AddScoped<ITextCommandHandler, StartCommandHandler>();
+        services.AddScoped<ITextCommandHandler, MenuCommandHandler>();
         services.AddScoped<ITextCommandHandler, MeCommandHandler>();
         services.AddScoped<ITextCommandHandler, TimezoneCommandHandler>();
         services.AddScoped<ITextCommandHandler, LoginCommandHandler>();
@@ -59,12 +60,15 @@ public static class DependencyInjection
         services.AddScoped<ITextCommandHandler, CardCommandHandler>();
         services.AddScoped<ITextCommandHandler, DeleteCommandHandler>();
         services.AddScoped<ITextCommandHandler, AddCommandHandler>();
+        services.AddScoped<ITextCommandHandler, DueCommandHandler>();
 
         services.AddScoped<ICallbackHandler, ListPaginationCallbackHandler>();
         services.AddScoped<ICallbackHandler, DeleteConfirmCallbackHandler>();
         services.AddScoped<ICallbackHandler, CardRestoreCallbackHandler>();
         services.AddScoped<ICallbackHandler, AddCardConfirmCallbackHandler>();
         services.AddScoped<ICallbackHandler, ReminderCallbackHandler>();
+        services.AddScoped<ICallbackHandler, MenuCallbackHandler>();
+        services.AddScoped<ICallbackHandler, DueCallbackHandler>();
 
         services.AddScoped<IConversationContinuationHandler>(sp =>
             sp.GetRequiredService<AddCardDialogHandler>());

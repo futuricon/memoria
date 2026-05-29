@@ -76,7 +76,9 @@ internal sealed class ListCommandHandler : ITextCommandHandler
 
         if (paged.Items.Count == 0)
         {
-            text = "📚 You have no cards yet. Use /add to create one.";
+            text = "📚 You have no cards yet.";
+            keyboard = new InlineKeyboardMarkup(
+                InlineKeyboardButton.WithCallbackData("➕ Add card", "menu:add"));
         }
         else
         {

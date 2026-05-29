@@ -9,6 +9,7 @@ using Memoria.Cards.Contracts.Queries;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace Memoria.Bot.Commands;
 
@@ -85,8 +86,13 @@ internal sealed class CardCommandHandler : ITextCommandHandler
             $"🏷 {tagsLine}\n" +
             $"📅 Created: {card.CreatedAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
 
+        var idN = card.Id.ToString("N", CultureInfo.InvariantCulture);
+        var keyboard = new InlineKeyboardMarkup(
+            InlineKeyboardButton.WithCallbackData("🗑 Delete", $"del:confirm:{idN}"));
+
         await _client.SendMessage(
-            message.Chat.Id, text, parseMode: ParseMode.Markdown, cancellationToken: ct).ConfigureAwait(false);
+            message.Chat.Id, text, parseMode: ParseMode.Markdown,
+            replyMarkup: keyboard, cancellationToken: ct).ConfigureAwait(false);
     }
 
     internal static string Escape(string s) =>

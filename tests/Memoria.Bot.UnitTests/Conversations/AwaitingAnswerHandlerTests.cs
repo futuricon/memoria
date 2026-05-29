@@ -19,6 +19,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 using Telegram.Bot;
+using Telegram.Bot.Requests;
 using Telegram.Bot.Types;
 
 namespace Memoria.Bot.UnitTests.Conversations;
@@ -50,6 +51,12 @@ public sealed class AwaitingAnswerHandlerTests
             .Send(Arg.Any<GetUserByTelegramIdQuery>(), Arg.Any<CancellationToken>())
             .Returns(Result<UserIdentityResolutionDto>.Success(
                 new UserIdentityResolutionDto(UserId, "Tester", null)));
+
+        // The handler sends a "⏳ checking…" message and reads its MessageId,
+        // so the underlying SendRequest must return a real Message.
+        _client
+            .SendRequest(Arg.Any<SendMessageRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new Message { Id = 1 });
     }
 
     private static Message MakeMessage(string text) => new()
