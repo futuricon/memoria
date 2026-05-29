@@ -62,7 +62,7 @@ public static class DependencyInjection
         services.AddScoped<ITextCommandHandler, AddCommandHandler>();
         services.AddScoped<ITextCommandHandler, DueCommandHandler>();
 
-        services.AddScoped<ICallbackHandler, ListPaginationCallbackHandler>();
+        services.AddScoped<ICallbackHandler, CardsBrowseCallbackHandler>();
         services.AddScoped<ICallbackHandler, DeleteConfirmCallbackHandler>();
         services.AddScoped<ICallbackHandler, CardRestoreCallbackHandler>();
         services.AddScoped<ICallbackHandler, AddCardConfirmCallbackHandler>();

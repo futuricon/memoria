@@ -4,6 +4,7 @@ using MediatR;
 
 using Memoria.Bot.Routing;
 using Memoria.Bot.Services;
+using Memoria.Cards.Contracts.Dtos;
 using Memoria.Cards.Contracts.Queries;
 
 using Telegram.Bot;
@@ -13,9 +14,15 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace Memoria.Bot.Commands;
 
+/// <summary>
+/// <c>/list</c> — renders the inline card browser: each card is a button (5 per
+/// page) with ◀/▶ navigation below. Tapping a card opens its detail view —
+/// see <c>CardsBrowseCallbackHandler</c> (prefix <c>cards:</c>).
+/// </summary>
 internal sealed class ListCommandHandler : ITextCommandHandler
 {
-    internal const int PageSize = 10;
+    internal const int PageSize = 5;
+    private const int MaxTitleOnButton = 40;
 
     private readonly ITelegramBotClient _client;
     private readonly IMediator _mediator;
@@ -72,7 +79,7 @@ internal sealed class ListCommandHandler : ITextCommandHandler
 
         var paged = listResult.Value!;
         string text;
-        InlineKeyboardMarkup? keyboard = null;
+        InlineKeyboardMarkup keyboard;
 
         if (paged.Items.Count == 0)
         {
@@ -83,10 +90,9 @@ internal sealed class ListCommandHandler : ITextCommandHandler
         else
         {
             var totalPages = Math.Max(1, (paged.TotalCount + PageSize - 1) / PageSize);
-            var lines = paged.Items.Select(c =>
-                $"`{c.Id.ToString("N", CultureInfo.InvariantCulture)[..8]}` {c.Title}");
-            text = $"📚 Cards (page {page} of {totalPages}):\n\n" + string.Join("\n", lines);
-            keyboard = BuildPaginationKeyboard(page, paged.TotalCount);
+            text = $"📚 *Your cards* — page {page.ToString(CultureInfo.InvariantCulture)} of " +
+                   $"{totalPages.ToString(CultureInfo.InvariantCulture)}";
+            keyboard = BuildCardsKeyboard(paged.Items, page, paged.TotalCount);
         }
 
         if (editMessageId is { } msgId)
@@ -103,20 +109,43 @@ internal sealed class ListCommandHandler : ITextCommandHandler
         }
     }
 
-    private static InlineKeyboardMarkup? BuildPaginationKeyboard(int page, int totalCount)
+    private static InlineKeyboardMarkup BuildCardsKeyboard(
+        IReadOnlyList<CardSummaryDto> items, int page, int totalCount)
     {
-        var buttons = new List<InlineKeyboardButton>();
+        var rows = new List<InlineKeyboardButton[]>(items.Count + 2);
+
+        foreach (var card in items)
+        {
+            var id = card.Id.ToString("N", CultureInfo.InvariantCulture);
+            rows.Add(new[]
+            {
+                InlineKeyboardButton.WithCallbackData(
+                    Truncate(card.Title),
+                    $"cards:open:{page.ToString(CultureInfo.InvariantCulture)}:{id}"),
+            });
+        }
+
+        var nav = new List<InlineKeyboardButton>(2);
         if (page > 1)
         {
-            buttons.Add(InlineKeyboardButton.WithCallbackData("◀ Prev",
-                $"list:prev:{page.ToString(CultureInfo.InvariantCulture)}"));
+            nav.Add(InlineKeyboardButton.WithCallbackData(
+                "◀ Back", $"cards:page:{(page - 1).ToString(CultureInfo.InvariantCulture)}"));
         }
         if (page * PageSize < totalCount)
         {
-            buttons.Add(InlineKeyboardButton.WithCallbackData("Next ▶",
-                $"list:next:{page.ToString(CultureInfo.InvariantCulture)}"));
+            nav.Add(InlineKeyboardButton.WithCallbackData(
+                "Forward ▶", $"cards:page:{(page + 1).ToString(CultureInfo.InvariantCulture)}"));
+        }
+        if (nav.Count > 0)
+        {
+            rows.Add(nav.ToArray());
         }
 
-        return buttons.Count == 0 ? null : new InlineKeyboardMarkup(buttons);
+        rows.Add(new[] { InlineKeyboardButton.WithCallbackData("🏠 Menu", "menu:home") });
+
+        return new InlineKeyboardMarkup(rows);
     }
+
+    private static string Truncate(string s) =>
+        s.Length <= MaxTitleOnButton ? s : s[..(MaxTitleOnButton - 1)] + "…";
 }
