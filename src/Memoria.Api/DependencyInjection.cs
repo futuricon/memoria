@@ -8,6 +8,7 @@ using Memoria.Api.Middleware;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +28,19 @@ public static class DependencyInjection
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
+
+        // Behind nginx (TLS terminates there, app listens on http://127.0.0.1:8080)
+        // we must honor X-Forwarded-Proto/Host so Request.Scheme is "https" — OAuth
+        // redirect_uri and the dashboard cookie depend on it. The app is only
+        // reachable via the loopback proxy, so trust forwarded headers from anyone.
+        services.Configure<ForwardedHeadersOptions>(o =>
+        {
+            o.ForwardedHeaders = ForwardedHeaders.XForwardedFor
+                                 | ForwardedHeaders.XForwardedProto
+                                 | ForwardedHeaders.XForwardedHost;
+            o.KnownNetworks.Clear();
+            o.KnownProxies.Clear();
+        });
 
         services.AddJwtBearerAuthentication(configuration);
         services.AddOAuthAuthentication(configuration);
@@ -99,6 +113,9 @@ public static class DependencyInjection
     {
         ArgumentNullException.ThrowIfNull(app);
 
+        // First: rewrite scheme/host from the nginx proxy headers, before anything
+        // (auth, logging, OAuth redirect building) reads them.
+        app.UseForwardedHeaders();
         app.UseMiddleware<OperationContextMiddleware>();
         app.UseExceptionHandler();
         app.UseCors(CorsConfiguration.PolicyName);
