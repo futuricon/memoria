@@ -18,6 +18,8 @@ COPY src/Modules/Reminders/Memoria.Reminders.Contracts/*.csproj ./src/Modules/Re
 COPY src/Modules/Reminders/Memoria.Reminders/*.csproj     ./src/Modules/Reminders/Memoria.Reminders/
 COPY src/Modules/Reviews/Memoria.Reviews.Contracts/*.csproj ./src/Modules/Reviews/Memoria.Reviews.Contracts/
 COPY src/Modules/Reviews/Memoria.Reviews/*.csproj         ./src/Modules/Reviews/Memoria.Reviews/
+COPY src/Modules/AI/Memoria.AI.Contracts/*.csproj         ./src/Modules/AI/Memoria.AI.Contracts/
+COPY src/Modules/AI/Memoria.AI/*.csproj                   ./src/Modules/AI/Memoria.AI/
 COPY src/Memoria.Bot/*.csproj                             ./src/Memoria.Bot/
 COPY src/Memoria.Api/*.csproj                             ./src/Memoria.Api/
 COPY src/Memoria.Host/*.csproj                            ./src/Memoria.Host/
