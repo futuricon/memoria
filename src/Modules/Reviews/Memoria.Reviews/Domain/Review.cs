@@ -20,7 +20,11 @@ internal sealed class Review
         Rating rating,
         string cardTitleSnapshot,
         DateTime reviewedAt,
-        string? note)
+        string? note,
+        string? answerText = null,
+        int? aiScore = null,
+        string? aiFeedback = null,
+        bool autoGraded = false)
     {
         Id = Guid.NewGuid();
         CardId = cardId;
@@ -30,6 +34,10 @@ internal sealed class Review
         CardTitleSnapshot = cardTitleSnapshot;
         ReviewedAt = reviewedAt;
         Note = note;
+        AnswerText = answerText;
+        AiScore = aiScore;
+        AiFeedback = aiFeedback;
+        AutoGraded = autoGraded;
     }
 
     public Guid Id { get; private set; }
@@ -40,4 +48,16 @@ internal sealed class Review
     public string CardTitleSnapshot { get; private set; } = string.Empty;
     public DateTime ReviewedAt { get; private set; }
     public string? Note { get; private set; }
+
+    /// <summary>The free-text answer the user submitted (Question cards only).</summary>
+    public string? AnswerText { get; private set; }
+
+    /// <summary>AI grade 0–100 (auto-graded Question reviews only).</summary>
+    public int? AiScore { get; private set; }
+
+    /// <summary>AI feedback shown to the user (auto-graded Question reviews only).</summary>
+    public string? AiFeedback { get; private set; }
+
+    /// <summary>True when the <see cref="Rating"/> was derived from an AI grade.</summary>
+    public bool AutoGraded { get; private set; }
 }

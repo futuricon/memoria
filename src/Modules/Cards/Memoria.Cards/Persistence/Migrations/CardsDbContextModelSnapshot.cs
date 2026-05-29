@@ -50,6 +50,12 @@ namespace Memoria.Cards.Persistence.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("title");
 
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("type");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");

@@ -2,6 +2,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\..\Shared\Memoria.Shared.Kernel\Memoria.Shared.Kernel.csproj" />
+      <ProjectReference Include="..\..\Cards\Memoria.Cards.Contracts\Memoria.Cards.Contracts.csproj" />
     </ItemGroup>
 
     <ItemGroup>

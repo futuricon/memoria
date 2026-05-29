@@ -1,14 +1,23 @@
 using Memoria.Reminders.Domain;
 using Memoria.Reminders.Options;
+using Memoria.Reviews.Contracts.Dtos;
 using Memoria.Users.Contracts.Dtos;
 using Microsoft.Extensions.Options;
 
 namespace Memoria.Reminders.Services;
 
+/// <summary>
+/// Builds reminders for the adaptive (Leitner/SM-2-style) schedule. A card has
+/// at most one pending reminder at a time: a fresh card gets a stage-1 reminder
+/// (<see cref="CreateFirstReminder"/>); after each rating the next reminder is
+/// computed from the current stage and the <see cref="Rating"/>
+/// (<see cref="ComputeNext"/> / <see cref="CreateNextReminder"/>); a Skip
+/// re-arms the same stage after <see cref="RemindersOptions.HardRetryInterval"/>
+/// (<see cref="CreateRetryReminder"/>). All scheduling honors the user's
+/// timezone and quiet-hours window.
+/// </summary>
 internal sealed class ReminderScheduler
 {
-    private const int RequiredIntervalCount = 5;
-
     private readonly RemindersOptions _options;
 
     public ReminderScheduler(IOptions<RemindersOptions> options)
@@ -17,35 +26,106 @@ internal sealed class ReminderScheduler
         _options = options.Value;
     }
 
-    public IReadOnlyList<Reminder> CreateScheduleFor(
+    private int MaxStage => _options.Intervals.Count;
+
+    /// <summary>
+    /// First reminder for a freshly created (or restored) card: stage 1,
+    /// delay = <c>Intervals[0]</c>.
+    /// </summary>
+    public Reminder CreateFirstReminder(
         Guid cardId,
         Guid userId,
         UserPreferencesDto preferences,
         DateTime anchorUtc)
     {
         ArgumentNullException.ThrowIfNull(preferences);
+        EnsureIntervals();
 
-        if (_options.Intervals.Count != RequiredIntervalCount)
+        return BuildReminder(cardId, userId, stage: 1, delay: _options.Intervals[0], preferences, anchorUtc);
+    }
+
+    /// <summary>
+    /// Adaptive transition: given the stage of the just-reviewed reminder and
+    /// the user's rating, produces the next reminder.
+    /// </summary>
+    public Reminder CreateNextReminder(
+        Guid cardId,
+        Guid userId,
+        int currentStage,
+        Rating rating,
+        UserPreferencesDto preferences,
+        DateTime anchorUtc)
+    {
+        ArgumentNullException.ThrowIfNull(preferences);
+        EnsureIntervals();
+
+        var (nextStage, delay) = ComputeNext(currentStage, rating);
+        return BuildReminder(cardId, userId, nextStage, delay, preferences, anchorUtc);
+    }
+
+    /// <summary>
+    /// Retry at the SAME stage after a Skip — uses
+    /// <see cref="RemindersOptions.HardRetryInterval"/>, no Review recorded.
+    /// </summary>
+    public Reminder CreateRetryReminder(
+        Guid cardId,
+        Guid userId,
+        int currentStage,
+        UserPreferencesDto preferences,
+        DateTime anchorUtc)
+    {
+        ArgumentNullException.ThrowIfNull(preferences);
+        EnsureIntervals();
+
+        return BuildReminder(cardId, userId, currentStage, _options.HardRetryInterval, preferences, anchorUtc);
+    }
+
+    /// <summary>
+    /// Maps <c>(currentStage, rating)</c> → <c>(nextStage, delay)</c>:
+    /// Forgot resets to stage 1; Hard repeats the stage after HardRetryInterval;
+    /// Good advances one stage; Easy advances two — both capped at the last
+    /// stage and using that stage's interval as the delay.
+    /// </summary>
+    public (int NextStage, TimeSpan Delay) ComputeNext(int currentStage, Rating rating)
+    {
+        EnsureIntervals();
+
+        return rating switch
+        {
+            Rating.Forgot => (1, _options.Intervals[0]),
+            Rating.Hard => (currentStage, _options.HardRetryInterval),
+            Rating.Good => StageStep(Math.Min(currentStage + 1, MaxStage)),
+            Rating.Easy => StageStep(Math.Min(currentStage + 2, MaxStage)),
+            _ => (currentStage, _options.HardRetryInterval),
+        };
+
+        (int, TimeSpan) StageStep(int stage) => (stage, _options.Intervals[stage - 1]);
+    }
+
+    private void EnsureIntervals()
+    {
+        if (_options.Intervals.Count < 1)
         {
             throw new InvalidOperationException(
-                $"RemindersOptions.Intervals must contain exactly {RequiredIntervalCount} entries, " +
-                $"actual: {_options.Intervals.Count}.");
+                "RemindersOptions.Intervals must contain at least one entry.");
         }
+    }
 
+    private Reminder BuildReminder(
+        Guid cardId,
+        Guid userId,
+        int stage,
+        TimeSpan delay,
+        UserPreferencesDto preferences,
+        DateTime anchorUtc)
+    {
         var timeZone = TimeZoneInfo.FindSystemTimeZoneById(preferences.TimeZoneId);
-        var reminders = new List<Reminder>(RequiredIntervalCount);
+        var naiveUtc = anchorUtc + delay;
+        var local = TimeZoneInfo.ConvertTimeFromUtc(naiveUtc, timeZone);
+        var shiftedLocal = ShiftIfInQuietHours(local, preferences.QuietHoursStart, preferences.QuietHoursEnd);
+        var scheduledAtUtc = TimeZoneInfo.ConvertTimeToUtc(shiftedLocal, timeZone);
 
-        for (var stage = 1; stage <= RequiredIntervalCount; stage++)
-        {
-            var naiveUtc = anchorUtc + _options.Intervals[stage - 1];
-            var local = TimeZoneInfo.ConvertTimeFromUtc(naiveUtc, timeZone);
-            var shiftedLocal = ShiftIfInQuietHours(local, preferences.QuietHoursStart, preferences.QuietHoursEnd);
-            var scheduledAtUtc = TimeZoneInfo.ConvertTimeToUtc(shiftedLocal, timeZone);
-
-            reminders.Add(new Reminder(cardId, userId, stage, scheduledAtUtc));
-        }
-
-        return reminders;
+        return new Reminder(cardId, userId, stage, scheduledAtUtc);
     }
 
     private static DateTime ShiftIfInQuietHours(

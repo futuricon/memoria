@@ -93,7 +93,8 @@ internal sealed class SendReminderJob
             CardTitle: card.Title,
             CardBody: card.Body,
             Tags: card.Tags,
-            StageNumber: reminder.StageNumber);
+            StageNumber: reminder.StageNumber,
+            CardType: card.Type);
 
         var sendResult = await _sender.SendReminderAsync(notification, ct).ConfigureAwait(false);
 

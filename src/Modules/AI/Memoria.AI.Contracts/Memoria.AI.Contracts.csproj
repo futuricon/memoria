@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\Shared\Memoria.Shared.Kernel\Memoria.Shared.Kernel.csproj" />
+    </ItemGroup>
+
+</Project>

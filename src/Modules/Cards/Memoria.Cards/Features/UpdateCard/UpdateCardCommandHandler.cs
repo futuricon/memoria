@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
+using Memoria.Cards.Contracts;
 using Memoria.Cards.Contracts.Commands;
 using Memoria.Cards.Contracts.Dtos;
 using Memoria.Cards.Domain;
@@ -62,6 +63,13 @@ internal sealed class UpdateCardCommandHandler : IRequestHandler<UpdateCardComma
             if (normalized.IsFailure)
             {
                 return Result<CardDto>.Failure(normalized.Error!);
+            }
+
+            if (normalized.Value!.Count > CardConstraints.MaxTagsPerCard)
+            {
+                return Result<CardDto>.Failure(Error.Validation(
+                    "cards.too_many_tags",
+                    $"A card can have at most {CardConstraints.MaxTagsPerCard} tags."));
             }
 
             var oldLinks = await _db.CardTags

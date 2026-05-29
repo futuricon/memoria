@@ -1,4 +1,5 @@
 using Memoria.Bot.Services;
+using Memoria.Cards.Contracts;
 
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -15,8 +16,8 @@ namespace Memoria.Bot.Conversations;
 /// </summary>
 internal sealed class AddCardDialogHandler : IConversationContinuationHandler
 {
-    private const int MaxTitleLength = 200;
-    private const int MaxBodyLength = 4000;
+    private const int MaxTitleLength = CardConstraints.MaxTitleLength;
+    private const int MaxBodyLength = CardConstraints.MaxBodyLength;
 
     private readonly ITelegramBotClient _client;
     private readonly IConversationStateStore _conversations;

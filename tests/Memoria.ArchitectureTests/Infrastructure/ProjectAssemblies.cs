@@ -12,6 +12,8 @@ internal static class ProjectAssemblies
     public static Assembly RemindersContracts => typeof(Memoria.Reminders.Contracts.RemindersContractsAssemblyMarker).Assembly;
     public static Assembly Reviews => typeof(Memoria.Reviews.ReviewsAssemblyMarker).Assembly;
     public static Assembly ReviewsContracts => typeof(Memoria.Reviews.Contracts.ReviewsContractsAssemblyMarker).Assembly;
+    public static Assembly Ai => typeof(Memoria.AI.AiAssemblyMarker).Assembly;
+    public static Assembly AiContracts => typeof(Memoria.AI.Contracts.AiContractsAssemblyMarker).Assembly;
     public static Assembly Bot => typeof(Memoria.Bot.BotAssemblyMarker).Assembly;
     public static Assembly Api => typeof(Memoria.Api.ApiAssemblyMarker).Assembly;
     public static Assembly Host => typeof(Memoria.Host.HostAssemblyMarker).Assembly;
@@ -19,8 +21,8 @@ internal static class ProjectAssemblies
     public static Assembly SharedInfrastructure => typeof(Memoria.Shared.Infrastructure.SharedInfrastructureAssemblyMarker).Assembly;
 
     public static IReadOnlyList<Assembly> AllInternalModules =>
-        new[] { Users, Cards, Reminders, Reviews };
+        new[] { Users, Cards, Reminders, Reviews, Ai };
 
     public static IReadOnlyList<Assembly> AllContracts =>
-        new[] { UsersContracts, CardsContracts, RemindersContracts, ReviewsContracts };
+        new[] { UsersContracts, CardsContracts, RemindersContracts, ReviewsContracts, AiContracts };
 }

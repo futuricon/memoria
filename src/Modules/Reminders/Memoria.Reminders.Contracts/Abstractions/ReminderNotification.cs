@@ -1,3 +1,5 @@
+using Memoria.Cards.Contracts.Dtos;
+
 namespace Memoria.Reminders.Contracts.Abstractions;
 
 public sealed record ReminderNotification(
@@ -7,4 +9,5 @@ public sealed record ReminderNotification(
     string CardTitle,
     string CardBody,
     IReadOnlyList<string> Tags,
-    int StageNumber);
+    int StageNumber,
+    CardType CardType);

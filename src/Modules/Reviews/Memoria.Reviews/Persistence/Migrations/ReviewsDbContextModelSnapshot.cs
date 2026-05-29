@@ -30,6 +30,24 @@ namespace Memoria.Reviews.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("AiFeedback")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("ai_feedback");
+
+                    b.Property<int?>("AiScore")
+                        .HasColumnType("integer")
+                        .HasColumnName("ai_score");
+
+                    b.Property<string>("AnswerText")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("answer_text");
+
+                    b.Property<bool>("AutoGraded")
+                        .HasColumnType("boolean")
+                        .HasColumnName("auto_graded");
+
                     b.Property<Guid>("CardId")
                         .HasColumnType("uuid")
                         .HasColumnName("card_id");

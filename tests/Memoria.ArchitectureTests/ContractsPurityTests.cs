@@ -39,6 +39,7 @@ public sealed class ContractsPurityTests
         "Memoria.Reminders.Options",
         "Memoria.Reviews.Domain", "Memoria.Reviews.Persistence",
         "Memoria.Reviews.Features", "Memoria.Reviews.Services",
+        "Memoria.AI.Claude", "Memoria.AI.Deepseek", "Memoria.AI.Llm", "Memoria.AI.Options",
     ];
 
     public static IEnumerable<object[]> ContractsAssemblies()
@@ -47,6 +48,7 @@ public sealed class ContractsPurityTests
         yield return new object[] { ProjectAssemblies.CardsContracts, "Cards.Contracts" };
         yield return new object[] { ProjectAssemblies.RemindersContracts, "Reminders.Contracts" };
         yield return new object[] { ProjectAssemblies.ReviewsContracts, "Reviews.Contracts" };
+        yield return new object[] { ProjectAssemblies.AiContracts, "AI.Contracts" };
     }
 
     [Theory]

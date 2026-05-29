@@ -31,7 +31,7 @@ public sealed class RecordReviewCommandHandlerTests
     private readonly FakeLogger<RecordReviewCommandHandler> _logger = new();
 
     private static CardDto MakeCardDto(Guid cardId, string title) =>
-        new(cardId, title, "body", Array.Empty<string>(), ClockUtc, ClockUtc);
+        new(cardId, title, "body", Array.Empty<string>(), ClockUtc, ClockUtc, CardType.Note);
 
     private void StubCardQuery(Guid userId, Guid cardId, Result<CardDto> result)
     {

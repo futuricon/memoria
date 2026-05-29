@@ -2,6 +2,8 @@ using System.Globalization;
 
 using MediatR;
 
+using Memoria.Bot.Conversations;
+using Memoria.Cards.Contracts.Dtos;
 using Memoria.Reminders.Contracts.Abstractions;
 using Memoria.Shared.Kernel.Results;
 using Memoria.Users.Contracts.Queries;
@@ -21,19 +23,23 @@ internal sealed class TelegramReminderNotificationSender : IReminderNotification
 {
     private readonly ITelegramBotClient _client;
     private readonly IMediator _mediator;
+    private readonly IConversationStateStore _conversations;
     private readonly ILogger<TelegramReminderNotificationSender> _logger;
     private readonly IAsyncPolicy _retryPolicy;
 
     public TelegramReminderNotificationSender(
         ITelegramBotClient client,
         IMediator mediator,
+        IConversationStateStore conversations,
         ILogger<TelegramReminderNotificationSender> logger)
     {
         ArgumentNullException.ThrowIfNull(client);
         ArgumentNullException.ThrowIfNull(mediator);
+        ArgumentNullException.ThrowIfNull(conversations);
         ArgumentNullException.ThrowIfNull(logger);
         _client = client;
         _mediator = mediator;
+        _conversations = conversations;
         _logger = logger;
         _retryPolicy = TelegramRateLimitPolicy.Build(logger);
     }
@@ -66,24 +72,10 @@ internal sealed class TelegramReminderNotificationSender : IReminderNotification
                 "Stored Telegram id is not a number."));
         }
 
-        var tagsLine = notification.Tags.Count > 0
-            ? "🏷 " + string.Join(" ", notification.Tags.Select(t => "#" + t))
-            : string.Empty;
-        var text =
-            "🔔 Time to review!\n" +
-            $"*{Escape(notification.CardTitle)}*\n" +
-            (tagsLine.Length > 0 ? tagsLine + "\n" : string.Empty) +
-            "\nRecall the answer, then tap a button.";
-
         var idN = notification.ReminderId.ToString("N", CultureInfo.InvariantCulture);
-        var keyboard = new InlineKeyboardMarkup(new[]
-        {
-            new[]
-            {
-                InlineKeyboardButton.WithCallbackData("📖 Show answer", $"rem:{idN}:show"),
-                InlineKeyboardButton.WithCallbackData("⏭ Skip", $"rem:{idN}:skip"),
-            },
-        });
+        var (text, keyboard) = notification.CardType == CardType.Question
+            ? BuildQuestionPrompt(notification, idN)
+            : BuildNotePrompt(notification, idN);
 
         try
         {
@@ -92,6 +84,11 @@ internal sealed class TelegramReminderNotificationSender : IReminderNotification
                     chatId, text, parseMode: ParseMode.Markdown,
                     replyMarkup: keyboard, cancellationToken: token),
                 ct).ConfigureAwait(false);
+
+            if (notification.CardType == CardType.Question)
+            {
+                ArmAwaitingAnswer(chatId, notification);
+            }
 
             return Result<int>.Success(sent.MessageId);
         }
@@ -108,6 +105,65 @@ internal sealed class TelegramReminderNotificationSender : IReminderNotification
             return Result<int>.Failure(Error.Unexpected("bot.telegram_send_failed", ex.Message));
         }
     }
+
+    private static (string Text, InlineKeyboardMarkup Keyboard) BuildNotePrompt(
+        ReminderNotification notification, string idN)
+    {
+        var tagsLine = TagsLine(notification.Tags);
+        var text =
+            "🔔 Time to review!\n" +
+            $"*{Escape(notification.CardTitle)}*\n" +
+            (tagsLine.Length > 0 ? tagsLine + "\n" : string.Empty) +
+            "\nRecall the answer, then tap a button.";
+
+        var keyboard = new InlineKeyboardMarkup(new[]
+        {
+            new[]
+            {
+                InlineKeyboardButton.WithCallbackData("📖 Show answer", $"rem:{idN}:show"),
+                InlineKeyboardButton.WithCallbackData("⏭ Skip", $"rem:{idN}:skip"),
+            },
+        });
+
+        return (text, keyboard);
+    }
+
+    private static (string Text, InlineKeyboardMarkup Keyboard) BuildQuestionPrompt(
+        ReminderNotification notification, string idN)
+    {
+        var tagsLine = TagsLine(notification.Tags);
+        var text =
+            "🔔 Time to review!\n" +
+            $"*{Escape(notification.CardTitle)}*\n" +
+            (tagsLine.Length > 0 ? tagsLine + "\n" : string.Empty) +
+            "\n✍️ Reply with your answer — I'll grade it.";
+
+        var keyboard = new InlineKeyboardMarkup(new[]
+        {
+            new[]
+            {
+                InlineKeyboardButton.WithCallbackData("⏭ Skip", $"rem:{idN}:skip"),
+            },
+        });
+
+        return (text, keyboard);
+    }
+
+    private void ArmAwaitingAnswer(long chatId, ReminderNotification notification)
+    {
+        // Don't clobber an in-progress /add dialog; that flow takes precedence.
+        if (_conversations.TryGet(chatId, out var existing) && existing is AddCardDialogState)
+        {
+            return;
+        }
+
+        _conversations.Start(chatId, new AwaitingAnswerState(notification.ReminderId, notification.CardId));
+    }
+
+    private static string TagsLine(IReadOnlyList<string> tags) =>
+        tags.Count > 0
+            ? "🏷 " + string.Join(" ", tags.Select(t => "#" + t))
+            : string.Empty;
 
     private static string Escape(string s) =>
         s

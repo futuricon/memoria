@@ -30,7 +30,10 @@ internal sealed class ReminderConfiguration : IEntityTypeConfiguration<Reminder>
         builder.Property(r => r.ConfirmedAt);
         builder.Property(r => r.SentAt);
 
-        builder.HasIndex(r => new { r.CardId, r.StageNumber }).IsUnique();
+        // Adaptive scheduling means a card accumulates many reminders over time
+        // with repeating stage numbers, so this index is NO LONGER unique.
+        builder.HasIndex(r => new { r.CardId, r.StageNumber });
+        builder.HasIndex(r => new { r.CardId, r.Status }); // "does this card have a pending reminder?"
         builder.HasIndex(r => r.UserId);
         builder.HasIndex(r => new { r.Status, r.ScheduledAt }); // SendReminderJob: "what's pending and due"
     }

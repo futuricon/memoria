@@ -7,4 +7,5 @@ public sealed record CardSummaryDto(
     Guid Id,
     string Title,
     IReadOnlyList<string> Tags,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    CardType Type);

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
+using Memoria.Cards.Contracts;
 using Memoria.Cards.Domain;
 
 namespace Memoria.Cards.Persistence.Configurations;
@@ -15,8 +16,12 @@ internal sealed class CardConfiguration : IEntityTypeConfiguration<Card>
         builder.HasKey(c => c.Id);
 
         builder.Property(c => c.UserId).IsRequired();
-        builder.Property(c => c.Title).HasMaxLength(200).IsRequired();
-        builder.Property(c => c.Body).HasMaxLength(4000).IsRequired();
+        builder.Property(c => c.Title).HasMaxLength(CardConstraints.MaxTitleLength).IsRequired();
+        builder.Property(c => c.Body).HasMaxLength(CardConstraints.MaxBodyLength).IsRequired();
+        builder.Property(c => c.Type)
+            .HasConversion<string>()
+            .HasMaxLength(16)
+            .IsRequired();
         builder.Property(c => c.CreatedAt).IsRequired();
         builder.Property(c => c.UpdatedAt).IsRequired();
         builder.Property(c => c.DeletedAt);

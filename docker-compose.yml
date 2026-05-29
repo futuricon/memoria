@@ -39,6 +39,11 @@ services:
       OAuth__GitHub__ClientSecret: ${GITHUB_CLIENT_SECRET:-}
       Cors__AllowedOrigins__0: ${SPA_ORIGIN:-http://localhost:5173}
       Hangfire__AllowedEmails__0: ${HANGFIRE_ADMIN_EMAIL:-}
+      Ai__Provider: ${AI_PROVIDER:-Claude}
+      Ai__ApiKey: ${AI_API_KEY:-}
+      Ai__BaseUrl: ${AI_BASE_URL:-}
+      Ai__GradingModel: ${AI_GRADING_MODEL:-}
+      Ai__ValidationModel: ${AI_VALIDATION_MODEL:-}
     ports:
       - "8080:8080"
     restart: unless-stopped

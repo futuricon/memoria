@@ -3,6 +3,8 @@ using FluentAssertions;
 using MediatR;
 
 using Memoria.Bot.Adapters;
+using Memoria.Bot.Conversations;
+using Memoria.Cards.Contracts.Dtos;
 using Memoria.Reminders.Contracts.Abstractions;
 using Memoria.Shared.Kernel.Results;
 using Memoria.Users.Contracts.Dtos;
@@ -25,6 +27,7 @@ public sealed class TelegramReminderNotificationSenderTests
 {
     private readonly ITelegramBotClient _client = Substitute.For<ITelegramBotClient>();
     private readonly IMediator _mediator = Substitute.For<IMediator>();
+    private readonly InMemoryConversationStateStore _conversations = new();
     private readonly TelegramReminderNotificationSender _sut;
 
     private static readonly Guid ReminderId = Guid.Parse("11111111-1111-1111-1111-111111111111");
@@ -33,15 +36,17 @@ public sealed class TelegramReminderNotificationSenderTests
 
     public TelegramReminderNotificationSenderTests()
     {
-        _sut = new TelegramReminderNotificationSender(_client, _mediator, NullLogger<TelegramReminderNotificationSender>.Instance);
+        _sut = new TelegramReminderNotificationSender(
+            _client, _mediator, _conversations, NullLogger<TelegramReminderNotificationSender>.Instance);
     }
 
-    private static ReminderNotification SampleNotification() => new(
+    private static ReminderNotification SampleNotification(CardType type = CardType.Note) => new(
         ReminderId, UserId, CardId,
         CardTitle: "PostgreSQL VACUUM",
         CardBody: "How does VACUUM work?",
         Tags: new[] { "postgres" },
-        StageNumber: 2);
+        StageNumber: 2,
+        CardType: type);
 
     private void StubIdentitiesResult(Result<IReadOnlyList<UserIdentityDto>> result)
     {
@@ -154,6 +159,45 @@ public sealed class TelegramReminderNotificationSenderTests
 
         result.IsFailure.Should().BeTrue();
         result.Error!.Code.Should().Be("bot.telegram_rate_limit");
+    }
+
+    [Fact]
+    public async Task SendReminderAsyncForQuestionCardShowsSkipOnlyAndArmsAwaitingAnswer()
+    {
+        StubIdentitiesResult(Result<IReadOnlyList<UserIdentityDto>>.Success(new[]
+        {
+            new UserIdentityDto("Telegram", "12345", DateTime.UtcNow),
+        }));
+        StubSendMessageReturns(new Message { Id = 7 });
+
+        var result = await _sut.SendReminderAsync(SampleNotification(CardType.Question), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        await _client.Received(1).SendRequest(
+            Arg.Is<SendMessageRequest>(r =>
+                ContainsCallback(r.ReplyMarkup, "skip") &&
+                !ContainsCallback(r.ReplyMarkup, "show")),
+            Arg.Any<CancellationToken>());
+
+        _conversations.TryGet(12345L, out var state).Should().BeTrue();
+        state.Should().BeOfType<AwaitingAnswerState>()
+            .Which.ReminderId.Should().Be(ReminderId);
+    }
+
+    [Fact]
+    public async Task SendReminderAsyncForQuestionCardDoesNotClobberActiveAddCardDialog()
+    {
+        StubIdentitiesResult(Result<IReadOnlyList<UserIdentityDto>>.Success(new[]
+        {
+            new UserIdentityDto("Telegram", "12345", DateTime.UtcNow),
+        }));
+        StubSendMessageReturns(new Message { Id = 8 });
+        _conversations.Start(12345L, new AddCardDialogState(AddCardStep.WaitingForTitle));
+
+        await _sut.SendReminderAsync(SampleNotification(CardType.Question), CancellationToken.None);
+
+        _conversations.TryGet(12345L, out var state).Should().BeTrue();
+        state.Should().BeOfType<AddCardDialogState>(because: "an in-progress /add dialog must not be overwritten");
     }
 
     private static bool ContainsCallback(IReplyMarkup? markup, string ratingTag)

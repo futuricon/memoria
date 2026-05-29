@@ -76,8 +76,10 @@ namespace Memoria.Reminders.Persistence.Migrations
                         .HasDatabaseName("ix_reminders_user_id");
 
                     b.HasIndex("CardId", "StageNumber")
-                        .IsUnique()
                         .HasDatabaseName("ix_reminders_card_id_stage_number");
+
+                    b.HasIndex("CardId", "Status")
+                        .HasDatabaseName("ix_reminders_card_id_status");
 
                     b.HasIndex("Status", "ScheduledAt")
                         .HasDatabaseName("ix_reminders_status_scheduled_at");

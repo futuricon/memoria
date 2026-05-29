@@ -26,6 +26,7 @@
       <ProjectReference Include="..\Memoria.Reminders.Contracts\Memoria.Reminders.Contracts.csproj" />
       <ProjectReference Include="..\..\Users\Memoria.Users.Contracts\Memoria.Users.Contracts.csproj" />
       <ProjectReference Include="..\..\Cards\Memoria.Cards.Contracts\Memoria.Cards.Contracts.csproj" />
+      <ProjectReference Include="..\..\Reviews\Memoria.Reviews.Contracts\Memoria.Reviews.Contracts.csproj" />
     </ItemGroup>
 
 </Project>

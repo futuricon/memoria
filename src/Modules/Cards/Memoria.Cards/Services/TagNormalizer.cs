@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 
+using Memoria.Cards.Contracts;
 using Memoria.Shared.Kernel.Results;
 
 namespace Memoria.Cards.Services;
@@ -11,8 +12,8 @@ namespace Memoria.Cards.Services;
 /// </summary>
 internal sealed class TagNormalizer
 {
-    private const int MinLength = 2;
-    private const int MaxLength = 30;
+    private const int MinLength = CardConstraints.TagMinLength;
+    private const int MaxLength = CardConstraints.TagMaxLength;
 
     private static readonly Regex AllowedCharsRegex = new(
         @"^[a-zA-Z0-9\s\-]+$",

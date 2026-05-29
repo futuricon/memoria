@@ -20,6 +20,8 @@
     <ItemGroup>
       <ProjectReference Include="..\Memoria.Api\Memoria.Api.csproj" />
       <ProjectReference Include="..\Memoria.Bot\Memoria.Bot.csproj" />
+      <ProjectReference Include="..\Modules\AI\Memoria.AI\Memoria.AI.csproj" />
+      <ProjectReference Include="..\Modules\AI\Memoria.AI.Contracts\Memoria.AI.Contracts.csproj" />
       <ProjectReference Include="..\Modules\Cards\Memoria.Cards.Contracts\Memoria.Cards.Contracts.csproj" />
       <ProjectReference Include="..\Modules\Cards\Memoria.Cards\Memoria.Cards.csproj" />
       <ProjectReference Include="..\Modules\Reviews\Memoria.Reviews\Memoria.Reviews.csproj" />

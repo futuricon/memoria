@@ -3,6 +3,7 @@ using Hangfire;
 using MediatR;
 
 using Memoria.Reminders.Contracts.Commands;
+using Memoria.Reminders.Domain;
 using Memoria.Reminders.Jobs;
 using Memoria.Reminders.Persistence;
 using Memoria.Reminders.Services;
@@ -43,10 +44,13 @@ internal sealed class ScheduleRemindersForCardCommandHandler
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var exists = await _db.Reminders
-            .AnyAsync(r => r.CardId == request.CardId, ct)
+        // Adaptive model: a card has at most one PENDING reminder. Guard on
+        // PENDING (not "any reminder") so a restored card whose old reminders
+        // are Confirmed/Skipped/Cancelled can be re-armed.
+        var hasPending = await _db.Reminders
+            .AnyAsync(r => r.CardId == request.CardId && r.Status == ReminderStatus.Pending, ct)
             .ConfigureAwait(false);
-        if (exists)
+        if (hasPending)
         {
             return Result<Unit>.Success(Unit.Value);
         }
@@ -60,21 +64,17 @@ internal sealed class ScheduleRemindersForCardCommandHandler
             return Result<Unit>.Failure(prefsResult.Error!);
         }
 
-        var reminders = _scheduler.CreateScheduleFor(
+        var reminder = _scheduler.CreateFirstReminder(
             request.CardId, request.UserId, prefsResult.Value!, request.AnchorUtc);
 
-        _db.Reminders.AddRange(reminders);
+        _db.Reminders.Add(reminder);
         await _db.SaveChangesAsync(ct).ConfigureAwait(false);
 
-        foreach (var reminder in reminders)
-        {
-            var reminderId = reminder.Id;
-            var jobId = _hangfire.Schedule<SendReminderJob>(
-                job => job.ExecuteAsync(reminderId, CancellationToken.None),
-                new DateTimeOffset(reminder.ScheduledAt, TimeSpan.Zero));
-
-            reminder.AttachHangfireJob(jobId);
-        }
+        var reminderId = reminder.Id;
+        var jobId = _hangfire.Schedule<SendReminderJob>(
+            job => job.ExecuteAsync(reminderId, CancellationToken.None),
+            new DateTimeOffset(reminder.ScheduledAt, TimeSpan.Zero));
+        reminder.AttachHangfireJob(jobId);
 
         await _db.SaveChangesAsync(ct).ConfigureAwait(false);
 

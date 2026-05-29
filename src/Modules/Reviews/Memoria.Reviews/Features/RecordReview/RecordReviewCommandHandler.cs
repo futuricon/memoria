@@ -4,6 +4,7 @@ using Memoria.Cards.Contracts.Queries;
 using Memoria.Reminders.Contracts.Commands;
 using Memoria.Reviews.Contracts.Commands;
 using Memoria.Reviews.Contracts.Dtos;
+using Memoria.Reviews.Contracts.Events;
 using Memoria.Reviews.Domain;
 using Memoria.Reviews.Persistence;
 using Memoria.Shared.Kernel.Results;
@@ -59,7 +60,11 @@ internal sealed class RecordReviewCommandHandler
             rating: request.Rating,
             cardTitleSnapshot: card.Title,
             reviewedAt: now,
-            note: request.Note);
+            note: request.Note,
+            answerText: request.AnswerText,
+            aiScore: request.AiScore,
+            aiFeedback: request.AiFeedback,
+            autoGraded: request.AutoGraded);
 
         _db.Reviews.Add(review);
         await _db.SaveChangesAsync(ct).ConfigureAwait(false);
@@ -77,6 +82,13 @@ internal sealed class RecordReviewCommandHandler
                     review.Id, confirm.Error!.Code, confirm.Error.Message);
             }
         }
+
+        // Drives adaptive rescheduling in the Reminders module. Published after
+        // the reminder is confirmed so the subscriber sees a non-Pending state.
+        await _mediator.Publish(
+            new ReviewRecordedEvent(
+                request.CardId, request.UserId, request.ReminderId, request.Rating, now),
+            ct).ConfigureAwait(false);
 
         var dto = new ReviewDto(
             review.Id,

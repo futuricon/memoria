@@ -40,7 +40,7 @@ public sealed class RevealReminderAnswerCommandHandlerTests
     }
 
     private static CardDto FakeCardDto(Guid cardId, string title = "Title", string body = "Body") =>
-        new(cardId, title, body, new[] { "tag" }, ClockUtc, ClockUtc);
+        new(cardId, title, body, new[] { "tag" }, ClockUtc, ClockUtc, CardType.Note);
 
     [Fact]
     public async Task HandleSentReminderReturnsCardBody()

@@ -1,3 +1,5 @@
+using Memoria.Cards.Contracts.Dtos;
+
 namespace Memoria.Cards.Domain;
 
 internal sealed class Card
@@ -14,6 +16,7 @@ internal sealed class Card
         UserId = userId;
         Title = title;
         Body = body;
+        Type = CardTypeResolver.FromTitle(title);
         CreatedAt = createdAt;
         UpdatedAt = createdAt;
     }
@@ -22,6 +25,10 @@ internal sealed class Card
     public Guid UserId { get; private set; }
     public string Title { get; private set; } = string.Empty;
     public string Body { get; private set; } = string.Empty;
+
+    /// <summary>Derived from the title at creation; never recomputed on edit.</summary>
+    public CardType Type { get; private set; }
+
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
     public DateTime? DeletedAt { get; private set; }

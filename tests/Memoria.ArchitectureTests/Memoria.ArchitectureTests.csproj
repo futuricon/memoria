@@ -27,6 +27,8 @@
       <ProjectReference Include="..\..\src\Memoria.Api\Memoria.Api.csproj" />
       <ProjectReference Include="..\..\src\Memoria.Bot\Memoria.Bot.csproj" />
       <ProjectReference Include="..\..\src\Memoria.Host\Memoria.Host.csproj" />
+      <ProjectReference Include="..\..\src\Modules\AI\Memoria.AI.Contracts\Memoria.AI.Contracts.csproj" />
+      <ProjectReference Include="..\..\src\Modules\AI\Memoria.AI\Memoria.AI.csproj" />
       <ProjectReference Include="..\..\src\Modules\Cards\Memoria.Cards.Contracts\Memoria.Cards.Contracts.csproj" />
       <ProjectReference Include="..\..\src\Modules\Cards\Memoria.Cards\Memoria.Cards.csproj" />
       <ProjectReference Include="..\..\src\Modules\Reminders\Memoria.Reminders.Contracts\Memoria.Reminders.Contracts.csproj" />

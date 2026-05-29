@@ -8,6 +8,7 @@ using MediatR;
 
 using Serilog;
 
+using Memoria.AI;
 using Memoria.Api;
 using Memoria.Bot;
 using Memoria.Cards;
@@ -66,6 +67,7 @@ try
         typeof(ValidationBehavior<,>));
 
     builder.Services
+        .AddAiModule(builder.Configuration)
         .AddUsersModule(builder.Configuration)
         .AddCardsModule(builder.Configuration)
         .AddRemindersModule(builder.Configuration)

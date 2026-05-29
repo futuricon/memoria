@@ -9,4 +9,5 @@ public sealed record CardDto(
     string Body,
     IReadOnlyList<string> Tags,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    CardType Type);

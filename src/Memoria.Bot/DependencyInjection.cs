@@ -46,6 +46,7 @@ public static class DependencyInjection
         services.AddScoped<CardIdResolver>();
         services.AddScoped<ListCommandHandler>();
         services.AddScoped<AddCardDialogHandler>();
+        services.AddScoped<AwaitingAnswerHandler>();
 
         services.AddScoped<ITextCommandHandler, HelpCommandHandler>();
         services.AddScoped<ITextCommandHandler, CancelCommandHandler>();
@@ -67,6 +68,8 @@ public static class DependencyInjection
 
         services.AddScoped<IConversationContinuationHandler>(sp =>
             sp.GetRequiredService<AddCardDialogHandler>());
+        services.AddScoped<IConversationContinuationHandler>(sp =>
+            sp.GetRequiredService<AwaitingAnswerHandler>());
 
         return services;
     }

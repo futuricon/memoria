@@ -37,7 +37,7 @@ public sealed class SendReminderJobTests
         new(cardId ?? Guid.NewGuid(), userId ?? Guid.NewGuid(), stageNumber: 1, ClockUtc);
 
     private static CardDto FakeCardDto(Guid cardId) =>
-        new(cardId, "Title", "Body", new[] { "tag1", "tag2" }, ClockUtc, ClockUtc);
+        new(cardId, "Title", "Body", new[] { "tag1", "tag2" }, ClockUtc, ClockUtc, CardType.Note);
 
     [Fact]
     public async Task ExecuteAsyncWithUnknownReminderIdReturnsWithoutAction()
