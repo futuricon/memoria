@@ -79,7 +79,12 @@ public static class DependencyInjection
         ArgumentNullException.ThrowIfNull(app);
 
         var filter = app.Services.GetRequiredService<HangfireDashboardAuthorizationFilter>();
-        app.UseHangfireDashboard("/jobs", new DashboardOptions
+
+        // Endpoint-routed dashboard — NOT app.UseHangfireDashboard(...), which
+        // branches on "/jobs" and swallows our custom /jobs/login + /jobs/signin
+        // endpoints before endpoint routing can dispatch them. With endpoint
+        // routing both coexist and the more specific route wins.
+        ((IEndpointRouteBuilder)app).MapHangfireDashboard("/jobs", new DashboardOptions
         {
             Authorization = new[] { filter },
             DashboardTitle = "Memoria · Hangfire",
