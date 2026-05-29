@@ -4,6 +4,7 @@ using Memoria.Api.Configuration;
 
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -42,6 +43,8 @@ internal static class OAuthAuthenticationConfiguration
                 o.LoginPath = "/jobs/login";
                 o.AccessDeniedPath = "/jobs/forbidden";
                 o.Cookie.Name = "memoria_hangfire";
+                o.Cookie.SameSite = SameSiteMode.Lax;
+                o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
                 o.ExpireTimeSpan = TimeSpan.FromHours(8);
                 o.SlidingExpiration = true;
             });
@@ -54,6 +57,11 @@ internal static class OAuthAuthenticationConfiguration
                 o.ClientId = oauth.Google.ClientId;
                 o.ClientSecret = oauth.Google.ClientSecret;
                 o.CallbackPath = "/jobs/signin-google";
+                // Lax survives the cross-site→top-level-GET callback and (unlike the
+                // default None) doesn't get dropped when the request scheme looks
+                // like http behind the proxy.
+                o.CorrelationCookie.SameSite = SameSiteMode.Lax;
+                o.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
             });
         }
 
@@ -66,6 +74,8 @@ internal static class OAuthAuthenticationConfiguration
                 o.ClientSecret = oauth.GitHub.ClientSecret;
                 o.CallbackPath = "/jobs/signin-github";
                 o.Scope.Add("user:email");
+                o.CorrelationCookie.SameSite = SameSiteMode.Lax;
+                o.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
             });
         }
 
