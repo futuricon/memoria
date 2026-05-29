@@ -63,13 +63,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Copy compose + promtail config to VPS
+      - name: Copy compose to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.DEPLOY_SSH_HOST }}
           username: ${{ secrets.DEPLOY_SSH_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          source: "docker-compose.prod.yml,deploy/promtail-config.yml"
+          source: "docker-compose.prod.yml"
           target: /opt/memoria/
 
       - name: Pull image & restart container

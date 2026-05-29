@@ -319,11 +319,42 @@ In Telegram, send `/start` to your bot — you should get the greeting.
 
 ### View logs
 
+CLI (quick tail):
+
 ```bash
 sudo -u memoria docker compose -f /opt/memoria/docker-compose.prod.yml logs -f app
 # or the live container directly:
 docker logs -f memoria-app
 ```
+
+Web UI — **Dozzle** at `https://logs.memoria.example.com` (live tail of all Docker
+containers in the browser). Dozzle reads container stdout via the read-only docker
+socket, so it shows `memoria-app` and `memoria-dozzle` — **not** host nginx/Postgres
+(those aren't containers; use `journalctl -u nginx` / `/var/log/postgresql` on the host).
+
+One-time setup (the Dozzle container itself ships automatically via compose, bound to
+`127.0.0.1:8081`; this just publishes it behind TLS + basic-auth):
+
+```bash
+# 1. DNS: add an A record  logs.memoria.example.com → <VPS public IP>.
+# 2. basic-auth user (prompts for a password):
+sudo apt-get install -y apache2-utils
+sudo htpasswd -c /etc/nginx/.htpasswd-dozzle <your-username>
+# 3. vhost (copy the template from the repo):
+git clone --depth=1 https://github.com/futuricon/memoria /tmp/memoria-repo
+sudo cp /tmp/memoria-repo/deploy/nginx-dozzle.conf /etc/nginx/sites-available/memoria-logs
+rm -rf /tmp/memoria-repo
+sudo ln -s /etc/nginx/sites-available/memoria-logs /etc/nginx/sites-enabled/memoria-logs
+sudo nginx -t && sudo systemctl reload nginx
+# 4. TLS (also adds the 80 → 443 redirect):
+sudo certbot --nginx -d logs.memoria.example.com -m you@example.com --agree-tos --redirect --non-interactive
+```
+
+> Migrating from the old Grafana Loki / Promtail setup? After the next deploy the
+> orphaned `memoria-promtail` container is removed automatically (`--remove-orphans`).
+> Drop its leftover volume once: `docker volume rm memoria_promtail-data` (ignore if
+> absent), and you can delete `/opt/memoria/deploy/promtail-config.yml`. The old
+> `LOKI_*` lines in `/opt/memoria/.env` are now unused and can be removed.
 
 ### Restart without redeploy
 

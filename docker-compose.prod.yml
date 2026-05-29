@@ -39,6 +39,12 @@ services:
     volumes:
       - memoria-logs:/app/logs
     restart: unless-stopped
+    # Cap the json-file logs Dozzle reads from so they can't grow unbounded.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/healthz || exit 1"]
       interval: 30s
@@ -46,31 +52,21 @@ services:
       retries: 3
       start_period: 30s
 
-  # Promtail ships Memoria/nginx/Postgres logs to Grafana Cloud Loki.
-  # If LOKI_URL/USER/PASSWORD are empty in /opt/memoria/.env the container
-  # will restart-loop (Promtail requires a valid clients[].url). Add the
-  # creds from grafana.com/orgs/<your-org>/stacks → Loki "Send Logs" wizard,
-  # then redeploy / `docker compose -f docker-compose.prod.yml up -d`.
-  promtail:
-    image: grafana/promtail:3.2.1
-    container_name: memoria-promtail
+  # Dozzle — live Docker-container log viewer. Reads container stdout via the
+  # (read-only) docker socket, so it sees memoria-app + itself, NOT the host
+  # nginx/postgres (those live outside Docker — use journalctl / /var/log on the
+  # host). Bound to loopback only; exposed read-only via nginx + basic-auth at
+  # logs.<domain> (see deploy/nginx-dozzle.conf).
+  dozzle:
+    image: amir20/dozzle:latest   # pin a version (amir20/dozzle:vX.Y.Z) for reproducible prod
+    container_name: memoria-dozzle
     restart: unless-stopped
-    network_mode: host
-    command:
-      - -config.file=/etc/promtail/promtail.yml
-      - -config.expand-env=true
+    ports:
+      - "127.0.0.1:8081:8080"
     environment:
-      LOKI_URL: ${LOKI_URL:-}
-      LOKI_USER: ${LOKI_USER:-}
-      LOKI_PASSWORD: ${LOKI_PASSWORD:-}
-      HOSTNAME: ${LOG_HOSTNAME:-memoria-vps}
+      DOZZLE_NO_ANALYTICS: "true"
     volumes:
-      - ./deploy/promtail-config.yml:/etc/promtail/promtail.yml:ro
-      - memoria-logs:/var/log/memoria:ro
-      - /var/log/nginx:/var/log/nginx:ro
-      - /var/log/postgresql:/var/log/postgresql:ro
-      - promtail-data:/var/lib/promtail
+      - /var/run/docker.sock:/var/run/docker.sock:ro
 
 volumes:
   memoria-logs:
-  promtail-data:
