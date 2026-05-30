@@ -77,3 +77,9 @@ export interface UpdateCardPayload {
   body?: string;
   tags?: string[];
 }
+
+export interface AddCardPayload {
+  title: string;
+  body: string;
+  tags: string[];
+}

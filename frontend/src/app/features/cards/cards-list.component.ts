@@ -7,6 +7,7 @@ import { ApiClient } from '../../core/api/api-client';
 import { CardSummaryDto } from '../../core/api/dto';
 import { openConfirm } from '../../core/ui/confirm-dialog.component';
 import { GradePillComponent } from '../../core/ui/grade-pill.component';
+import { openAddDrawer } from './add-card-drawer.component';
 import { openEditDrawer } from './edit-card-drawer.component';
 
 const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -21,10 +22,15 @@ const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
         <h1 class="text-2xl font-semibold">Cards</h1>
         <p class="text-sm text-slate-500">Search and browse your library.</p>
       </div>
-      <div class="text-sm text-slate-500">
+      <div class="flex items-center gap-3">
         @if (page.value()) {
-          {{ page.value()!.totalCount }} total
+          <span class="text-sm text-slate-500">{{ page.value()!.totalCount }} total</span>
         }
+        <button
+          type="button"
+          (click)="onAdd()"
+          class="px-3 py-1.5 text-sm rounded bg-slate-900 text-white hover:bg-slate-800"
+        >+ New card</button>
       </div>
     </header>
 
@@ -231,6 +237,13 @@ export class CardsListComponent {
 
   isEditable(card: CardSummaryDto): boolean {
     return Date.now() - new Date(card.createdAt).getTime() < EDIT_WINDOW_MS;
+  }
+
+  onAdd(): void {
+    const ref = openAddDrawer(this.dialog);
+    ref.closed.subscribe((created) => {
+      if (created) this.refresh();
+    });
   }
 
   async onEdit(card: CardSummaryDto): Promise<void> {

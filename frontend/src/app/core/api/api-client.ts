@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import {
+  AddCardPayload,
   CardDto,
   CardSummaryDto,
   CardWithGradeDto,
@@ -64,6 +65,10 @@ export class ApiClient {
       `${this.base}/api/v1/auth/telegram-linking/start`,
       {},
     );
+  }
+
+  createCard(payload: AddCardPayload): Observable<CardDto> {
+    return this.http.post<CardDto>(`${this.base}/api/v1/cards`, payload);
   }
 
   updateCard(id: string, payload: UpdateCardPayload): Observable<CardDto> {
