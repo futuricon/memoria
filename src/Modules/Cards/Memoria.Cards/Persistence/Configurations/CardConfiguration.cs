@@ -25,6 +25,8 @@ internal sealed class CardConfiguration : IEntityTypeConfiguration<Card>
         builder.Property(c => c.CreatedAt).IsRequired();
         builder.Property(c => c.UpdatedAt).IsRequired();
         builder.Property(c => c.DeletedAt);
+        builder.Property(c => c.IsPaused).HasDefaultValue(false).IsRequired();
+        builder.Property(c => c.PausedAtStage);
 
         builder.HasIndex(c => c.UserId);
         builder.HasIndex(c => c.DeletedAt);

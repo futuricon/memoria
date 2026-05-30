@@ -33,6 +33,21 @@ internal sealed class Card
     public DateTime UpdatedAt { get; private set; }
     public DateTime? DeletedAt { get; private set; }
 
+    /// <summary>
+    /// True while the user has explicitly suspended scheduling for this card.
+    /// Pending reminders are cancelled on pause and a fresh one is created on
+    /// unpause from <see cref="PausedAtStage"/>.
+    /// </summary>
+    public bool IsPaused { get; private set; }
+
+    /// <summary>
+    /// Stage to resume from when the card is unpaused. Captured at pause time
+    /// as the highest <c>Reminder.StageNumber</c> seen for the card so the
+    /// user picks up where they left off. <c>null</c> for a brand-new card
+    /// paused before it ever had a reminder.
+    /// </summary>
+    public int? PausedAtStage { get; private set; }
+
     public IReadOnlyCollection<CardTag> CardTags => _cardTags;
 
     public void Edit(string? title, string? body, DateTime utcNow)
@@ -54,5 +69,35 @@ internal sealed class Card
     {
         DeletedAt = null;
         UpdatedAt = utcNow;
+    }
+
+    public void Pause(int? stage, DateTime utcNow)
+    {
+        if (IsPaused)
+        {
+            throw new InvalidOperationException("Card is already paused.");
+        }
+
+        IsPaused = true;
+        PausedAtStage = stage;
+        UpdatedAt = utcNow;
+    }
+
+    /// <summary>
+    /// Returns the stored stage so the caller can hand it to
+    /// <c>ReminderScheduler</c>. <c>null</c> means "resume as a fresh card".
+    /// </summary>
+    public int? Unpause(DateTime utcNow)
+    {
+        if (!IsPaused)
+        {
+            throw new InvalidOperationException("Card is not paused.");
+        }
+
+        var stage = PausedAtStage;
+        IsPaused = false;
+        PausedAtStage = null;
+        UpdatedAt = utcNow;
+        return stage;
     }
 }

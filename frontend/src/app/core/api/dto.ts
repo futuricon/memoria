@@ -9,6 +9,8 @@ export interface CardSummaryDto {
   reviewCount: number;
   avgRating: number | null;
   avgAiScore: number | null;
+  isPaused: boolean;
+  pausedAtStage: number | null;
 }
 
 export interface CardDto extends CardSummaryDto {

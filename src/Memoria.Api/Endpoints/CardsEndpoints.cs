@@ -146,6 +146,32 @@ internal static class CardsEndpoints
                 return result.ToHttpResultNoContent();
             });
 
+        group.MapPost("/{id:guid}/pause", async (
+                HttpContext ctx,
+                IMediator mediator,
+                Guid id,
+                CancellationToken ct) =>
+            {
+                var user = ctx.GetCurrentUser();
+                var result = await mediator
+                    .Send(new PauseCardCommand(user.Id, id), ct)
+                    .ConfigureAwait(false);
+                return result.ToHttpResultNoContent();
+            });
+
+        group.MapPost("/{id:guid}/unpause", async (
+                HttpContext ctx,
+                IMediator mediator,
+                Guid id,
+                CancellationToken ct) =>
+            {
+                var user = ctx.GetCurrentUser();
+                var result = await mediator
+                    .Send(new UnpauseCardCommand(user.Id, id), ct)
+                    .ConfigureAwait(false);
+                return result.ToHttpResultNoContent();
+            });
+
         return app;
     }
 

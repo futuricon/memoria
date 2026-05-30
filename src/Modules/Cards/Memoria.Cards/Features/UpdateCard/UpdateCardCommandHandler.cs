@@ -13,6 +13,12 @@ namespace Memoria.Cards.Features.UpdateCard;
 
 internal sealed class UpdateCardCommandHandler : IRequestHandler<UpdateCardCommand, Result<CardDto>>
 {
+    /// <summary>
+    /// How long after creation a card stays editable. After that the title /
+    /// body / tags freeze so reviewed cards don't drift under the user.
+    /// </summary>
+    internal static readonly TimeSpan EditWindow = TimeSpan.FromHours(24);
+
     private readonly CardsDbContext _db;
     private readonly TagNormalizer _normalizer;
     private readonly TagRepository _tags;
@@ -54,6 +60,14 @@ internal sealed class UpdateCardCommandHandler : IRequestHandler<UpdateCardComma
         }
 
         var now = _clock.GetUtcNow().UtcDateTime;
+
+        if (now - card.CreatedAt > EditWindow)
+        {
+            return Result<CardDto>.Failure(Error.Validation(
+                "cards.edit_window_closed",
+                $"Card edit window is {EditWindow.TotalHours:0} hours after creation."));
+        }
+
         card.Edit(request.Title, request.Body, now);
 
         IReadOnlyList<string> tagsForDto;

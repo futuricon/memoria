@@ -40,5 +40,6 @@ internal static class CardQueries
     }
 
     public static CardDto ToDto(Card card, IReadOnlyList<string> tags) =>
-        new(card.Id, card.Title, card.Body, tags, card.CreatedAt, card.UpdatedAt, card.Type);
+        new(card.Id, card.Title, card.Body, tags, card.CreatedAt, card.UpdatedAt, card.Type,
+            IsPaused: card.IsPaused, PausedAtStage: card.PausedAtStage);
 }

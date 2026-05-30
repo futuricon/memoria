@@ -63,6 +63,31 @@ public sealed class ReminderSchedulerTests
     }
 
     [Theory]
+    [InlineData(3, 24)]       // Intervals[2] = 1 day
+    [InlineData(5, 7 * 24)]   // Intervals[4] = 7 days
+    public void CreateReminderForStageUsesIntervalForGivenStage(int stage, int expectedHoursDelay)
+    {
+        var sut = CreateSut();
+
+        var reminder = sut.CreateReminderForStage(CardId, UserId, stage, PrefsWith(), AnchorUtc);
+
+        reminder.StageNumber.Should().Be(stage);
+        reminder.ScheduledAt.Should().Be(AnchorUtc.AddHours(expectedHoursDelay));
+    }
+
+    [Theory]
+    [InlineData(0)]   // below floor
+    [InlineData(99)]  // above ceiling
+    public void CreateReminderForStageClampsOutOfRangeStage(int stage)
+    {
+        var sut = CreateSut();
+
+        var reminder = sut.CreateReminderForStage(CardId, UserId, stage, PrefsWith(), AnchorUtc);
+
+        reminder.StageNumber.Should().BeInRange(1, 8);
+    }
+
+    [Theory]
     [InlineData(1)]
     [InlineData(5)]
     [InlineData(8)]

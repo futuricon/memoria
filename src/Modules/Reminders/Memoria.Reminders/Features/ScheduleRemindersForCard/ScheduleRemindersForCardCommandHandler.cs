@@ -64,8 +64,11 @@ internal sealed class ScheduleRemindersForCardCommandHandler
             return Result<Unit>.Failure(prefsResult.Error!);
         }
 
-        var reminder = _scheduler.CreateFirstReminder(
-            request.CardId, request.UserId, prefsResult.Value!, request.AnchorUtc);
+        var reminder = request.Stage is int resumeStage and > 0
+            ? _scheduler.CreateReminderForStage(
+                request.CardId, request.UserId, resumeStage, prefsResult.Value!, request.AnchorUtc)
+            : _scheduler.CreateFirstReminder(
+                request.CardId, request.UserId, prefsResult.Value!, request.AnchorUtc);
 
         _db.Reminders.Add(reminder);
         await _db.SaveChangesAsync(ct).ConfigureAwait(false);

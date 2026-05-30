@@ -64,6 +64,25 @@ internal sealed class ReminderScheduler
     }
 
     /// <summary>
+    /// Resume scheduling at <paramref name="stage"/> with delay
+    /// <c>Intervals[stage - 1]</c>. Used by the Unpause flow to thaw a card
+    /// back at the same stage where it was frozen.
+    /// </summary>
+    public Reminder CreateReminderForStage(
+        Guid cardId,
+        Guid userId,
+        int stage,
+        UserPreferencesDto preferences,
+        DateTime anchorUtc)
+    {
+        ArgumentNullException.ThrowIfNull(preferences);
+        EnsureIntervals();
+
+        var clamped = Math.Clamp(stage, 1, MaxStage);
+        return BuildReminder(cardId, userId, clamped, _options.Intervals[clamped - 1], preferences, anchorUtc);
+    }
+
+    /// <summary>
     /// Retry at the SAME stage after a Skip — uses
     /// <see cref="RemindersOptions.HardRetryInterval"/>, no Review recorded.
     /// </summary>

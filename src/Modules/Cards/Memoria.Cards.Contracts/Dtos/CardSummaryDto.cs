@@ -14,4 +14,6 @@ public sealed record CardSummaryDto(
     CardType Type,
     int ReviewCount = 0,
     double? AvgRating = null,
-    double? AvgAiScore = null);
+    double? AvgAiScore = null,
+    bool IsPaused = false,
+    int? PausedAtStage = null);

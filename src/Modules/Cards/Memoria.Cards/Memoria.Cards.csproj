@@ -25,6 +25,7 @@
       <ProjectReference Include="..\..\..\Shared\Memoria.Shared.Kernel\Memoria.Shared.Kernel.csproj" />
       <ProjectReference Include="..\Memoria.Cards.Contracts\Memoria.Cards.Contracts.csproj" />
       <ProjectReference Include="..\..\AI\Memoria.AI.Contracts\Memoria.AI.Contracts.csproj" />
+      <ProjectReference Include="..\..\Reminders\Memoria.Reminders.Contracts\Memoria.Reminders.Contracts.csproj" />
     </ItemGroup>
 
 </Project>

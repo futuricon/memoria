@@ -62,6 +62,8 @@ internal sealed class ListCardsQueryHandler : IRequestHandler<ListCardsQuery, Re
                 c.Title,
                 c.CreatedAt,
                 c.Type,
+                c.IsPaused,
+                c.PausedAtStage,
                 Tags = _db.CardTags
                     .Where(ct => ct.CardId == c.Id)
                     .Join(_db.Tags, ct => ct.TagId, t => t.Id, (_, t) => t.NormalizedName)
@@ -72,7 +74,9 @@ internal sealed class ListCardsQueryHandler : IRequestHandler<ListCardsQuery, Re
             .ConfigureAwait(false);
 
         var items = cards
-            .Select(c => new CardSummaryDto(c.Id, c.Title, c.Tags, c.CreatedAt, c.Type))
+            .Select(c => new CardSummaryDto(
+                c.Id, c.Title, c.Tags, c.CreatedAt, c.Type,
+                IsPaused: c.IsPaused, PausedAtStage: c.PausedAtStage))
             .ToList();
 
         return Result<PagedResult<CardSummaryDto>>.Success(
