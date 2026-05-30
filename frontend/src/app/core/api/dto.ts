@@ -83,3 +83,11 @@ export interface AddCardPayload {
   body: string;
   tags: string[];
 }
+
+export interface TrashedCardDto {
+  id: string;
+  title: string;
+  tags: string[];
+  deletedAt: string;
+  reviewsCount: number;
+}

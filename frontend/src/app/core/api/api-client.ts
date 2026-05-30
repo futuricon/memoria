@@ -12,6 +12,7 @@ import {
   DueReminderDto,
   PagedResult,
   TelegramLinkingTokenDto,
+  TrashedCardDto,
   UpdateCardPayload,
   UpdateMePayload,
   UserIdentityDto,
@@ -77,6 +78,22 @@ export class ApiClient {
 
   softDeleteCard(id: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/api/v1/cards/${id}`);
+  }
+
+  listTrash(page = 1, pageSize = 10): Observable<PagedResult<TrashedCardDto>> {
+    const params = new HttpParams()
+      .set('page', String(page))
+      .set('pageSize', String(pageSize));
+    return this.http.get<PagedResult<TrashedCardDto>>(
+      `${this.base}/api/v1/cards/trash`, { params });
+  }
+
+  restoreCard(id: string): Observable<CardDto> {
+    return this.http.post<CardDto>(`${this.base}/api/v1/cards/${id}/restore`, {});
+  }
+
+  permanentlyDeleteCard(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/api/v1/cards/${id}/permanent`);
   }
 
   pauseCard(id: string): Observable<void> {

@@ -37,6 +37,11 @@ export const APP_ROUTES: Routes = [
           ),
       },
       {
+        path: 'trash',
+        loadComponent: () =>
+          import('./features/trash/trash.component').then((m) => m.TrashComponent),
+      },
+      {
         path: 'settings',
         loadComponent: () =>
           import('./features/settings/settings.component').then(

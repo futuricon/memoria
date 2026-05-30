@@ -24,6 +24,11 @@ import { AuthService } from '../auth/auth.service';
             class="px-3 py-2 rounded hover:bg-slate-800"
           >Cards</a>
           <a
+            routerLink="/trash"
+            routerLinkActive="bg-slate-800"
+            class="px-3 py-2 rounded hover:bg-slate-800"
+          >Trash</a>
+          <a
             routerLink="/settings"
             routerLinkActive="bg-slate-800"
             class="px-3 py-2 rounded hover:bg-slate-800"
