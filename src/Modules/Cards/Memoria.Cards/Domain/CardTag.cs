@@ -18,4 +18,10 @@ internal sealed class CardTag
 
     public Guid CardId { get; private set; }
     public Guid TagId { get; private set; }
+
+    /// <summary>
+    /// Repoints this join row at a different tag. Used only by the
+    /// account-merge flow when collapsing duplicate tag names.
+    /// </summary>
+    internal void RepointToTag(Guid newTagId) => TagId = newTagId;
 }

@@ -31,4 +31,18 @@ internal sealed class User
         QuietHoursStart = quietHoursStart;
         QuietHoursEnd = quietHoursEnd;
     }
+
+    /// <summary>
+    /// Clears the email so the unique index (filtered by IS NOT NULL) frees
+    /// the slot. Used only by the account-merge flow before soft-deleting
+    /// the source user.
+    /// </summary>
+    internal void ClearEmail() => Email = null;
+
+    /// <summary>
+    /// Marks the user as removed. The query filter
+    /// (<c>DeletedAt == null</c>) then hides the row from regular reads.
+    /// Used only by the account-merge flow.
+    /// </summary>
+    internal void SoftDelete(DateTime utcNow) => DeletedAt = utcNow;
 }

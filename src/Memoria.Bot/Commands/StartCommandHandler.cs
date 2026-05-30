@@ -4,10 +4,13 @@ using MediatR;
 
 using Memoria.Bot.Routing;
 using Memoria.Bot.Services;
+using Memoria.Shared.Infrastructure.Options;
 using Memoria.Shared.Kernel.Results;
 using Memoria.Users.Contracts.Commands;
+using Memoria.Users.Contracts.Dtos;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -21,21 +24,25 @@ internal sealed class StartCommandHandler : ITextCommandHandler
     private readonly ITelegramBotClient _client;
     private readonly IMediator _mediator;
     private readonly CurrentUserResolver _resolver;
+    private readonly TelegramOptions _telegram;
     private readonly ILogger<StartCommandHandler> _logger;
 
     public StartCommandHandler(
         ITelegramBotClient client,
         IMediator mediator,
         CurrentUserResolver resolver,
+        IOptions<TelegramOptions> telegram,
         ILogger<StartCommandHandler> logger)
     {
         ArgumentNullException.ThrowIfNull(client);
         ArgumentNullException.ThrowIfNull(mediator);
         ArgumentNullException.ThrowIfNull(resolver);
+        ArgumentNullException.ThrowIfNull(telegram);
         ArgumentNullException.ThrowIfNull(logger);
         _client = client;
         _mediator = mediator;
         _resolver = resolver;
+        _telegram = telegram.Value;
         _logger = logger;
     }
 
@@ -117,15 +124,50 @@ internal sealed class StartCommandHandler : ITextCommandHandler
             new CompleteTelegramLinkingCommand(token, telegramId), ct).ConfigureAwait(false);
 
         var reply = result.IsSuccess
-            ? "✅ Telegram account linked successfully."
+            ? FormatLinkingSuccess(result.Value!)
             : result.Error!.Type switch
             {
                 ErrorType.NotFound => "❌ Unknown or expired linking token.",
                 ErrorType.Validation => "❌ Linking token has expired. Please request a new one in the app.",
-                ErrorType.Conflict => "❌ This Telegram is already linked to another account.",
+                ErrorType.Conflict => "❌ This Telegram is linked to a different account that can't be merged automatically. Contact support.",
                 _ => "❌ Could not link account, please try again.",
             };
 
         await _client.SendMessage(message.Chat.Id, reply, cancellationToken: ct).ConfigureAwait(false);
     }
+
+    private string FormatLinkingSuccess(TelegramLinkingResultDto result)
+    {
+        if (!result.Merged || result.MergeStats is null)
+        {
+            return "✅ Telegram account linked successfully.";
+        }
+
+        // Use the largest non-zero count so the message reads naturally even
+        // if the source had reviews but no cards (or vice versa).
+        var stats = result.MergeStats;
+        var headline = Math.Max(stats.CardsMoved, Math.Max(stats.RemindersMoved, stats.ReviewsMoved));
+
+        if (headline == 0)
+        {
+            // Edge case: merge ran but source was already empty. No value in
+            // mentioning the merge — just confirm the link.
+            return "✅ Telegram account linked successfully.";
+        }
+
+        var noun = stats.CardsMoved > 0
+            ? Plural(stats.CardsMoved, "card", "cards")
+            : Plural(headline, "item", "items");
+
+        var body = $"✅ Telegram linked. Merged {stats.CardsMoved} {noun} from your old Telegram-only account.";
+
+        if (!string.IsNullOrWhiteSpace(_telegram.SpaUrl))
+        {
+            body += $" View them at {_telegram.SpaUrl.TrimEnd('/')}/cards";
+        }
+
+        return body;
+    }
+
+    private static string Plural(int n, string one, string many) => n == 1 ? one : many;
 }

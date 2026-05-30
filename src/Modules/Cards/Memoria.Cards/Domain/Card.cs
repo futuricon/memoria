@@ -65,6 +65,12 @@ internal sealed class Card
 
     public void SoftDelete(DateTime utcNow) => DeletedAt = utcNow;
 
+    /// <summary>
+    /// Moves ownership of this card to a different user. Used only by the
+    /// account-merge flow; regular operation never re-parents cards.
+    /// </summary>
+    internal void ReassignTo(Guid newUserId) => UserId = newUserId;
+
     public void Restore(DateTime utcNow)
     {
         DeletedAt = null;

@@ -17,4 +17,11 @@ public sealed class TelegramOptions
 
     [Required]
     public string BotUsername { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Public URL of the SPA, embedded into bot replies that want to point
+    /// the user back to the web app (e.g. "Merged N cards. View them at &lt;SpaUrl&gt;/cards").
+    /// Optional — when empty the bot omits the link from its reply.
+    /// </summary>
+    public string? SpaUrl { get; init; }
 }

@@ -1,11 +1,13 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, computed, inject, resource } from '@angular/core';
+import { Component, computed, inject, resource, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { ApiClient } from '../../core/api/api-client';
 import { GradePillComponent } from '../../core/ui/grade-pill.component';
 import { relativeTime } from '../../core/ui/relative-time';
+
+const TELEGRAM_BANNER_DISMISS_KEY = 'memoria.telegramBannerDismissed';
 
 @Component({
   selector: 'app-dashboard',
@@ -16,6 +18,25 @@ import { relativeTime } from '../../core/ui/relative-time';
       <h1 class="text-2xl font-semibold">Dashboard</h1>
       <p class="text-sm text-slate-500">A snapshot of what your brain wants next.</p>
     </header>
+
+    @if (showTelegramBanner()) {
+      <div class="mb-6 flex items-start gap-3 p-4 rounded-lg border border-amber-200 bg-amber-50 text-sm">
+        <span class="text-lg leading-none">💬</span>
+        <div class="flex-1">
+          <div class="font-medium text-amber-900">Already use &#64;memoria_bot?</div>
+          <p class="text-amber-800 mt-0.5">
+            Link your Telegram in
+            <a routerLink="/settings" class="underline font-medium">Settings</a>
+            — we'll merge your existing bot data into this account automatically.
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="dismissTelegramBanner()"
+          class="text-amber-700 hover:text-amber-900 text-xs underline"
+        >Dismiss</button>
+      </div>
+    }
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <section class="bg-white border border-slate-200 rounded-lg p-5">
@@ -161,6 +182,34 @@ export class DashboardComponent {
     if (scored.length === 0) return null;
     return scored.reduce((a, b) => a + b, 0) / scored.length;
   });
+
+  readonly identities = resource({
+    loader: () => firstValueFrom(this.api.getIdentities()),
+  });
+
+  /** Local dismissal flag — survives page reloads but not localStorage clear. */
+  readonly bannerDismissed = signal<boolean>(
+    typeof localStorage !== 'undefined'
+      && localStorage.getItem(TELEGRAM_BANNER_DISMISS_KEY) === 'true',
+  );
+
+  /** Banner is visible only when the user has no Telegram identity yet AND hasn't dismissed it. */
+  readonly showTelegramBanner = computed<boolean>(() => {
+    if (this.bannerDismissed()) return false;
+    const list = this.identities.value();
+    if (!list) return false; // still loading — hide so it doesn't flash
+    return !list.some((i) => i.provider === 'Telegram');
+  });
+
+  dismissTelegramBanner(): void {
+    this.bannerDismissed.set(true);
+    try {
+      localStorage.setItem(TELEGRAM_BANNER_DISMISS_KEY, 'true');
+    } catch {
+      // localStorage may be unavailable (private mode etc.) — banner just
+      // re-appears next session, which is acceptable.
+    }
+  }
 
   relTime(iso: string): string {
     return relativeTime(iso);

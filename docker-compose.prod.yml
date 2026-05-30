@@ -22,6 +22,7 @@ services:
       Jwt__SigningKey: ${JWT_SIGNING_KEY}
       Telegram__BotToken: ${TELEGRAM_BOT_TOKEN}
       Telegram__BotUsername: ${TELEGRAM_BOT_USERNAME:-memoria_bot}
+      Telegram__SpaUrl: ${SPA_ORIGIN:-https://memoria.futuricon.net}
       OAuth__Google__ClientId: ${GOOGLE_CLIENT_ID:-}
       OAuth__Google__ClientSecret: ${GOOGLE_CLIENT_SECRET:-}
       OAuth__GitHub__ClientId: ${GITHUB_CLIENT_ID:-}

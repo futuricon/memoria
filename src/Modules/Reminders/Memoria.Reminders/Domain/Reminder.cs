@@ -34,6 +34,15 @@ public sealed class Reminder
         HangfireJobId = hangfireJobId;
     }
 
+    /// <summary>
+    /// Moves ownership of this reminder to a different user. Used only by the
+    /// account-merge flow — regular operation never re-parents reminders.
+    /// </summary>
+    internal void ReassignTo(Guid newUserId)
+    {
+        UserId = newUserId;
+    }
+
     public void BeginSending()
     {
         if (Status is not ReminderStatus.Pending)

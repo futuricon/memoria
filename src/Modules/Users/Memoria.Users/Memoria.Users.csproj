@@ -28,6 +28,9 @@
       <ProjectReference Include="..\..\..\Shared\Memoria.Shared.Infrastructure\Memoria.Shared.Infrastructure.csproj" />
       <ProjectReference Include="..\..\..\Shared\Memoria.Shared.Kernel\Memoria.Shared.Kernel.csproj" />
       <ProjectReference Include="..\Memoria.Users.Contracts\Memoria.Users.Contracts.csproj" />
+      <ProjectReference Include="..\..\Cards\Memoria.Cards.Contracts\Memoria.Cards.Contracts.csproj" />
+      <ProjectReference Include="..\..\Reminders\Memoria.Reminders.Contracts\Memoria.Reminders.Contracts.csproj" />
+      <ProjectReference Include="..\..\Reviews\Memoria.Reviews.Contracts\Memoria.Reviews.Contracts.csproj" />
     </ItemGroup>
 
 </Project>

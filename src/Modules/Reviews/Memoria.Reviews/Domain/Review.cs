@@ -60,4 +60,10 @@ internal sealed class Review
 
     /// <summary>True when the <see cref="Rating"/> was derived from an AI grade.</summary>
     public bool AutoGraded { get; private set; }
+
+    /// <summary>
+    /// Moves ownership of this review to a different user. Used only by the
+    /// account-merge flow; regular operation never re-parents reviews.
+    /// </summary>
+    internal void ReassignTo(Guid newUserId) => UserId = newUserId;
 }

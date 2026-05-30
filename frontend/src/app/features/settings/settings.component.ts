@@ -133,6 +133,11 @@ import { ApiClient } from '../../core/api/api-client';
           Link your Telegram account so the bot can send you reminders. The link is
           one-time and expires after 5 minutes.
         </p>
+        <p class="text-xs text-slate-500 mb-3">
+          If this Telegram chat already has a Memoria account, opening the link will
+          <span class="font-medium">merge it into your current account</span>
+          (cards, reviews, history). The original Telegram-only account is deactivated.
+        </p>
         <button
           type="button"
           (click)="generateTelegramLink()"

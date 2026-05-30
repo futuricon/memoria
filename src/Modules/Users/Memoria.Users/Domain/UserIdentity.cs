@@ -20,4 +20,11 @@ internal sealed class UserIdentity
     public IdentityProvider Provider { get; private set; }
     public string ExternalId { get; private set; } = string.Empty;
     public DateTime LinkedAt { get; private set; }
+
+    /// <summary>
+    /// Repoints this identity at a different user. Used only by the
+    /// account-merge flow when transferring identities that the target user
+    /// does not already own.
+    /// </summary>
+    internal void ReassignTo(Guid newUserId) => UserId = newUserId;
 }
