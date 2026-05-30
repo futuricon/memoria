@@ -1,9 +1,15 @@
+import { Dialog } from '@angular/cdk/dialog';
 import { Component, inject, resource, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 
 import { ApiClient } from '../../core/api/api-client';
+import { CardSummaryDto } from '../../core/api/dto';
+import { openConfirm } from '../../core/ui/confirm-dialog.component';
 import { GradePillComponent } from '../../core/ui/grade-pill.component';
+import { openEditDrawer } from './edit-card-drawer.component';
+
+const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 @Component({
   selector: 'app-cards-list',
@@ -66,7 +72,15 @@ import { GradePillComponent } from '../../core/ui/grade-pill.component';
           @for (card of items; track card.id) {
             <div class="p-4 flex items-start justify-between gap-4">
               <div class="min-w-0 flex-1">
-                <div class="font-medium text-slate-900 truncate">{{ card.title }}</div>
+                <div class="flex items-center gap-2">
+                  <div class="font-medium text-slate-900 truncate">{{ card.title }}</div>
+                  @if (card.isPaused) {
+                    <span
+                      class="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700"
+                      [title]="'Paused at stage ' + (card.pausedAtStage ?? 'start')"
+                    >⏸ paused</span>
+                  }
+                </div>
                 @if (card.tags.length > 0) {
                   <div class="mt-1 flex flex-wrap gap-1">
                     @for (t of card.tags; track t) {
@@ -75,6 +89,7 @@ import { GradePillComponent } from '../../core/ui/grade-pill.component';
                   </div>
                 }
               </div>
+
               <div class="flex flex-col items-end gap-1">
                 <app-grade-pill
                   [type]="card.type"
@@ -85,6 +100,37 @@ import { GradePillComponent } from '../../core/ui/grade-pill.component';
                 <span class="text-xs text-slate-400">
                   {{ card.reviewCount }} review{{ card.reviewCount === 1 ? '' : 's' }}
                 </span>
+              </div>
+
+              <div class="flex items-center gap-1 ml-2">
+                <button
+                  type="button"
+                  (click)="onEdit(card)"
+                  [disabled]="!isEditable(card) || actionBusy() === card.id"
+                  class="px-2 py-1 text-xs rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                  [title]="isEditable(card) ? 'Edit' : 'Edit window (24h) is closed'"
+                >Edit</button>
+                @if (card.isPaused) {
+                  <button
+                    type="button"
+                    (click)="onUnpause(card)"
+                    [disabled]="actionBusy() === card.id"
+                    class="px-2 py-1 text-xs rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40"
+                  >Unpause</button>
+                } @else {
+                  <button
+                    type="button"
+                    (click)="onPause(card)"
+                    [disabled]="actionBusy() === card.id"
+                    class="px-2 py-1 text-xs rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40"
+                  >Pause</button>
+                }
+                <button
+                  type="button"
+                  (click)="onDelete(card)"
+                  [disabled]="actionBusy() === card.id"
+                  class="px-2 py-1 text-xs rounded border border-rose-300 bg-white text-rose-700 hover:bg-rose-50 disabled:opacity-40"
+                >Delete</button>
               </div>
             </div>
           }
@@ -106,16 +152,25 @@ import { GradePillComponent } from '../../core/ui/grade-pill.component';
           >Next →</button>
         </div>
       }
+
+      @if (actionError()) {
+        <p class="mt-3 text-sm text-rose-600">{{ actionError() }}</p>
+      }
     }
   `,
 })
 export class CardsListComponent {
   private readonly api = inject(ApiClient);
+  private readonly dialog = inject(Dialog);
 
   readonly search = signal('');
   readonly selectedTags = signal<string[]>([]);
   readonly pageNum = signal(1);
+  readonly refreshTick = signal(0);
   readonly pageSize = 10;
+
+  readonly actionBusy = signal<string | null>(null);
+  readonly actionError = signal<string | null>(null);
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -128,6 +183,7 @@ export class CardsListComponent {
       search: this.search(),
       tags: this.selectedTags(),
       page: this.pageNum(),
+      _tick: this.refreshTick(),
     }),
     loader: ({ params }) =>
       firstValueFrom(
@@ -171,5 +227,83 @@ export class CardsListComponent {
 
   next(): void {
     if (this.pageNum() < this.totalPages()) this.pageNum.update((n) => n + 1);
+  }
+
+  isEditable(card: CardSummaryDto): boolean {
+    return Date.now() - new Date(card.createdAt).getTime() < EDIT_WINDOW_MS;
+  }
+
+  async onEdit(card: CardSummaryDto): Promise<void> {
+    this.actionError.set(null);
+    try {
+      const full = await firstValueFrom(this.api.getCard(card.id));
+      const ref = openEditDrawer(this.dialog, { card: full });
+      ref.closed.subscribe((updated) => {
+        if (updated) this.refresh();
+      });
+    } catch (e) {
+      this.actionError.set(this.describe(e, 'Could not open the card.'));
+    }
+  }
+
+  async onPause(card: CardSummaryDto): Promise<void> {
+    this.actionError.set(null);
+    this.actionBusy.set(card.id);
+    try {
+      await firstValueFrom(this.api.pauseCard(card.id));
+      this.refresh();
+    } catch (e) {
+      this.actionError.set(this.describe(e, 'Could not pause the card.'));
+    } finally {
+      this.actionBusy.set(null);
+    }
+  }
+
+  async onUnpause(card: CardSummaryDto): Promise<void> {
+    this.actionError.set(null);
+    this.actionBusy.set(card.id);
+    try {
+      await firstValueFrom(this.api.unpauseCard(card.id));
+      this.refresh();
+    } catch (e) {
+      this.actionError.set(this.describe(e, 'Could not unpause the card.'));
+    } finally {
+      this.actionBusy.set(null);
+    }
+  }
+
+  onDelete(card: CardSummaryDto): void {
+    const ref = openConfirm(this.dialog, {
+      title: 'Delete card?',
+      message: `"${card.title}" will be moved to trash. You can restore it later from the bot.`,
+      confirmLabel: 'Delete',
+      destructive: true,
+    });
+
+    ref.closed.subscribe(async (confirmed) => {
+      if (!confirmed) return;
+      this.actionError.set(null);
+      this.actionBusy.set(card.id);
+      try {
+        await firstValueFrom(this.api.softDeleteCard(card.id));
+        this.refresh();
+      } catch (e) {
+        this.actionError.set(this.describe(e, 'Could not delete the card.'));
+      } finally {
+        this.actionBusy.set(null);
+      }
+    });
+  }
+
+  private refresh(): void {
+    this.refreshTick.update((n) => n + 1);
+  }
+
+  private describe(e: unknown, fallback: string): string {
+    if (e && typeof e === 'object' && 'error' in e) {
+      const err = (e as { error?: { message?: string } }).error;
+      if (err?.message) return err.message;
+    }
+    return fallback;
   }
 }

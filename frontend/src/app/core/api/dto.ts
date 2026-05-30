@@ -49,3 +49,31 @@ export interface TelegramLinkingTokenDto {
   deepLink: string;
   expiresAt: string;
 }
+
+export interface CurrentUserDto {
+  id: string;
+  displayName: string;
+  email: string | null;
+  timeZoneId: string;
+  quietHoursStart: string | null;
+  quietHoursEnd: string | null;
+  createdAt: string;
+}
+
+export interface UserIdentityDto {
+  provider: string;
+  externalId: string;
+  linkedAt: string;
+}
+
+export interface UpdateMePayload {
+  timeZoneId: string;
+  quietHoursStart: string | null;
+  quietHoursEnd: string | null;
+}
+
+export interface UpdateCardPayload {
+  title?: string;
+  body?: string;
+  tags?: string[];
+}

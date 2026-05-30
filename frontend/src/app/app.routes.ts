@@ -29,6 +29,13 @@ export const APP_ROUTES: Routes = [
             (m) => m.CardsListComponent,
           ),
       },
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('./features/settings/settings.component').then(
+            (m) => m.SettingsComponent,
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

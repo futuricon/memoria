@@ -7,9 +7,13 @@ import {
   CardDto,
   CardSummaryDto,
   CardWithGradeDto,
+  CurrentUserDto,
   DueReminderDto,
   PagedResult,
   TelegramLinkingTokenDto,
+  UpdateCardPayload,
+  UpdateMePayload,
+  UserIdentityDto,
 } from './dto';
 
 @Injectable({ providedIn: 'root' })
@@ -60,5 +64,33 @@ export class ApiClient {
       `${this.base}/api/v1/auth/telegram-linking/start`,
       {},
     );
+  }
+
+  updateCard(id: string, payload: UpdateCardPayload): Observable<CardDto> {
+    return this.http.patch<CardDto>(`${this.base}/api/v1/cards/${id}`, payload);
+  }
+
+  softDeleteCard(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.base}/api/v1/cards/${id}`);
+  }
+
+  pauseCard(id: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/api/v1/cards/${id}/pause`, {});
+  }
+
+  unpauseCard(id: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/api/v1/cards/${id}/unpause`, {});
+  }
+
+  getMe(): Observable<CurrentUserDto> {
+    return this.http.get<CurrentUserDto>(`${this.base}/api/v1/users/me`);
+  }
+
+  updateMe(payload: UpdateMePayload): Observable<void> {
+    return this.http.patch<void>(`${this.base}/api/v1/users/me`, payload);
+  }
+
+  getIdentities(): Observable<UserIdentityDto[]> {
+    return this.http.get<UserIdentityDto[]>(`${this.base}/api/v1/users/me/identities`);
   }
 }
