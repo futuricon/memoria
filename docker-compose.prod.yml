@@ -36,6 +36,12 @@ services:
       Ai__BaseUrl: ${AI_BASE_URL:-}
       Ai__GradingModel: ${AI_GRADING_MODEL:-}
       Ai__ValidationModel: ${AI_VALIDATION_MODEL:-}
+      # Resend transactional email (SPA verification codes). Empty key falls
+      # back to the LoggingEmailSender stub — codes will only appear in the
+      # app log, no email is sent. Configure RESEND_API_KEY in /opt/memoria/.env
+      # and verify the sender domain in the Resend dashboard.
+      Email__ApiKey: ${RESEND_API_KEY:-}
+      Email__FromAddress: ${RESEND_FROM_ADDRESS:-Memoria <noreply@memoria.futuricon.net>}
       # Логирование. Дефолт = поведение из appsettings.json. Чтобы крутануть до
       # Debug на время разбора — выставить LOG_LEVEL=Debug в /opt/memoria/.env
       # и пересоздать контейнер. Не держи Microsoft.* в Debug долго — это даёт

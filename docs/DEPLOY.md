@@ -309,6 +309,57 @@ fails with `redirect_uri_mismatch`.
   Authorization callback URL. Replace with
   `https://api.memoria.example.com/jobs/signin-github`.
 
+### 1.12 Email delivery (Resend)
+
+SPA email login (`/api/v1/auth/email/start` → `/confirm`) sends a 6-digit
+code to the user's inbox via [Resend](https://resend.com). If
+`RESEND_API_KEY` in `/opt/memoria/.env` is empty, the app falls back to
+`LoggingEmailSender` — codes are written to the app log only, which is fine
+for first-boot debugging but useless for real users.
+
+One-time setup (~5 min):
+
+1. **Create a Resend account.** Free tier: 3000 emails/month, 100/day —
+   plenty for early users.
+2. **Add and verify your sending domain** (e.g. `memoria.futuricon.net`):
+   Dashboard → Domains → "Add Domain" → enter the apex. Resend shows three
+   DNS records to add: an MX, an SPF TXT, and a DKIM TXT. Paste them at your
+   DNS provider. Click "Verify DNS records" — usually ready in 1–5 minutes.
+   The "From" address can use any local part on this domain
+   (`noreply@`, `hello@`, etc.).
+3. **Create an API key.** Dashboard → API Keys → "Create API Key" →
+   "Sending access" → name it `memoria-prod`. Copy the `re_…` token —
+   shown only once.
+4. **Drop it into `/opt/memoria/.env`** on the VPS:
+   ```
+   RESEND_API_KEY=re_paste_here
+   RESEND_FROM_ADDRESS=Memoria <noreply@memoria.futuricon.net>
+   ```
+5. **Restart the container** so the new env is picked up:
+   ```bash
+   sudo -u memoria bash -c 'cd /opt/memoria && docker compose -f docker-compose.prod.yml up -d'
+   ```
+
+Smoke-test from the login screen: enter your email, click "Send code", and
+the code should arrive within ~10 s. If it doesn't:
+
+```bash
+# Watch the live log; you'll see one of:
+#   "Resend accepted verification code for fu***@gmail.com (status 200)"
+#   "Resend returned 422 for fu***@gmail.com: {...}"   ← misconfigured domain
+#   "ResendEmailSender: Email:FromAddress is not configured — ..."
+docker logs -f memoria-app | grep -i resend
+```
+
+Common gotchas:
+
+- **422 from Resend** — `FromAddress` domain isn't verified. Check the
+  Domains page in the Resend dashboard.
+- **Code never arrives but log says "accepted"** — check the recipient's
+  spam folder. After ~10 emails the deliverability reputation warms up.
+- **Want to revert to log-only mode** — empty `RESEND_API_KEY` in `.env`
+  and restart. The stub takes over automatically.
+
 ---
 
 ## Part 2 — GitHub setup

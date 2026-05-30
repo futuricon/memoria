@@ -1,6 +1,9 @@
+using System.Net.Http.Headers;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 using Memoria.Shared.Infrastructure.Options;
 using Memoria.Users.Contracts.Abstractions;
@@ -46,11 +49,35 @@ public static class DependencyInjection
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        var emailSection = configuration.GetSection(EmailOptions.SectionName);
+        services.AddOptions<EmailOptions>().Bind(emailSection);
+        var emailOptions = emailSection.Get<EmailOptions>() ?? new EmailOptions();
+
         services.AddSingleton<VerificationCodeService>();
         services.AddSingleton<JwtTokenIssuer>();
-        services.AddSingleton<IEmailSender, LoggingEmailSender>();
+
+        if (!string.IsNullOrWhiteSpace(emailOptions.ApiKey))
+        {
+            services.AddHttpClient<IEmailSender, ResendEmailSender>(ConfigureResend);
+        }
+        else
+        {
+            services.AddSingleton<IEmailSender, LoggingEmailSender>();
+        }
 
         return services;
+    }
+
+    private static void ConfigureResend(IServiceProvider sp, HttpClient http)
+    {
+        var options = sp.GetRequiredService<IOptions<EmailOptions>>().Value;
+        http.BaseAddress = new Uri(ResendEmailSender.DefaultBaseUrl);
+        http.Timeout = TimeSpan.FromSeconds(10);
+        if (!string.IsNullOrWhiteSpace(options.ApiKey))
+        {
+            http.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", options.ApiKey);
+        }
     }
 
     public static async Task MigrateUsersModuleAsync(this IServiceProvider services)
