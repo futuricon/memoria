@@ -10,7 +10,12 @@ import {
   CardWithGradeDto,
   CurrentUserDto,
   DueReminderDto,
+  HeatmapDayDto,
   PagedResult,
+  RatingDistributionDto,
+  StreakDto,
+  StuckCardDto,
+  TagAverageDto,
   TelegramLinkingTokenDto,
   TrashedCardDto,
   UpdateCardPayload,
@@ -94,6 +99,38 @@ export class ApiClient {
 
   permanentlyDeleteCard(id: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/api/v1/cards/${id}/permanent`);
+  }
+
+  streak(): Observable<StreakDto> {
+    return this.http.get<StreakDto>(`${this.base}/api/v1/cards/streak`);
+  }
+
+  ratingDistribution(days = 30): Observable<RatingDistributionDto> {
+    const params = new HttpParams().set('days', String(days));
+    return this.http.get<RatingDistributionDto>(
+      `${this.base}/api/v1/cards/rating-distribution`, { params });
+  }
+
+  activityHeatmap(days = 90): Observable<HeatmapDayDto[]> {
+    const params = new HttpParams().set('days', String(days));
+    return this.http.get<HeatmapDayDto[]>(
+      `${this.base}/api/v1/cards/activity-heatmap`, { params });
+  }
+
+  stuckCards(take = 10, minConsecutiveForgot = 3, maxStage = 2): Observable<StuckCardDto[]> {
+    const params = new HttpParams()
+      .set('take', String(take))
+      .set('minConsecutiveForgot', String(minConsecutiveForgot))
+      .set('maxStage', String(maxStage));
+    return this.http.get<StuckCardDto[]>(`${this.base}/api/v1/cards/stuck`, { params });
+  }
+
+  tagAverages(take = 10, minReviews = 3): Observable<TagAverageDto[]> {
+    const params = new HttpParams()
+      .set('take', String(take))
+      .set('minReviews', String(minReviews));
+    return this.http.get<TagAverageDto[]>(
+      `${this.base}/api/v1/cards/tag-averages`, { params });
   }
 
   pauseCard(id: string): Observable<void> {

@@ -36,6 +36,27 @@ public sealed record CardWithGradeDto(
     double? AvgRating,
     double? AvgAiScore);
 
+/// <summary>
+/// Composite DTO for the "stuck cards" dashboard widget — a candidate from
+/// Reviews enriched with the card title and current reminder stage.
+/// </summary>
+public sealed record StuckCardDto(
+    Guid CardId,
+    string Title,
+    int ConsecutiveForgotCount,
+    DateTime LastReviewedAt,
+    int? CurrentStage);
+
+/// <summary>
+/// Composite DTO for the "hardest tags" widget — average normalized rating
+/// across all cards bearing the tag, plus how many cards / reviews fed it.
+/// </summary>
+public sealed record TagAverageDto(
+    string Tag,
+    int CardCount,
+    int ReviewCount,
+    double AvgScore);
+
 internal static class CardsActivityEndpoints
 {
     public static IEndpointRouteBuilder MapCardsActivityEndpoints(this IEndpointRouteBuilder app)
@@ -119,6 +140,174 @@ internal static class CardsActivityEndpoints
 
                 return Result<IReadOnlyList<CardWithGradeDto>>
                     .Success(joined)
+                    .ToHttpResult();
+            });
+
+        group.MapGet("/streak", async (
+                HttpContext ctx,
+                IMediator mediator,
+                CancellationToken ct) =>
+            {
+                var user = ctx.GetCurrentUser();
+                var result = await mediator
+                    .Send(new GetStreakQuery(user.Id), ct)
+                    .ConfigureAwait(false);
+                return result.ToHttpResult();
+            });
+
+        group.MapGet("/rating-distribution", async (
+                HttpContext ctx,
+                IMediator mediator,
+                CancellationToken ct,
+                [FromQuery] int days = 30) =>
+            {
+                var user = ctx.GetCurrentUser();
+                var result = await mediator
+                    .Send(new GetRatingDistributionQuery(user.Id, days), ct)
+                    .ConfigureAwait(false);
+                return result.ToHttpResult();
+            });
+
+        group.MapGet("/activity-heatmap", async (
+                HttpContext ctx,
+                IMediator mediator,
+                CancellationToken ct,
+                [FromQuery] int days = 90) =>
+            {
+                var user = ctx.GetCurrentUser();
+                var result = await mediator
+                    .Send(new GetActivityHeatmapQuery(user.Id, days), ct)
+                    .ConfigureAwait(false);
+                return result.ToHttpResult();
+            });
+
+        group.MapGet("/stuck", async (
+                HttpContext ctx,
+                IMediator mediator,
+                CancellationToken ct,
+                [FromQuery] int take = 10,
+                [FromQuery] int minConsecutiveForgot = 3,
+                [FromQuery] int maxStage = 2) =>
+            {
+                var user = ctx.GetCurrentUser();
+
+                var candidatesResult = await mediator
+                    .Send(new GetStuckCardCandidatesQuery(
+                        user.Id, minConsecutiveForgot, Take: take * 3), ct)
+                    .ConfigureAwait(false);
+
+                if (candidatesResult.IsFailure)
+                {
+                    return candidatesResult.ToHttpResult();
+                }
+
+                var enriched = new List<StuckCardDto>(take);
+                foreach (var candidate in candidatesResult.Value!)
+                {
+                    var stageResult = await mediator
+                        .Send(new GetCurrentCardStageQuery(candidate.CardId), ct)
+                        .ConfigureAwait(false);
+
+                    var stage = stageResult.IsSuccess ? stageResult.Value : null;
+                    if (stage is int s && s > maxStage)
+                    {
+                        // "Stuck" implies the user is still struggling at an
+                        // early stage; if they're already past it, the bad
+                        // run is historical and we don't surface it.
+                        continue;
+                    }
+
+                    var cardResult = await mediator
+                        .Send(new GetCardByIdQuery(user.Id, candidate.CardId, IncludeDeleted: false), ct)
+                        .ConfigureAwait(false);
+                    if (cardResult.IsFailure)
+                    {
+                        continue;
+                    }
+
+                    enriched.Add(new StuckCardDto(
+                        CardId: candidate.CardId,
+                        Title: cardResult.Value!.Title,
+                        ConsecutiveForgotCount: candidate.ConsecutiveForgotCount,
+                        LastReviewedAt: candidate.LastReviewedAt,
+                        CurrentStage: stage));
+
+                    if (enriched.Count >= take) break;
+                }
+
+                return Result<IReadOnlyList<StuckCardDto>>
+                    .Success(enriched)
+                    .ToHttpResult();
+            });
+
+        group.MapGet("/tag-averages", async (
+                HttpContext ctx,
+                IMediator mediator,
+                CancellationToken ct,
+                [FromQuery] int take = 10,
+                [FromQuery] int minReviews = 3) =>
+            {
+                var user = ctx.GetCurrentUser();
+
+                // Pull all cards with tags. PageSize=100 hard-cap on the
+                // backend — for users with >100 cards we'd need pagination
+                // here, but at that scale the dashboard is the wrong place
+                // for full-library aggregation anyway.
+                var pageResult = await mediator
+                    .Send(new ListCardsQuery(user.Id, null, null, Page: 1, PageSize: 100), ct)
+                    .ConfigureAwait(false);
+                if (pageResult.IsFailure)
+                {
+                    return pageResult.ToHttpResult();
+                }
+
+                var cards = pageResult.Value!.Items;
+                if (cards.Count == 0)
+                {
+                    return Result<IReadOnlyList<TagAverageDto>>
+                        .Success(Array.Empty<TagAverageDto>())
+                        .ToHttpResult();
+                }
+
+                var statsResult = await mediator
+                    .Send(new GetCardGradeStatsQuery(user.Id, cards.Select(c => c.Id).ToList()), ct)
+                    .ConfigureAwait(false);
+                if (statsResult.IsFailure)
+                {
+                    return statsResult.ToHttpResult();
+                }
+                var statsById = statsResult.Value!.ToDictionary(s => s.CardId);
+
+                var perTag = new Dictionary<string, (double SumScore, int Reviews, int Cards)>();
+                foreach (var card in cards)
+                {
+                    if (!statsById.TryGetValue(card.Id, out var stats)) continue;
+                    var score = stats.AvgAiScore ?? stats.AvgRating;
+                    if (score is null) continue;
+
+                    foreach (var tag in card.Tags)
+                    {
+                        perTag.TryGetValue(tag, out var acc);
+                        perTag[tag] = (
+                            acc.SumScore + score.Value,
+                            acc.Reviews + stats.ReviewCount,
+                            acc.Cards + 1);
+                    }
+                }
+
+                var ranked = perTag
+                    .Where(kv => kv.Value.Reviews >= minReviews)
+                    .Select(kv => new TagAverageDto(
+                        Tag: kv.Key,
+                        CardCount: kv.Value.Cards,
+                        ReviewCount: kv.Value.Reviews,
+                        AvgScore: kv.Value.SumScore / kv.Value.Cards))
+                    .OrderBy(t => t.AvgScore)
+                    .Take(take)
+                    .ToList();
+
+                return Result<IReadOnlyList<TagAverageDto>>
+                    .Success(ranked)
                     .ToHttpResult();
             });
 

@@ -91,3 +91,37 @@ export interface TrashedCardDto {
   deletedAt: string;
   reviewsCount: number;
 }
+
+export interface StreakDto {
+  current: number;
+  longest: number;
+  lastReviewedOnUtc: string | null;
+}
+
+export interface RatingDistributionDto {
+  forgot: number;
+  hard: number;
+  good: number;
+  easy: number;
+  total: number;
+}
+
+export interface HeatmapDayDto {
+  dateUtc: string;
+  count: number;
+}
+
+export interface StuckCardDto {
+  cardId: string;
+  title: string;
+  consecutiveForgotCount: number;
+  lastReviewedAt: string;
+  currentStage: number | null;
+}
+
+export interface TagAverageDto {
+  tag: string;
+  cardCount: number;
+  reviewCount: number;
+  avgScore: number;
+}

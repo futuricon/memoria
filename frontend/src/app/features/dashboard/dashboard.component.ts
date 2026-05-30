@@ -6,13 +6,27 @@ import { firstValueFrom } from 'rxjs';
 import { ApiClient } from '../../core/api/api-client';
 import { GradePillComponent } from '../../core/ui/grade-pill.component';
 import { relativeTime } from '../../core/ui/relative-time';
+import { HardestTagsWidgetComponent } from './widgets/hardest-tags-widget.component';
+import { HeatmapWidgetComponent } from './widgets/heatmap-widget.component';
+import { RatingDistributionWidgetComponent } from './widgets/rating-distribution-widget.component';
+import { StreakWidgetComponent } from './widgets/streak-widget.component';
+import { StuckCardsWidgetComponent } from './widgets/stuck-cards-widget.component';
 
 const TELEGRAM_BANNER_DISMISS_KEY = 'memoria.telegramBannerDismissed';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [DecimalPipe, GradePillComponent, RouterLink],
+  imports: [
+    DecimalPipe,
+    GradePillComponent,
+    RouterLink,
+    StreakWidgetComponent,
+    RatingDistributionWidgetComponent,
+    HeatmapWidgetComponent,
+    StuckCardsWidgetComponent,
+    HardestTagsWidgetComponent,
+  ],
   template: `
     <header class="mb-6">
       <h1 class="text-2xl font-semibold">Dashboard</h1>
@@ -89,6 +103,11 @@ const TELEGRAM_BANNER_DISMISS_KEY = 'memoria.telegramBannerDismissed';
         }
       </section>
 
+      <app-streak-widget />
+      <app-rating-distribution-widget />
+      <app-stuck-cards-widget />
+      <app-hardest-tags-widget />
+
       <section class="bg-white border border-slate-200 rounded-lg p-5 md:col-span-2">
         <h2 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-3">
           Coming up
@@ -148,6 +167,10 @@ const TELEGRAM_BANNER_DISMISS_KEY = 'memoria.telegramBannerDismissed';
           </div>
         }
       </section>
+
+      <div class="md:col-span-2">
+        <app-heatmap-widget />
+      </div>
     </div>
   `,
 })
