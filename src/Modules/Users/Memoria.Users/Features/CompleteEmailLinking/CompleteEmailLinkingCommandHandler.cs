@@ -94,19 +94,53 @@ internal sealed class CompleteEmailLinkingCommandHandler
 
         if (user is null)
         {
-            user = new User(
-                displayName: request.Email,
-                timeZoneId: "UTC",
-                createdAt: now);
-            user.SetEmail(request.Email);
-            _db.Users.Add(user);
+            // SPA "sign in by email" flow: the verification code was issued
+            // without a UserId. Three possible states for this email address:
+            //   (a) UserIdentity (Email, X) already exists → log in to its owner
+            //   (b) User.Email = X but no Email-provider identity yet → attach,
+            //       then log in (covers users created via Telegram who later
+            //       linked their email manually or via the bot)
+            //   (c) Neither exists → register a brand-new user
+            // Ownership of the inbox is proof of authorization for all three.
+            var existingIdentity = await _db.Identities
+                .FirstOrDefaultAsync(
+                    i => i.Provider == IdentityProvider.Email && i.ExternalId == request.Email,
+                    cancellationToken)
+                .ConfigureAwait(false);
 
-            var emailIdentity = new UserIdentity(
-                userId: user.Id,
-                provider: IdentityProvider.Email,
-                externalId: request.Email,
-                linkedAt: now);
-            _db.Identities.Add(emailIdentity);
+            if (existingIdentity is not null)
+            {
+                user = await _db.Users
+                    .FirstOrDefaultAsync(u => u.Id == existingIdentity.UserId, cancellationToken)
+                    .ConfigureAwait(false);
+                if (user is null)
+                {
+                    return Result<JwtTokenPairDto>.Failure(Error.NotFound(
+                        "users.not_found", "User not found."));
+                }
+            }
+            else
+            {
+                user = await _db.Users
+                    .FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken)
+                    .ConfigureAwait(false);
+
+                if (user is null)
+                {
+                    user = new User(
+                        displayName: request.Email,
+                        timeZoneId: "UTC",
+                        createdAt: now);
+                    user.SetEmail(request.Email);
+                    _db.Users.Add(user);
+                }
+
+                _db.Identities.Add(new UserIdentity(
+                    userId: user.Id,
+                    provider: IdentityProvider.Email,
+                    externalId: request.Email,
+                    linkedAt: now));
+            }
         }
         else if (string.IsNullOrEmpty(user.Email))
         {
