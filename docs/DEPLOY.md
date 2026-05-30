@@ -302,12 +302,25 @@ The `/jobs` Hangfire dashboard moved from `memoria.example.com/jobs` to
 Google and GitHub must be updated. Without this, sign-in for the dashboard
 fails with `redirect_uri_mismatch`.
 
+The SPA also uses Google/GitHub OAuth (Phase 2), which adds two more
+callback paths under the same OAuth apps. **Add both URIs to each provider**
+— the OAuth app object stays the same, only the redirect-URI list grows.
+
 - **Google Cloud Console** → APIs & Services → Credentials → your OAuth 2.0
-  client → Authorized redirect URIs. Replace `…/jobs/signin-google`
-  with `https://api.memoria.example.com/jobs/signin-google`.
+  client → Authorized redirect URIs. Add:
+  - `https://api.memoria.example.com/jobs/signin-google` (Hangfire dashboard)
+  - `https://api.memoria.example.com/api/v1/auth/google/callback` (SPA login)
 - **GitHub** → Settings → Developer settings → OAuth Apps → your app →
-  Authorization callback URL. Replace with
-  `https://api.memoria.example.com/jobs/signin-github`.
+  Authorization callback URL. GitHub allows **only one** callback URL per
+  OAuth app, so you must choose which flow uses it:
+  - Either keep `https://api.memoria.example.com/jobs/signin-github` (only
+    Hangfire dashboard has GitHub sign-in; SPA login still has Google + email),
+  - Or use `https://api.memoria.example.com/api/v1/auth/github/callback`
+    (SPA login has GitHub; Hangfire dashboard falls back to Google + email).
+  - Or register a **second** OAuth app with the other callback URL, set its
+    `Client ID` / `Secret` as separate env vars (e.g. `GITHUB_SPA_*`) and
+    extend `OAuthAuthenticationConfiguration.cs` to bind them. Recommended
+    only if you actually need both surfaces — most operators don't.
 
 ### 1.12 Email delivery (Resend)
 

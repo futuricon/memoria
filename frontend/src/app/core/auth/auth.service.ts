@@ -68,6 +68,24 @@ export class AuthService {
     void this.router.navigate(['/login']);
   }
 
+  /**
+   * Navigates the whole window (NOT an XHR) to the OAuth /start endpoint so
+   * the browser follows the cross-site redirect chain. The backend will
+   * redirect back to `/auth/callback#access=…&refresh=…` once the provider
+   * approves the user.
+   */
+  startOAuth(provider: 'google' | 'github'): void {
+    const returnUrl = `${window.location.origin}/auth/callback`;
+    const url = new URL(`${environment.apiBase}/api/v1/auth/${provider}/start`);
+    url.searchParams.set('returnUrl', returnUrl);
+    window.location.assign(url.toString());
+  }
+
+  /** Accepts a token bundle delivered via the OAuth redirect fragment. */
+  applyExternalTokens(bundle: TokenBundle): void {
+    this.applyTokens(bundle);
+  }
+
   private applyTokens(b: TokenBundle): void {
     tokenStorage.write(b);
     this._tokens.set(b);

@@ -144,6 +144,7 @@ public static class DependencyInjection
         app.MapBotCodeAndRefreshEndpoints();
         app.MapEmailAuthEndpoints();
         app.MapTelegramWidgetEndpoint();
+        app.MapOAuthAuthEndpoints();
 
         app.MapUsersEndpoints();
         app.MapCardsEndpoints();

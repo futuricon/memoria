@@ -26,6 +26,9 @@ internal static class OAuthAuthenticationConfiguration
 {
     public const string CookieScheme = "HangfireCookie";
 
+    public const string GoogleSpaScheme = "GoogleSpa";
+    public const string GitHubSpaScheme = "GitHubSpa";
+
     public static IServiceCollection AddOAuthAuthentication(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -76,6 +79,40 @@ internal static class OAuthAuthenticationConfiguration
                 o.Scope.Add("user:email");
                 o.CorrelationCookie.SameSite = SameSiteMode.Lax;
                 o.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+            });
+        }
+
+        // SPA OAuth — short-circuits via OnTicketReceived to issue JWTs and
+        // bounce the browser to the SPA callback URL with tokens in the
+        // fragment. SignInScheme is set to the Hangfire cookie purely to
+        // satisfy AddOAuthHandler's validation; HandleResponse() in the
+        // event prevents that scheme from ever being touched.
+        if (HasCredentials(oauth.Google))
+        {
+            builder.AddGoogle(GoogleSpaScheme, o =>
+            {
+                o.SignInScheme = CookieScheme;
+                o.ClientId = oauth.Google.ClientId;
+                o.ClientSecret = oauth.Google.ClientSecret;
+                o.CallbackPath = "/api/v1/auth/google/callback";
+                o.CorrelationCookie.SameSite = SameSiteMode.Lax;
+                o.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+                o.Events.OnTicketReceived = SpaOAuthEvents.HandleGoogleTicket;
+            });
+        }
+
+        if (HasCredentials(oauth.GitHub))
+        {
+            builder.AddGitHub(GitHubSpaScheme, o =>
+            {
+                o.SignInScheme = CookieScheme;
+                o.ClientId = oauth.GitHub.ClientId;
+                o.ClientSecret = oauth.GitHub.ClientSecret;
+                o.CallbackPath = "/api/v1/auth/github/callback";
+                o.Scope.Add("user:email");
+                o.CorrelationCookie.SameSite = SameSiteMode.Lax;
+                o.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+                o.Events.OnTicketReceived = SpaOAuthEvents.HandleGitHubTicket;
             });
         }
 

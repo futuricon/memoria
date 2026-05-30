@@ -9,6 +9,13 @@ export const APP_ROUTES: Routes = [
       import('./features/auth-pages/login.component').then((m) => m.LoginComponent),
   },
   {
+    path: 'auth/callback',
+    loadComponent: () =>
+      import('./features/auth-pages/oauth-callback.component').then(
+        (m) => m.OAuthCallbackComponent,
+      ),
+  },
+  {
     path: '',
     canActivate: [authGuard],
     loadComponent: () =>
