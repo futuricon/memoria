@@ -44,6 +44,22 @@ internal static class AuthTelegramWidgetEndpoint
             .RequireRateLimiting(RateLimitingConfiguration.AuthPolicy)
             .AllowAnonymous();
 
+        // Authenticated SPA user requests a one-time link token + deep-link to
+        // attach their Telegram identity (Settings page → "Link Telegram").
+        group.MapPost("/api/v1/auth/telegram-linking/start", async (
+                HttpContext ctx,
+                IMediator mediator,
+                CancellationToken ct) =>
+            {
+                var user = ctx.GetCurrentUser();
+                var result = await mediator
+                    .Send(new StartTelegramLinkingCommand(user.Id), ct)
+                    .ConfigureAwait(false);
+                return result.ToHttpResult();
+            })
+            .RequireAuthorization()
+            .RequireRateLimiting(RateLimitingConfiguration.AuthPolicy);
+
         return group;
     }
 }

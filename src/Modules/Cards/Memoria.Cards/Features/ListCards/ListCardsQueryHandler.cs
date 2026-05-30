@@ -33,7 +33,8 @@ internal sealed class ListCardsQueryHandler : IRequestHandler<ListCardsQuery, Re
         if (!string.IsNullOrWhiteSpace(request.Search))
         {
             var pattern = $"%{request.Search.Trim()}%";
-            query = query.Where(c => EF.Functions.ILike(c.Title, pattern));
+            query = query.Where(c =>
+                EF.Functions.ILike(c.Title, pattern) || EF.Functions.ILike(c.Body, pattern));
         }
 
         if (request.Tags is { Count: > 0 })

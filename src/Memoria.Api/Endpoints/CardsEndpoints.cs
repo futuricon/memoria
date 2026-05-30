@@ -6,7 +6,11 @@ using Memoria.Api.Authentication;
 using Memoria.Api.Configuration;
 using Memoria.Api.Results;
 using Memoria.Cards.Contracts.Commands;
+using Memoria.Cards.Contracts.Dtos;
 using Memoria.Cards.Contracts.Queries;
+using Memoria.Reviews.Contracts.Dtos;
+using Memoria.Reviews.Contracts.Queries;
+using Memoria.Shared.Kernel.Results;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -44,10 +48,18 @@ internal static class CardsEndpoints
                     ? null
                     : tags.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList();
 
-                var result = await mediator
+                var listed = await mediator
                     .Send(new ListCardsQuery(user.Id, search, tagList, page, pageSize), ct)
                     .ConfigureAwait(false);
-                return result.ToHttpResult();
+
+                if (listed.IsFailure)
+                {
+                    return listed.ToHttpResult();
+                }
+
+                var enriched = await EnrichWithStatsAsync(listed.Value!, user.Id, mediator, ct)
+                    .ConfigureAwait(false);
+                return Result<PagedResult<CardSummaryDto>>.Success(enriched).ToHttpResult();
             });
 
         group.MapPost("/", async (
@@ -80,7 +92,31 @@ internal static class CardsEndpoints
                 var result = await mediator
                     .Send(new GetCardByIdQuery(user.Id, id, IncludeDeleted: false), ct)
                     .ConfigureAwait(false);
-                return result.ToHttpResult();
+
+                if (result.IsFailure)
+                {
+                    return result.ToHttpResult();
+                }
+
+                var card = result.Value!;
+                var statsResult = await mediator
+                    .Send(new GetCardGradeStatsQuery(user.Id, new[] { card.Id }), ct)
+                    .ConfigureAwait(false);
+
+                var stats = statsResult.IsSuccess && statsResult.Value!.Count > 0
+                    ? statsResult.Value![0]
+                    : null;
+
+                var enriched = stats is null
+                    ? card
+                    : card with
+                    {
+                        ReviewCount = stats.ReviewCount,
+                        AvgRating = stats.AvgRating,
+                        AvgAiScore = stats.AvgAiScore,
+                    };
+
+                return Result<CardDto>.Success(enriched).ToHttpResult();
             });
 
         group.MapPatch("/{id:guid}", async (
@@ -111,5 +147,41 @@ internal static class CardsEndpoints
             });
 
         return app;
+    }
+
+    private static async Task<PagedResult<CardSummaryDto>> EnrichWithStatsAsync(
+        PagedResult<CardSummaryDto> page,
+        Guid userId,
+        IMediator mediator,
+        CancellationToken ct)
+    {
+        if (page.Items.Count == 0)
+        {
+            return page;
+        }
+
+        var ids = page.Items.Select(c => c.Id).ToList();
+        var statsResult = await mediator
+            .Send(new GetCardGradeStatsQuery(userId, ids), ct)
+            .ConfigureAwait(false);
+
+        if (statsResult.IsFailure)
+        {
+            return page;
+        }
+
+        var byId = statsResult.Value!.ToDictionary(s => s.CardId);
+        var enriched = page.Items
+            .Select(c => byId.TryGetValue(c.Id, out var s)
+                ? c with
+                {
+                    ReviewCount = s.ReviewCount,
+                    AvgRating = s.AvgRating,
+                    AvgAiScore = s.AvgAiScore,
+                }
+                : c)
+            .ToList();
+
+        return new PagedResult<CardSummaryDto>(enriched, page.Page, page.PageSize, page.TotalCount);
     }
 }
