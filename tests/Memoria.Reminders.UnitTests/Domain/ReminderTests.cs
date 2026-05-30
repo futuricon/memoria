@@ -243,8 +243,19 @@ public sealed class ReminderTests
         sut.ConfirmedAt.Should().Be(ClockUtc);
     }
 
+    [Fact]
+    public void CancelFromSentTransitionsToCancelled()
+    {
+        // Sent is cancellable so that deleting a card whose reminder is in flight
+        // does not deadlock the per-user single-in-flight queue.
+        var sut = ArrangeReminderInStatus(ReminderStatus.Sent);
+
+        sut.Cancel(ClockUtc);
+
+        sut.Status.Should().Be(ReminderStatus.Cancelled);
+    }
+
     [Theory]
-    [InlineData(ReminderStatus.Sent)]
     [InlineData(ReminderStatus.Confirmed)]
     [InlineData(ReminderStatus.Skipped)]
     [InlineData(ReminderStatus.Failed)]

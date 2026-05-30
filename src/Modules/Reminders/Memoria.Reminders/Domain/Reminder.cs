@@ -91,7 +91,10 @@ public sealed class Reminder
 
     public void Cancel(DateTime utcNow)
     {
-        if (Status is not (ReminderStatus.Pending or ReminderStatus.Sending))
+        // Sent is intentionally included: when the card is deleted while a
+        // reminder is still awaiting the user's response, leaving it Sent
+        // forever would deadlock the per-user single-in-flight queue.
+        if (Status is not (ReminderStatus.Pending or ReminderStatus.Sending or ReminderStatus.Sent))
         {
             throw new InvalidOperationException($"Cannot Cancel reminder in status {Status}");
         }
