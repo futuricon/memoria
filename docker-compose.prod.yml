@@ -36,15 +36,24 @@ services:
       Ai__BaseUrl: ${AI_BASE_URL:-}
       Ai__GradingModel: ${AI_GRADING_MODEL:-}
       Ai__ValidationModel: ${AI_VALIDATION_MODEL:-}
+      # Логирование. Дефолт = поведение из appsettings.json. Чтобы крутануть до
+      # Debug на время разбора — выставить LOG_LEVEL=Debug в /opt/memoria/.env
+      # и пересоздать контейнер. Не держи Microsoft.* в Debug долго — это даёт
+      # SQL-каждой-команды от EF и тысячи строк в час.
+      Serilog__MinimumLevel__Default: ${LOG_LEVEL:-Information}
+      Serilog__MinimumLevel__Override__Microsoft: ${LOG_LEVEL_MICROSOFT:-Warning}
+      Serilog__MinimumLevel__Override__System: ${LOG_LEVEL_SYSTEM:-Warning}
+      Serilog__MinimumLevel__Override__Microsoft.AspNetCore: ${LOG_LEVEL_ASPNETCORE:-Warning}
     volumes:
       - memoria-logs:/app/logs
     restart: unless-stopped
     # Cap the json-file logs Dozzle reads from so they can't grow unbounded.
+    # Sized for Debug-level bursts during analysis (~500 MB total).
     logging:
       driver: json-file
       options:
-        max-size: "10m"
-        max-file: "5"
+        max-size: "50m"
+        max-file: "10"
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/healthz || exit 1"]
       interval: 30s

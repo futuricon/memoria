@@ -1,13 +1,22 @@
 using FluentAssertions;
 
+using Hangfire;
+using Hangfire.Common;
+using Hangfire.States;
+
 using Memoria.Reminders.Contracts.Commands;
 using Memoria.Reminders.Domain;
 using Memoria.Reminders.Features.ConfirmReminder;
+using Memoria.Reminders.Persistence;
+using Memoria.Reminders.Services;
 using Memoria.Reminders.UnitTests.Infrastructure;
 using Memoria.Shared.Kernel.Results;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
+
+using NSubstitute;
 
 namespace Memoria.Reminders.UnitTests.Features.ConfirmReminder;
 
@@ -17,6 +26,11 @@ public sealed class ConfirmReminderCommandHandlerTests
     private const int SampleMessageId = 42;
 
     private readonly FakeTimeProvider _clock = new(new DateTimeOffset(ClockUtc, TimeSpan.Zero));
+    private readonly IBackgroundJobClient _hangfire = Substitute.For<IBackgroundJobClient>();
+
+    private ConfirmReminderCommandHandler CreateSut(RemindersDbContext db) =>
+        new(db, _clock,
+            new DueRemindersDispatcher(db, _hangfire, NullLogger<DueRemindersDispatcher>.Instance));
 
     private static Reminder NewSentReminder(Guid userId)
     {
@@ -35,9 +49,7 @@ public sealed class ConfirmReminderCommandHandlerTests
         db.Reminders.Add(reminder);
         await db.SaveChangesAsync();
 
-        var sut = new ConfirmReminderCommandHandler(db, _clock);
-
-        var result = await sut.Handle(
+        var result = await CreateSut(db).Handle(
             new ConfirmReminderCommand(reminder.Id, userId),
             CancellationToken.None);
 
@@ -52,9 +64,8 @@ public sealed class ConfirmReminderCommandHandlerTests
     public async Task HandleUnknownReminderReturnsNotFound()
     {
         await using var db = RemindersDbContextTestFactory.Create();
-        var sut = new ConfirmReminderCommandHandler(db, _clock);
 
-        var result = await sut.Handle(
+        var result = await CreateSut(db).Handle(
             new ConfirmReminderCommand(Guid.NewGuid(), Guid.NewGuid()),
             CancellationToken.None);
 
@@ -72,9 +83,7 @@ public sealed class ConfirmReminderCommandHandlerTests
         db.Reminders.Add(reminder);
         await db.SaveChangesAsync();
 
-        var sut = new ConfirmReminderCommandHandler(db, _clock);
-
-        var result = await sut.Handle(
+        var result = await CreateSut(db).Handle(
             new ConfirmReminderCommand(reminder.Id, attacker),
             CancellationToken.None);
 
@@ -95,14 +104,29 @@ public sealed class ConfirmReminderCommandHandlerTests
         db.Reminders.Add(pending);
         await db.SaveChangesAsync();
 
-        var sut = new ConfirmReminderCommandHandler(db, _clock);
-
-        var result = await sut.Handle(
+        var result = await CreateSut(db).Handle(
             new ConfirmReminderCommand(pending.Id, userId),
             CancellationToken.None);
 
         result.IsFailure.Should().BeTrue();
         result.Error!.Type.Should().Be(ErrorType.Conflict);
         result.Error.Code.Should().Be("reminders.invalid_transition");
+    }
+
+    [Fact]
+    public async Task HandleConfirmEnqueuesNextOverduePendingReminder()
+    {
+        await using var db = RemindersDbContextTestFactory.Create();
+        var userId = Guid.NewGuid();
+        var inFlight = NewSentReminder(userId);
+        var overduePending = new Reminder(
+            Guid.NewGuid(), userId, stageNumber: 1, ClockUtc.AddMinutes(-10));
+        db.Reminders.AddRange(inFlight, overduePending);
+        await db.SaveChangesAsync();
+
+        await CreateSut(db).Handle(
+            new ConfirmReminderCommand(inFlight.Id, userId), CancellationToken.None);
+
+        _hangfire.Received(1).Create(Arg.Any<Job>(), Arg.Any<IState>());
     }
 }

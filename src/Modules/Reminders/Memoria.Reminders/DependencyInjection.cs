@@ -44,6 +44,7 @@ public static class DependencyInjection
 
         services.AddSingleton<ReminderScheduler>();
         services.AddScoped<IRemindersScheduler, RemindersScheduler>();
+        services.AddScoped<DueRemindersDispatcher>();
         services.AddScoped<SendReminderJob>();
 
         services.AddHangfire(cfg =>

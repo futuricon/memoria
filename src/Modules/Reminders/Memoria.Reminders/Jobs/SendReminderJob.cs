@@ -63,6 +63,22 @@ internal sealed class SendReminderJob
             return;
         }
 
+        // Serialization: at most one reminder in-flight per user. If another is
+        // already Sent (awaiting the user's response), this one stays Pending and
+        // gets picked up by DueRemindersDispatcher when the in-flight resolves.
+        var anotherInFlight = await _db.Reminders
+            .AnyAsync(r => r.UserId == reminder.UserId
+                           && r.Status == ReminderStatus.Sent
+                           && r.Id != reminderId, ct)
+            .ConfigureAwait(false);
+        if (anotherInFlight)
+        {
+            _logger.LogInformation(
+                "SendReminderJob: reminder {ReminderId} deferred — user {UserId} has another reminder in flight",
+                reminderId, reminder.UserId);
+            return;
+        }
+
         var now = _clock.GetUtcNow().UtcDateTime;
 
         // Re-check card. With IncludeDeleted: false, soft-deleted or missing cards

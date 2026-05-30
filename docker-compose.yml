@@ -44,6 +44,11 @@ services:
       Ai__BaseUrl: ${AI_BASE_URL:-}
       Ai__GradingModel: ${AI_GRADING_MODEL:-}
       Ai__ValidationModel: ${AI_VALIDATION_MODEL:-}
+      # Toggle verbose logging temporarily via LOG_LEVEL (see .env.example).
+      Serilog__MinimumLevel__Default:                       ${LOG_LEVEL:-Information}
+      Serilog__MinimumLevel__Override__Microsoft:           ${LOG_LEVEL_MICROSOFT:-Warning}
+      Serilog__MinimumLevel__Override__System:              ${LOG_LEVEL_SYSTEM:-Warning}
+      Serilog__MinimumLevel__Override__Microsoft.AspNetCore: ${LOG_LEVEL_ASPNETCORE:-Warning}
     ports:
       - "8080:8080"
     restart: unless-stopped

@@ -2,6 +2,7 @@ using MediatR;
 
 using Memoria.Reminders.Contracts.Commands;
 using Memoria.Reminders.Persistence;
+using Memoria.Reminders.Services;
 using Memoria.Shared.Kernel.Results;
 
 using Microsoft.EntityFrameworkCore;
@@ -15,13 +16,19 @@ internal sealed class ConfirmReminderCommandHandler
 {
     private readonly RemindersDbContext _db;
     private readonly TimeProvider _clock;
+    private readonly DueRemindersDispatcher _dispatcher;
 
-    public ConfirmReminderCommandHandler(RemindersDbContext db, TimeProvider clock)
+    public ConfirmReminderCommandHandler(
+        RemindersDbContext db,
+        TimeProvider clock,
+        DueRemindersDispatcher dispatcher)
     {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(clock);
+        ArgumentNullException.ThrowIfNull(dispatcher);
         _db = db;
         _clock = clock;
+        _dispatcher = dispatcher;
     }
 
     public async Task<Result<Unit>> Handle(ConfirmReminderCommand request, CancellationToken ct)
@@ -44,9 +51,10 @@ internal sealed class ConfirmReminderCommandHandler
                 "reminders.not_owner", "Reminder belongs to another user."));
         }
 
+        var now = _clock.GetUtcNow().UtcDateTime;
         try
         {
-            reminder.Confirm(_clock.GetUtcNow().UtcDateTime);
+            reminder.Confirm(now);
         }
         catch (InvalidOperationException ex)
         {
@@ -55,6 +63,7 @@ internal sealed class ConfirmReminderCommandHandler
         }
 
         await _db.SaveChangesAsync(ct).ConfigureAwait(false);
+        await _dispatcher.EnqueueNextDueAsync(reminder.UserId, now, ct).ConfigureAwait(false);
         return Result<Unit>.Success(Unit.Value);
     }
 }

@@ -16,6 +16,7 @@ using Memoria.Users.Contracts.Dtos;
 using Memoria.Users.Contracts.Queries;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Time.Testing;
 
@@ -41,7 +42,9 @@ public sealed class SkipReminderCommandHandlerTests
         }));
 
     private SkipReminderCommandHandler CreateSut(RemindersDbContext db) =>
-        new(db, CreateScheduler(), _mediator, _hangfire, _clock, _logger);
+        new(db, CreateScheduler(), _mediator, _hangfire,
+            new DueRemindersDispatcher(db, _hangfire, NullLogger<DueRemindersDispatcher>.Instance),
+            _clock, _logger);
 
     private void StubPrefs(Guid userId)
     {

@@ -23,6 +23,7 @@ internal sealed class SkipReminderCommandHandler
     private readonly ReminderScheduler _scheduler;
     private readonly IMediator _mediator;
     private readonly IBackgroundJobClient _hangfire;
+    private readonly DueRemindersDispatcher _dispatcher;
     private readonly TimeProvider _clock;
     private readonly ILogger<SkipReminderCommandHandler> _logger;
 
@@ -31,6 +32,7 @@ internal sealed class SkipReminderCommandHandler
         ReminderScheduler scheduler,
         IMediator mediator,
         IBackgroundJobClient hangfire,
+        DueRemindersDispatcher dispatcher,
         TimeProvider clock,
         ILogger<SkipReminderCommandHandler> logger)
     {
@@ -38,12 +40,14 @@ internal sealed class SkipReminderCommandHandler
         ArgumentNullException.ThrowIfNull(scheduler);
         ArgumentNullException.ThrowIfNull(mediator);
         ArgumentNullException.ThrowIfNull(hangfire);
+        ArgumentNullException.ThrowIfNull(dispatcher);
         ArgumentNullException.ThrowIfNull(clock);
         ArgumentNullException.ThrowIfNull(logger);
         _db = db;
         _scheduler = scheduler;
         _mediator = mediator;
         _hangfire = hangfire;
+        _dispatcher = dispatcher;
         _clock = clock;
         _logger = logger;
     }
@@ -93,6 +97,7 @@ internal sealed class SkipReminderCommandHandler
             _logger.LogWarning(
                 "SkipReminderCommandHandler: reminder {ReminderId} skipped, but cannot load preferences: {Code} — {Message}",
                 reminder.Id, prefsResult.Error!.Code, prefsResult.Error.Message);
+            await _dispatcher.EnqueueNextDueAsync(reminder.UserId, now, ct).ConfigureAwait(false);
             return Result<Unit>.Success(Unit.Value);
         }
 
@@ -109,6 +114,8 @@ internal sealed class SkipReminderCommandHandler
         retry.AttachHangfireJob(jobId);
 
         await _db.SaveChangesAsync(ct).ConfigureAwait(false);
+
+        await _dispatcher.EnqueueNextDueAsync(reminder.UserId, now, ct).ConfigureAwait(false);
 
         return Result<Unit>.Success(Unit.Value);
     }

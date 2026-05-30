@@ -55,6 +55,31 @@ public sealed class SendReminderJobTests
     }
 
     [Fact]
+    public async Task ExecuteAsyncDefersWhenAnotherReminderForSameUserIsSent()
+    {
+        await using var db = RemindersDbContextTestFactory.Create();
+        var userId = Guid.NewGuid();
+
+        var inFlight = new Reminder(Guid.NewGuid(), userId, stageNumber: 1, ClockUtc);
+        inFlight.BeginSending();
+        inFlight.MarkSent(SampleMessageId, ClockUtc);
+
+        var pending = new Reminder(Guid.NewGuid(), userId, stageNumber: 1, ClockUtc);
+        db.Reminders.AddRange(inFlight, pending);
+        await db.SaveChangesAsync();
+
+        var sut = CreateSut(db);
+        await sut.ExecuteAsync(pending.Id, CancellationToken.None);
+
+        await _sender.DidNotReceive()
+            .SendReminderAsync(Arg.Any<ReminderNotification>(), Arg.Any<CancellationToken>());
+
+        var persisted = await db.Reminders.FirstAsync(r => r.Id == pending.Id);
+        persisted.Status.Should().Be(ReminderStatus.Pending,
+            because: "single-in-flight serialization should keep this reminder pending");
+    }
+
+    [Fact]
     public async Task ExecuteAsyncOnNonPendingReminderReturnsWithoutSending()
     {
         await using var db = RemindersDbContextTestFactory.Create();

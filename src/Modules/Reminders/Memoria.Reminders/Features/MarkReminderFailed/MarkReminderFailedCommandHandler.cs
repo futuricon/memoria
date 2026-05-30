@@ -2,6 +2,7 @@ using MediatR;
 
 using Memoria.Reminders.Contracts.Commands;
 using Memoria.Reminders.Persistence;
+using Memoria.Reminders.Services;
 using Memoria.Shared.Kernel.Results;
 
 using Microsoft.EntityFrameworkCore;
@@ -16,18 +17,22 @@ internal sealed class MarkReminderFailedCommandHandler
 {
     private readonly RemindersDbContext _db;
     private readonly TimeProvider _clock;
+    private readonly DueRemindersDispatcher _dispatcher;
     private readonly ILogger<MarkReminderFailedCommandHandler> _logger;
 
     public MarkReminderFailedCommandHandler(
         RemindersDbContext db,
         TimeProvider clock,
+        DueRemindersDispatcher dispatcher,
         ILogger<MarkReminderFailedCommandHandler> logger)
     {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(clock);
+        ArgumentNullException.ThrowIfNull(dispatcher);
         ArgumentNullException.ThrowIfNull(logger);
         _db = db;
         _clock = clock;
+        _dispatcher = dispatcher;
         _logger = logger;
     }
 
@@ -52,9 +57,10 @@ internal sealed class MarkReminderFailedCommandHandler
             "MarkReminderFailed: reminder {ReminderId} delivery failed: {Reason}",
             request.ReminderId, request.Reason);
 
+        var now = _clock.GetUtcNow().UtcDateTime;
         try
         {
-            reminder.MarkFailed(_clock.GetUtcNow().UtcDateTime);
+            reminder.MarkFailed(now);
         }
         catch (InvalidOperationException ex)
         {
@@ -67,6 +73,7 @@ internal sealed class MarkReminderFailedCommandHandler
         }
 
         await _db.SaveChangesAsync(ct).ConfigureAwait(false);
+        await _dispatcher.EnqueueNextDueAsync(reminder.UserId, now, ct).ConfigureAwait(false);
         return Result<Unit>.Success(Unit.Value);
     }
 }
