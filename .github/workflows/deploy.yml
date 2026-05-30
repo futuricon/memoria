@@ -51,9 +51,40 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  build-frontend:
+    name: Build Angular SPA
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build production bundle
+        working-directory: frontend
+        run: npm run build -- --configuration=production
+
+      - name: Upload SPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: spa-dist
+          path: frontend/dist/frontend/browser/
+          if-no-files-found: error
+          retention-days: 7
+
   deploy:
     name: Deploy to VPS
-    needs: build-and-push
+    needs: [build-and-push, build-frontend]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -63,6 +94,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Download SPA artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: spa-dist
+          path: spa-dist/
+
       - name: Copy compose to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -71,6 +108,17 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           source: "docker-compose.prod.yml"
           target: /opt/memoria/
+
+      - name: Copy SPA bundle to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          source: "spa-dist/*"
+          target: /var/www/memoria-spa/browser/
+          strip_components: 1
+          rm: true
 
       - name: Pull image & restart container
         uses: appleboy/ssh-action@v1.0.3

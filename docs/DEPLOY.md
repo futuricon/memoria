@@ -6,19 +6,20 @@ Actions + GHCR + Docker Compose. Tested on Ubuntu 24.04 LTS.
 **Topology**
 
 ```
-┌────── GitHub ──────┐         ┌──────────────────── VPS ────────────────────┐
-│                    │         │                                              │
-│  push to main      │         │  nginx (443)  →  127.0.0.1:8080  (memoria)   │
-│      │             │         │       │                  │                   │
-│      ▼             │         │       │                  ├─→  127.0.0.1:5432 │
-│  build Docker      │ ──ssh→  │   certbot                │     (postgres)    │
-│      │             │         │       │                  │                   │
-│      ▼             │         │       └─ memoria.example.com               │
-│  push to GHCR      │         │                                              │
-│      │             │         │  ufw: 22, 80, 443 ONLY                       │
-│      ▼             │         │                                              │
-│  ssh: pull+restart │ ────────►  docker compose pull && up -d                │
-└────────────────────┘         └──────────────────────────────────────────────┘
+┌────── GitHub ──────┐         ┌──────────────────── VPS ─────────────────────────┐
+│                    │         │                                                   │
+│  push to main      │         │  nginx (443) ──┬─→ memoria.example.com            │
+│      │             │         │                │     /var/www/memoria-spa/browser │
+│      ├─► docker ──►│ ──ssh──►│                │     (static SPA, no proxy)       │
+│      │   build &   │         │                │                                  │
+│      │   GHCR push │         │                └─→ api.memoria.example.com        │
+│      │             │         │                      127.0.0.1:8080 (Memoria.Host)│
+│      └─► ng build ►│ ──scp──►│                      ├─→ 127.0.0.1:5432 (postgres)│
+│          dist/     │         │   certbot (per host)  │                            │
+│                    │         │                       └─ /jobs Hangfire dashboard │
+│  ssh: pull+restart │ ────────►  docker compose pull && up -d                     │
+└────────────────────┘         │  ufw: 22, 80, 443 ONLY                            │
+                               └───────────────────────────────────────────────────┘
 ```
 
 ---
@@ -208,49 +209,105 @@ the container crashes on startup.
 > ℹ️ `docker-compose.prod.yml` will land in `/opt/memoria/` automatically on
 > the first successful GitHub Actions run — you don't need to create it manually.
 
-### 1.8 Configure nginx vhost
+### 1.8 Configure nginx vhosts
 
-Copy `deploy/nginx-memoria.conf` from the repo to the VPS (manually for the
-first time — after this, you'll edit it in place when needed):
+Memoria runs on **two** vhosts: the SPA at `memoria.example.com` (static
+files) and the API at `api.memoria.example.com` (reverse-proxy to the .NET
+container). The Hangfire `/jobs` dashboard rides along on the api vhost.
 
-```bash
-# Easiest: clone the repo somewhere temporary just to grab the file.
-git clone --depth=1 https://github.com/futuricon/memoria /tmp/memoria-repo
-cp /tmp/memoria-repo/deploy/nginx-memoria.conf /etc/nginx/sites-available/memoria
-rm -rf /tmp/memoria-repo
-
-ln -s /etc/nginx/sites-available/memoria /etc/nginx/sites-enabled/memoria
-nginx -t
-systemctl reload nginx
-```
-
-Set up DNS first — add an **A record** for `memoria.example.com` pointing
-to your VPS's public IP. Wait ~1 min for propagation, then verify:
+Add **both A records** to DNS, pointing at the VPS public IP, before you
+touch nginx — certbot needs DNS resolution to issue the certs.
 
 ```bash
 PUBLIC_IP=$(curl -4 -s ifconfig.me)
 echo "VPS public IP: $PUBLIC_IP"
-dig +short memoria.example.com   # → should print PUBLIC_IP
+dig +short memoria.example.com      # → should print PUBLIC_IP
+dig +short api.memoria.example.com  # → should print PUBLIC_IP
 ```
 
-### 1.9 Obtain TLS cert via certbot
+Copy both vhost templates from the repo:
+
+```bash
+git clone --depth=1 https://github.com/futuricon/memoria /tmp/memoria-repo
+
+cp /tmp/memoria-repo/deploy/nginx-memoria.conf      /etc/nginx/sites-available/memoria
+cp /tmp/memoria-repo/deploy/nginx-memoria-api.conf  /etc/nginx/sites-available/memoria-api
+
+# Edit each file and replace `memoria.example.com` / `api.memoria.example.com`
+# with your real hostnames.
+sed -i "s/memoria\.example\.com/memoria.futuricon.net/g" /etc/nginx/sites-available/memoria
+sed -i "s/api\.memoria\.example\.com/api.memoria.futuricon.net/g; s/memoria\.example\.com/memoria.futuricon.net/g" /etc/nginx/sites-available/memoria-api
+
+rm -rf /tmp/memoria-repo
+
+ln -sf /etc/nginx/sites-available/memoria      /etc/nginx/sites-enabled/memoria
+ln -sf /etc/nginx/sites-available/memoria-api  /etc/nginx/sites-enabled/memoria-api
+
+nginx -t
+systemctl reload nginx
+```
+
+### 1.9 Obtain TLS certs via certbot
+
+Run certbot once per hostname. Each invocation will edit the corresponding
+`sites-available/` file in place to add the 443 server block and the 80→443
+redirect — leave those edits in place on future deploys.
 
 ```bash
 apt-get install -y certbot python3-certbot-nginx
+
 certbot --nginx \
   -d memoria.example.com \
   -m you@example.com \
-  --agree-tos \
-  --redirect \
-  --non-interactive
+  --agree-tos --redirect --non-interactive
 
-# Verify auto-renewal will work
+certbot --nginx \
+  -d api.memoria.example.com \
+  -m you@example.com \
+  --agree-tos --redirect --non-interactive
+
+# Verify auto-renewal will work for both
 certbot renew --dry-run
 ```
 
-After this `memoria.example.com` serves HTTPS and 80 redirects to 443.
-But there's nothing behind it yet — `curl https://memoria.example.com/healthz`
-will return 502 until the first GH Actions deploy puts the container up.
+### 1.10 Prepare the SPA directory
+
+The GitHub Actions deploy uploads the built Angular bundle to
+`/var/www/memoria-spa/browser/`. The `memoria` user (the SSH identity CI uses)
+must own this directory so `scp` can overwrite files without `sudo`.
+
+```bash
+mkdir -p /var/www/memoria-spa/browser
+chown -R memoria:memoria /var/www/memoria-spa
+chmod 755 /var/www/memoria-spa /var/www/memoria-spa/browser
+
+# nginx (running as www-data) must be able to read the files. Default umask
+# from scp gives 644 files / 755 dirs — that's already world-readable.
+```
+
+After the first successful GH Actions run, you should see:
+
+```bash
+ls /var/www/memoria-spa/browser/
+# → index.html  main-*.js  polyfills-*.js  styles-*.css  ...
+
+curl -fsS https://memoria.example.com/             # → SPA index.html
+curl -fsS https://api.memoria.example.com/healthz  # → {"status":"alive"}
+```
+
+### 1.11 Update OAuth redirect URIs
+
+The `/jobs` Hangfire dashboard moved from `memoria.example.com/jobs` to
+`api.memoria.example.com/jobs`, so the OAuth redirect URIs registered with
+Google and GitHub must be updated. Without this, sign-in for the dashboard
+fails with `redirect_uri_mismatch`.
+
+- **Google Cloud Console** → APIs & Services → Credentials → your OAuth 2.0
+  client → Authorized redirect URIs. Replace `…/jobs/signin-google`
+  with `https://api.memoria.example.com/jobs/signin-google`.
+- **GitHub** → Settings → Developer settings → OAuth Apps → your app →
+  Authorization callback URL. Replace with
+  `https://api.memoria.example.com/jobs/signin-github`.
 
 ---
 
@@ -287,13 +344,17 @@ on the VPS — the image itself contains zero secrets.
 
 ```bash
 # On your dev machine
-git add docker-compose.prod.yml .github/workflows/deploy.yml deploy/nginx-memoria.conf docs/DEPLOY.md
+git add docker-compose.prod.yml .github/workflows/deploy.yml \
+        deploy/nginx-memoria.conf deploy/nginx-memoria-api.conf \
+        frontend/ docs/DEPLOY.md
 git commit -m "ci: set up GitHub Actions deploy pipeline"
 git push origin main
 ```
 
-Watch the run at **github.com/futuricon/memoria/actions**. First run takes
-~5–7 min (Docker layers are cold); subsequent runs ~1–2 min.
+Watch the run at **github.com/futuricon/memoria/actions**. The pipeline now
+runs `build-and-push` (.NET image) and `build-frontend` (Angular bundle) in
+parallel, then `deploy` ssh+scp's both onto the VPS. First run takes ~6–8 min
+(Docker layers cold + npm cache cold); subsequent runs ~2–3 min.
 
 ---
 
@@ -305,10 +366,21 @@ docker ps                                    # memoria-app should be Up + health
 docker logs memoria-app --tail 50            # → "Memoria started, listening for requests"
 curl -fsS http://127.0.0.1:8080/healthz      # → {"status":"alive"}
 curl -fsS http://127.0.0.1:8080/readyz       # → {"status":"Healthy", ...}
+ls /var/www/memoria-spa/browser/index.html   # → exists (uploaded by GH Actions)
 
 # From anywhere
-curl -fsS https://memoria.example.com/healthz    # → {"status":"alive"}
+curl -fsS https://api.memoria.example.com/healthz   # → {"status":"alive"}
+curl -fsS https://memoria.example.com/ | head -1    # → <!doctype html>
 ```
+
+Open `https://memoria.example.com/` in a browser — the SPA should load the
+login screen. Sign in via email (a code is sent to your inbox) or the
+Telegram widget. Then:
+
+- `/` shows the dashboard widgets (hardest card, due today, upcoming, totals).
+- `/cards` lists your library; search and tag filters work.
+- `https://api.memoria.example.com/jobs` shows the Hangfire dashboard after
+  Google/GitHub OAuth.
 
 In Telegram, send `/start` to your bot — you should get the greeting.
 `/help` should list all commands.
@@ -450,6 +522,62 @@ Visit **github.com/futuricon?tab=packages** to confirm `memoria` exists.
 
 ---
 
+## Migrating an existing single-vhost deployment
+
+If you set this up before Phase 0F, your `memoria.example.com` vhost reverse-
+proxied everything to `127.0.0.1:8080`. The new split moves the API behind
+`api.memoria.example.com` and reuses `memoria.example.com` for SPA statics.
+
+Order matters — set up the api subdomain **first**, leave the old vhost in
+place until the api is verified working, then swap.
+
+```bash
+# 1. DNS: add A record for api.memoria.example.com → VPS IP. Verify.
+dig +short api.memoria.example.com
+
+# 2. Install the new api vhost alongside the existing one (keeps old setup live).
+git clone --depth=1 https://github.com/futuricon/memoria /tmp/memoria-repo
+cp /tmp/memoria-repo/deploy/nginx-memoria-api.conf  /etc/nginx/sites-available/memoria-api
+sed -i "s/api\.memoria\.example\.com/api.memoria.YOUR-DOMAIN/g; s/memoria\.example\.com/memoria.YOUR-DOMAIN/g" \
+  /etc/nginx/sites-available/memoria-api
+ln -sf /etc/nginx/sites-available/memoria-api /etc/nginx/sites-enabled/memoria-api
+nginx -t && systemctl reload nginx
+
+# 3. Issue cert for api subdomain.
+certbot --nginx -d api.memoria.YOUR-DOMAIN -m you@example.com \
+  --agree-tos --redirect --non-interactive
+
+# 4. Update OAuth redirect URIs in Google + GitHub consoles
+#    (see step 1.11 above). Test /jobs login on the new subdomain BEFORE
+#    flipping the SPA vhost — otherwise admins can't get into Hangfire.
+
+# 5. Prepare the SPA directory.
+mkdir -p /var/www/memoria-spa/browser
+chown -R memoria:memoria /var/www/memoria-spa
+
+# 6. Trigger a GH Actions run to upload the first SPA bundle.
+#    Verify /var/www/memoria-spa/browser/index.html exists after the run.
+
+# 7. Swap the old memoria.example.com vhost for the SPA template.
+cp /tmp/memoria-repo/deploy/nginx-memoria.conf /etc/nginx/sites-available/memoria
+sed -i "s/memoria\.example\.com/memoria.YOUR-DOMAIN/g" /etc/nginx/sites-available/memoria
+
+# certbot already added a 443 ssl block to the old file — that block must be
+# preserved when replacing the file. Either:
+#   a) edit by hand, keeping certbot's `listen 443 ssl;` server block
+#      and the 80 → 443 redirect, OR
+#   b) delete the cert, replace, re-run certbot:
+#        certbot delete --cert-name memoria.YOUR-DOMAIN
+#        certbot --nginx -d memoria.YOUR-DOMAIN ... (as in 1.9)
+
+nginx -t && systemctl reload nginx
+rm -rf /tmp/memoria-repo
+```
+
+After step 7, the old `memoria.YOUR-DOMAIN/healthz` and `/api/v1/*` paths
+**stop working** — clients must use `api.memoria.YOUR-DOMAIN`. The Telegram
+bot itself is unaffected (it uses long polling, not the public HTTPS surface).
+
 ## Security checklist
 
 - [ ] `listen_addresses = 'localhost'` in `postgresql.conf`.
@@ -461,3 +589,8 @@ Visit **github.com/futuricon?tab=packages** to confirm `memoria` exists.
 - [ ] Hangfire `/jobs` requires OAuth — without OAuth keys it's unreachable.
 - [ ] Rate limit on `/api/v1/auth/*` is 5 req/min/IP — already wired.
 - [ ] HTTPS-only — certbot's `--redirect` puts 80 → 443 redirect in nginx.
+- [ ] `/var/www/memoria-spa` owned by `memoria:memoria` so CI scp succeeds
+      without sudo; nginx (`www-data`) reads via the world-readable bit.
+- [ ] `Cors:AllowedOrigins` in `appsettings.json` lists the production SPA
+      origin (`https://memoria.YOUR-DOMAIN`) — without it, browser fetches
+      from the SPA to the api subdomain are blocked.
