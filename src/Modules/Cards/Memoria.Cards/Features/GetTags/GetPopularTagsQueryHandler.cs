@@ -4,7 +4,6 @@ using Memoria.Cards.Contracts.Dtos;
 using Memoria.Cards.Contracts.Queries;
 using Memoria.Cards.Persistence;
 using Memoria.Shared.Kernel.Results;
-using Npgsql;
 
 namespace Memoria.Cards.Features.GetTags;
 
@@ -26,25 +25,22 @@ internal sealed class GetPopularTagsQueryHandler : IRequestHandler<GetPopularTag
 
         var count = Math.Clamp(request.Count, 1, 50);
     
-        var sql = @"
-        SELECT 
-            t.id AS Id,
-            t.normalized_name AS Name,
-            COUNT(ct.card_id) AS CardCount
-        FROM cards.tags t
-        INNER JOIN cards.card_tags ct ON ct.tag_id = t.id
-        INNER JOIN cards.cards c ON c.id = ct.card_id
-        WHERE t.user_id = @UserId
-            AND c.deleted_at IS NULL
-        GROUP BY t.id, t.normalized_name
-        HAVING COUNT(ct.card_id) > 0
-        ORDER BY CardCount DESC, Name ASC
-        LIMIT @Count";
+        var query = from tag in _db.Tags
+            where tag.UserId == request.UserId
+            join ct in _db.CardTags on tag.Id equals ct.TagId
+            join card in _db.Cards on ct.CardId equals card.Id
+            where card.DeletedAt == null
+            group ct by new { tag.Id, tag.NormalizedName } into g
+            select new TagDto(
+                g.Key.Id,
+                g.Key.NormalizedName,
+                g.Count()
+            );
 
-        var items = await _db.Database
-            .SqlQueryRaw<TagDto>(sql, 
-                new NpgsqlParameter("@UserId", request.UserId),
-                new NpgsqlParameter("@Count", count))
+        var items = await query
+            .OrderByDescending(x => x.CardCount)
+            .ThenBy(x => x.Name)
+            .Take(count)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
