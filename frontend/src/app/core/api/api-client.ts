@@ -10,9 +10,13 @@ import {
   CardWithGradeDto,
   CurrentUserDto,
   DueReminderDto,
+  GradingResult,
   HeatmapDayDto,
   PagedResult,
   RatingDistributionDto,
+  RecordReviewPayload,
+  RevealedAnswerDto,
+  ReviewDto,
   StreakDto,
   StuckCardDto,
   TagAverageDto,
@@ -131,6 +135,26 @@ export class ApiClient {
       .set('minReviews', String(minReviews));
     return this.http.get<TagAverageDto[]>(
       `${this.base}/api/v1/cards/tag-averages`, { params });
+  }
+
+  revealReminder(reminderId: string): Observable<RevealedAnswerDto> {
+    return this.http.post<RevealedAnswerDto>(
+      `${this.base}/api/v1/reminders/${reminderId}/reveal`, {});
+  }
+
+  skipReminder(reminderId: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/api/v1/reminders/${reminderId}/skip`, {});
+  }
+
+  gradeAnswer(cardId: string, userAnswer: string): Observable<GradingResult> {
+    return this.http.post<GradingResult>(
+      `${this.base}/api/v1/cards/${cardId}/grade-answer`,
+      { userAnswer });
+  }
+
+  recordReview(cardId: string, payload: RecordReviewPayload): Observable<ReviewDto> {
+    return this.http.post<ReviewDto>(
+      `${this.base}/api/v1/cards/${cardId}/review`, payload);
   }
 
   pauseCard(id: string): Observable<void> {

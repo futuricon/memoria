@@ -1,5 +1,7 @@
 using MediatR;
 
+using Memoria.AI.Contracts.Abstractions;
+using Memoria.AI.Contracts.Dtos;
 using Memoria.Api.Authentication;
 using Memoria.Api.Configuration;
 using Memoria.Api.Results;
@@ -19,7 +21,23 @@ using Microsoft.AspNetCore.Routing;
 
 namespace Memoria.Api.Endpoints;
 
-public sealed record RecordReviewRequest(Guid? ReminderId, Rating Rating, string? Note);
+/// <summary>
+/// Body of <c>POST /api/v1/cards/{id}/review</c>. The AI fields are filled by
+/// the SPA when the user submitted a free-text answer and accepted the
+/// AI-suggested rating (<c>AutoGraded=true</c>); they're <c>null</c> for
+/// manual Note ratings or when the user overrides the AI suggestion.
+/// </summary>
+public sealed record RecordReviewRequest(
+    Guid? ReminderId,
+    Rating Rating,
+    string? Note,
+    string? AnswerText = null,
+    int? AiScore = null,
+    string? AiFeedback = null,
+    bool AutoGraded = false);
+
+/// <summary>Body of <c>POST /api/v1/cards/{id}/grade-answer</c>.</summary>
+public sealed record GradeAnswerRequest(string UserAnswer);
 
 /// <summary>
 /// Composite DTO returned by SPA dashboard endpoints. Joins a card summary
@@ -325,9 +343,51 @@ internal static class CardsActivityEndpoints
                         id,
                         req.ReminderId,
                         req.Rating,
-                        req.Note), ct)
+                        req.Note,
+                        req.AnswerText,
+                        req.AiScore,
+                        req.AiFeedback,
+                        req.AutoGraded), ct)
                     .ConfigureAwait(false);
                 return result.ToHttpResult();
+            });
+
+        group.MapPost("/{id:guid}/grade-answer", async (
+                HttpContext ctx,
+                Guid id,
+                [FromBody] GradeAnswerRequest req,
+                IMediator mediator,
+                IAnswerGrader grader,
+                CancellationToken ct) =>
+            {
+                var user = ctx.GetCurrentUser();
+
+                if (string.IsNullOrWhiteSpace(req.UserAnswer))
+                {
+                    return Result<GradingResult>.Failure(Error.Validation(
+                        "reviews.answer_empty", "Answer cannot be empty.")).ToHttpResult();
+                }
+
+                var cardResult = await mediator
+                    .Send(new GetCardByIdQuery(user.Id, id, IncludeDeleted: false), ct)
+                    .ConfigureAwait(false);
+                if (cardResult.IsFailure)
+                {
+                    return cardResult.ToHttpResult();
+                }
+
+                var card = cardResult.Value!;
+                if (card.Type != CardType.Question)
+                {
+                    return Result<GradingResult>.Failure(Error.Validation(
+                        "reviews.card_not_question",
+                        "Only Question cards can be auto-graded.")).ToHttpResult();
+                }
+
+                var gradeResult = await grader
+                    .GradeAsync(new GradingRequest(card.Title, card.Body, req.UserAnswer), ct)
+                    .ConfigureAwait(false);
+                return gradeResult.ToHttpResult();
             });
 
         return app;

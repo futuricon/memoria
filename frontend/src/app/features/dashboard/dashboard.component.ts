@@ -100,6 +100,12 @@ const TELEGRAM_BANNER_DISMISS_KEY = 'memoria.telegramBannerDismissed';
           <p class="text-sm text-slate-500 mt-1">
             {{ count === 0 ? 'Nothing scheduled — enjoy your day.' : 'cards waiting' }}
           </p>
+          @if (count > 0) {
+            <a
+              routerLink="/practice"
+              class="inline-block mt-3 px-3 py-1.5 text-sm rounded bg-slate-900 text-white hover:bg-slate-800"
+            >Start practice →</a>
+          }
         }
       </section>
 

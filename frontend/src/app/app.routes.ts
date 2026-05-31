@@ -30,6 +30,13 @@ export const APP_ROUTES: Routes = [
           ),
       },
       {
+        path: 'practice',
+        loadComponent: () =>
+          import('./features/practice/practice.component').then(
+            (m) => m.PracticeComponent,
+          ),
+      },
+      {
         path: 'cards',
         loadComponent: () =>
           import('./features/cards/cards-list.component').then(

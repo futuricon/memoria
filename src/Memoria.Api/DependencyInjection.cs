@@ -150,6 +150,7 @@ public static class DependencyInjection
         app.MapCardsEndpoints();
         app.MapCardsTrashEndpoints();
         app.MapCardsActivityEndpoints();
+        app.MapRemindersEndpoints();
         app.MapTagsEndpoints();
 
         return app;

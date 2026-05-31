@@ -125,3 +125,40 @@ export interface TagAverageDto {
   reviewCount: number;
   avgScore: number;
 }
+
+export type Rating = 'Forgot' | 'Hard' | 'Good' | 'Easy';
+
+export interface RevealedAnswerDto {
+  cardId: string;
+  title: string;
+  body: string;
+}
+
+export type GradingVerdict = 'Incorrect' | 'Partial' | 'Correct';
+
+export interface GradingResult {
+  score: number;
+  verdict: GradingVerdict;
+  feedback: string;
+}
+
+export interface RecordReviewPayload {
+  reminderId?: string | null;
+  rating: Rating;
+  note?: string | null;
+  answerText?: string | null;
+  aiScore?: number | null;
+  aiFeedback?: string | null;
+  autoGraded?: boolean;
+}
+
+export interface ReviewDto {
+  id: string;
+  cardId: string;
+  userId: string;
+  reminderId: string | null;
+  rating: Rating;
+  cardTitleSnapshot: string;
+  reviewedAt: string;
+  note: string | null;
+}
