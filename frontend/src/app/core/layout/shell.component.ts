@@ -61,9 +61,9 @@ interface NavItem {
         (click)="closeSidebar()"
       ></div>
 
-      <!-- Sidebar — static on md+, off-canvas drawer on mobile -->
+      <!-- Sidebar — sticky on md+, off-canvas drawer on mobile -->
       <aside
-        class="sidebar-mobile md:translate-x-0 md:static fixed inset-y-0 left-0 z-40 w-64 bg-sidebar border-r border-default flex flex-col pb-safe"
+        class="sidebar-mobile md:translate-x-0 md:sticky md:top-0 md:h-screen md:self-start fixed inset-y-0 left-0 z-40 w-64 bg-sidebar border-r border-default flex flex-col pb-safe"
         [class.is-open]="sidebarOpen()"
       >
         <div class="h-12 px-5 flex items-center gap-2 border-b border-default">
