@@ -1,31 +1,35 @@
-import { Dialog } from '@angular/cdk/dialog';
-import { Component, inject, resource, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { firstValueFrom } from 'rxjs';
+import { Dialog } from "@angular/cdk/dialog";
+import { Component, inject, resource, signal } from "@angular/core";
+import { FormsModule } from "@angular/forms";
+import { firstValueFrom } from "rxjs";
 
-import { ApiClient } from '../../core/api/api-client';
-import { CardSummaryDto } from '../../core/api/dto';
-import { openConfirm } from '../../core/ui/confirm-dialog.component';
-import { GradePillComponent } from '../../core/ui/grade-pill.component';
-import { IconComponent } from '../../core/ui/icon.component';
-import { openAddDrawer } from './add-card-drawer.component';
-import { openEditDrawer } from './edit-card-drawer.component';
+import { ApiClient } from "../../core/api/api-client";
+import { CardSummaryDto } from "../../core/api/dto";
+import { openConfirm } from "../../core/ui/confirm-dialog.component";
+import { GradePillComponent } from "../../core/ui/grade-pill.component";
+import { IconComponent } from "../../core/ui/icon.component";
+import { openAddDrawer } from "./add-card-drawer.component";
+import { openEditDrawer } from "./edit-card-drawer.component";
 
 const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 @Component({
-  selector: 'app-cards-list',
+  selector: "app-cards-list",
   standalone: true,
   imports: [FormsModule, GradePillComponent, IconComponent],
   template: `
     <div class="px-4 md:px-8 py-6 md:py-8 max-w-6xl mx-auto">
       <header class="mb-5 flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">Cards</h1>
+          <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">
+            Cards
+          </h1>
           @if (page.value(); as p) {
             <p class="text-fg-secondary text-sm">{{ p.totalCount }} total</p>
           } @else {
-            <p class="text-fg-secondary text-sm">Search and browse your library.</p>
+            <p class="text-fg-secondary text-sm">
+              Search and browse your library.
+            </p>
           }
         </div>
         <button
@@ -41,7 +45,10 @@ const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
       <!-- Search -->
       <div class="flex flex-col md:flex-row md:items-center gap-3 mb-4">
         <div class="relative flex-1">
-          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted" aria-hidden="true">
+          <span
+            class="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted"
+            aria-hidden="true"
+          >
             <app-icon name="search" [size]="16" />
           </span>
           <input
@@ -74,7 +81,9 @@ const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
                 (click)="toggleTag(t.name)"
               >
                 <span>#{{ t.name }}</span>
-                <span class="text-fg-muted tabular-nums">{{ t.cardCount }}</span>
+                <span class="text-fg-muted tabular-nums">{{
+                  t.cardCount
+                }}</span>
               </button>
             }
           </div>
@@ -93,34 +102,56 @@ const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
       } @else {
         @let items = page.value()?.items ?? [];
         @if (items.length === 0) {
-          <div class="bg-surface border border-default rounded-xl shadow-card p-10 md:p-14 text-center">
-            <div class="mx-auto w-20 h-20 rounded-full grid place-items-center mb-4 text-brand"
-                 style="background: color-mix(in srgb, var(--color-brand-500) 10%, transparent);">
+          <div
+            class="bg-surface border border-default rounded-xl shadow-card p-10 md:p-14 text-center"
+          >
+            <div
+              class="mx-auto w-20 h-20 rounded-full grid place-items-center mb-4 text-brand"
+              style="background: color-mix(in srgb, var(--color-brand-500) 10%, transparent);"
+            >
               <app-icon name="search" [size]="28" />
             </div>
-            <h2 class="text-lg font-semibold mb-1">No cards match your filters</h2>
-            <p class="text-fg-secondary text-sm max-w-md mx-auto">Clear the search or pick different tags to widen the net.</p>
+            <h2 class="text-lg font-semibold mb-1">
+              No cards match your filters
+            </h2>
+            <p class="text-fg-secondary text-sm max-w-md mx-auto">
+              Clear the search or pick different tags to widen the net.
+            </p>
           </div>
         } @else {
-          <div class="bg-surface border border-default rounded-xl shadow-card divide-y divide-default overflow-hidden">
+          <div
+            class="bg-surface border border-default rounded-xl shadow-card divide-y divide-default overflow-hidden"
+          >
             @for (card of items; track card.id) {
               <div class="px-4 py-3 md:px-5 md:py-4 flex items-start gap-3">
                 <div class="min-w-0 flex-1">
                   <div class="flex items-center gap-2 flex-wrap">
-                    <span [class]="card.type === 'Question' ? 'chip-question' : 'chip-note'">
+                    <span
+                      [class]="
+                        card.type === 'Question' ? 'chip-question' : 'chip-note'
+                      "
+                    >
                       <app-icon
-                        [name]="card.type === 'Question' ? 'help-circle' : 'file-text'"
+                        [name]="
+                          card.type === 'Question' ? 'help-circle' : 'file-text'
+                        "
                         [size]="11"
                       />
                       {{ card.type }}
                     </span>
-                    <h3 class="text-sm font-medium text-fg truncate">{{ card.title }}</h3>
+                    <h3 class="text-sm font-medium text-fg truncate">
+                      {{ card.title }}
+                    </h3>
                     @if (card.isPaused) {
                       <span
                         class="text-[10px] px-1.5 py-0.5 rounded-full inline-flex items-center gap-1"
                         [style.color]="'var(--color-state-hard)'"
-                        [style.background]="'color-mix(in srgb, var(--color-state-hard) 14%, transparent)'"
-                        [title]="'Paused at stage ' + (card.pausedAtStage ?? 'start')"
+                        [style.background]="
+                          'color-mix(in srgb, var(--color-state-hard) 14%, transparent)'
+                        "
+                        [title]="
+                          'Paused at stage ' + (card.pausedAtStage ?? 'start')
+                        "
                       >
                         <app-icon name="pause" [size]="10" />
                         paused
@@ -128,17 +159,27 @@ const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
                     }
                   </div>
                   @if (card.tags.length > 0) {
-                    <div class="mt-1 flex items-center gap-x-2 gap-y-1 flex-wrap text-xs text-fg-muted">
+                    <div
+                      class="mt-1 flex items-center gap-x-2 gap-y-1 flex-wrap text-xs text-fg-muted"
+                    >
                       @for (t of card.tags; track t; let last = $last) {
                         <span>#{{ t }}</span>
-                        @if (!last) { <span aria-hidden="true">·</span> }
+                        @if (!last) {
+                          <span aria-hidden="true">·</span>
+                        }
                       }
                       <span aria-hidden="true">·</span>
-                      <span>{{ card.reviewCount }} review{{ card.reviewCount === 1 ? '' : 's' }}</span>
+                      <span
+                        >{{ card.reviewCount }} review{{
+                          card.reviewCount === 1 ? "" : "s"
+                        }}</span
+                      >
                     </div>
                   } @else {
                     <div class="mt-1 text-xs text-fg-muted">
-                      {{ card.reviewCount }} review{{ card.reviewCount === 1 ? '' : 's' }}
+                      {{ card.reviewCount }} review{{
+                        card.reviewCount === 1 ? "" : "s"
+                      }}
                     </div>
                   }
                 </div>
@@ -156,7 +197,9 @@ const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
                     (click)="onEdit(card)"
                     [disabled]="!isEditable(card) || actionBusy() === card.id"
                     class="inline-flex items-center gap-1 px-2 h-8 text-xs rounded-md border border-default text-fg-secondary hover:bg-surface-hover disabled:opacity-40 disabled:cursor-not-allowed"
-                    [title]="isEditable(card) ? 'Edit' : 'Edit window (24 h) is closed'"
+                    [title]="
+                      isEditable(card) ? 'Edit' : 'Edit window (24 h) is closed'
+                    "
                   >
                     <app-icon name="pencil" [size]="12" />
                     Edit
@@ -188,7 +231,9 @@ const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
                     [disabled]="actionBusy() === card.id"
                     class="inline-flex items-center gap-1 px-2 h-8 text-xs rounded-md border hover:bg-surface-hover disabled:opacity-40"
                     [style.color]="'var(--color-rating-again)'"
-                    [style.borderColor]="'color-mix(in srgb, var(--color-rating-again) 35%, var(--color-border))'"
+                    [style.borderColor]="
+                      'color-mix(in srgb, var(--color-rating-again) 35%, var(--color-border))'
+                    "
                   >
                     <app-icon name="trash-2" [size]="12" />
                     Delete
@@ -211,28 +256,38 @@ const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
                       <button
                         type="button"
                         (click)="onEdit(card); closeMenu()"
-                        [disabled]="!isEditable(card) || actionBusy() === card.id"
+                        [disabled]="
+                          !isEditable(card) || actionBusy() === card.id
+                        "
                         class="w-full px-3 py-2 text-xs text-fg hover:bg-surface-hover flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-                      ><app-icon name="pencil" [size]="14" /> Edit</button>
+                      >
+                        <app-icon name="pencil" [size]="14" /> Edit
+                      </button>
                       @if (card.isPaused) {
                         <button
                           type="button"
                           (click)="onUnpause(card); closeMenu()"
                           class="w-full px-3 py-2 text-xs text-fg hover:bg-surface-hover flex items-center gap-2"
-                        ><app-icon name="play" [size]="14" /> Unpause</button>
+                        >
+                          <app-icon name="play" [size]="14" /> Unpause
+                        </button>
                       } @else {
                         <button
                           type="button"
                           (click)="onPause(card); closeMenu()"
                           class="w-full px-3 py-2 text-xs text-fg hover:bg-surface-hover flex items-center gap-2"
-                        ><app-icon name="pause" [size]="14" /> Pause</button>
+                        >
+                          <app-icon name="pause" [size]="14" /> Pause
+                        </button>
                       }
                       <button
                         type="button"
                         (click)="onDelete(card); closeMenu()"
                         class="w-full px-3 py-2 text-xs hover:bg-surface-hover flex items-center gap-2"
                         [style.color]="'var(--color-rating-again)'"
-                      ><app-icon name="trash-2" [size]="14" /> Delete</button>
+                      >
+                        <app-icon name="trash-2" [size]="14" /> Delete
+                      </button>
                     </div>
                   }
                 </button>
@@ -250,7 +305,9 @@ const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
               <app-icon name="chevron-left" [size]="14" />
               Prev
             </button>
-            <span class="text-fg-muted">Page {{ pageNum() }} of {{ totalPages() }}</span>
+            <span class="text-fg-muted"
+              >Page {{ pageNum() }} of {{ totalPages() }}</span
+            >
             <button
               type="button"
               (click)="next()"
@@ -274,7 +331,7 @@ export class CardsListComponent {
   private readonly api = inject(ApiClient);
   private readonly dialog = inject(Dialog);
 
-  readonly search = signal('');
+  readonly search = signal("");
   readonly selectedTags = signal<string[]>([]);
   readonly pageNum = signal(1);
   readonly refreshTick = signal(0);
@@ -287,7 +344,7 @@ export class CardsListComponent {
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly tags = resource({
-    loader: () => firstValueFrom(this.api.listTags()),
+    loader: () => firstValueFrom(this.api.listPopularTags(5)),
   });
 
   readonly page = resource({
@@ -320,7 +377,9 @@ export class CardsListComponent {
 
   toggleTag(tag: string): void {
     const cur = this.selectedTags();
-    const next = cur.includes(tag) ? cur.filter((t) => t !== tag) : [...cur, tag];
+    const next = cur.includes(tag)
+      ? cur.filter((t) => t !== tag)
+      : [...cur, tag];
     this.selectedTags.set(next);
     this.pageNum.set(1);
   }
@@ -370,7 +429,7 @@ export class CardsListComponent {
         if (updated) this.refresh();
       });
     } catch (e) {
-      this.actionError.set(this.describe(e, 'Could not open the card.'));
+      this.actionError.set(this.describe(e, "Could not open the card."));
     }
   }
 
@@ -381,7 +440,7 @@ export class CardsListComponent {
       await firstValueFrom(this.api.pauseCard(card.id));
       this.refresh();
     } catch (e) {
-      this.actionError.set(this.describe(e, 'Could not pause the card.'));
+      this.actionError.set(this.describe(e, "Could not pause the card."));
     } finally {
       this.actionBusy.set(null);
     }
@@ -394,7 +453,7 @@ export class CardsListComponent {
       await firstValueFrom(this.api.unpauseCard(card.id));
       this.refresh();
     } catch (e) {
-      this.actionError.set(this.describe(e, 'Could not unpause the card.'));
+      this.actionError.set(this.describe(e, "Could not unpause the card."));
     } finally {
       this.actionBusy.set(null);
     }
@@ -402,9 +461,9 @@ export class CardsListComponent {
 
   onDelete(card: CardSummaryDto): void {
     const ref = openConfirm(this.dialog, {
-      title: 'Delete card?',
+      title: "Delete card?",
       message: `"${card.title}" will be moved to trash. You can restore it later from the trash page.`,
-      confirmLabel: 'Delete',
+      confirmLabel: "Delete",
       destructive: true,
     });
 
@@ -416,7 +475,7 @@ export class CardsListComponent {
         await firstValueFrom(this.api.softDeleteCard(card.id));
         this.refresh();
       } catch (e) {
-        this.actionError.set(this.describe(e, 'Could not delete the card.'));
+        this.actionError.set(this.describe(e, "Could not delete the card."));
       } finally {
         this.actionBusy.set(null);
       }
@@ -428,7 +487,7 @@ export class CardsListComponent {
   }
 
   private describe(e: unknown, fallback: string): string {
-    if (e && typeof e === 'object' && 'error' in e) {
+    if (e && typeof e === "object" && "error" in e) {
       const err = (e as { error?: { message?: string } }).error;
       if (err?.message) return err.message;
     }

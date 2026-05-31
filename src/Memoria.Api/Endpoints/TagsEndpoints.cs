@@ -32,6 +32,22 @@ internal static class TagsEndpoints
             .RequireAuthorization()
             .RequireRateLimiting(RateLimitingConfiguration.DefaultPolicy);
 
+        app.MapGet("/api/v1/tags/popular", async (
+            HttpContext ctx,
+            IMediator mediator,
+            int count,
+            CancellationToken ct) =>
+        {
+            var user = ctx.GetCurrentUser();
+
+            var result = await mediator
+                .Send(new GetPopularTagsQuery(user.Id, count), ct);
+
+            return result.ToHttpResult();
+        })
+        .RequireAuthorization()
+        .RequireRateLimiting(RateLimitingConfiguration.DefaultPolicy);
+
         return app;
     }
 }

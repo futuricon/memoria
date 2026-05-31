@@ -1,8 +1,8 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { HttpClient, HttpParams } from "@angular/common/http";
+import { Injectable, inject } from "@angular/core";
+import { Observable } from "rxjs";
 
-import { environment } from '../../../environments/environment';
+import { environment } from "../../../environments/environment";
 import {
   AddCardPayload,
   CardDto,
@@ -26,9 +26,9 @@ import {
   UpdateCardPayload,
   UpdateMePayload,
   UserIdentityDto,
-} from './dto';
+} from "./dto";
 
-@Injectable({ providedIn: 'root' })
+@Injectable({ providedIn: "root" })
 export class ApiClient {
   private readonly http = inject(HttpClient);
   private readonly base = environment.apiBase;
@@ -40,11 +40,15 @@ export class ApiClient {
     pageSize?: number;
   }): Observable<PagedResult<CardSummaryDto>> {
     let params = new HttpParams()
-      .set('page', String(opts.page ?? 1))
-      .set('pageSize', String(opts.pageSize ?? 10));
-    if (opts.search?.trim()) params = params.set('search', opts.search.trim());
-    if (opts.tags && opts.tags.length > 0) params = params.set('tags', opts.tags.join(','));
-    return this.http.get<PagedResult<CardSummaryDto>>(`${this.base}/api/v1/cards`, { params });
+      .set("page", String(opts.page ?? 1))
+      .set("pageSize", String(opts.pageSize ?? 10));
+    if (opts.search?.trim()) params = params.set("search", opts.search.trim());
+    if (opts.tags && opts.tags.length > 0)
+      params = params.set("tags", opts.tags.join(","));
+    return this.http.get<PagedResult<CardSummaryDto>>(
+      `${this.base}/api/v1/cards`,
+      { params },
+    );
   }
 
   getCard(id: string): Observable<CardDto> {
@@ -55,20 +59,35 @@ export class ApiClient {
     return this.http.get<TagDto[]>(`${this.base}/api/v1/tags`);
   }
 
+  listPopularTags(count: number): Observable<TagDto[]> {
+    const params = new HttpParams().set("count", String(count));
+    return this.http.get<TagDto[]>(`${this.base}/api/v1/tags/popular`, {
+      params,
+    });
+  }
+
   dueToday(): Observable<DueReminderDto[]> {
-    return this.http.get<DueReminderDto[]>(`${this.base}/api/v1/cards/due-today`);
+    return this.http.get<DueReminderDto[]>(
+      `${this.base}/api/v1/cards/due-today`,
+    );
   }
 
   upcoming(take = 10): Observable<DueReminderDto[]> {
-    const params = new HttpParams().set('take', String(take));
-    return this.http.get<DueReminderDto[]>(`${this.base}/api/v1/cards/upcoming`, { params });
+    const params = new HttpParams().set("take", String(take));
+    return this.http.get<DueReminderDto[]>(
+      `${this.base}/api/v1/cards/upcoming`,
+      { params },
+    );
   }
 
   worst(take = 5, minReviews = 3): Observable<CardWithGradeDto[]> {
     const params = new HttpParams()
-      .set('take', String(take))
-      .set('minReviews', String(minReviews));
-    return this.http.get<CardWithGradeDto[]>(`${this.base}/api/v1/cards/worst`, { params });
+      .set("take", String(take))
+      .set("minReviews", String(minReviews));
+    return this.http.get<CardWithGradeDto[]>(
+      `${this.base}/api/v1/cards/worst`,
+      { params },
+    );
   }
 
   startTelegramLinking(): Observable<TelegramLinkingTokenDto> {
@@ -92,14 +111,19 @@ export class ApiClient {
 
   listTrash(page = 1, pageSize = 10): Observable<PagedResult<TrashedCardDto>> {
     const params = new HttpParams()
-      .set('page', String(page))
-      .set('pageSize', String(pageSize));
+      .set("page", String(page))
+      .set("pageSize", String(pageSize));
     return this.http.get<PagedResult<TrashedCardDto>>(
-      `${this.base}/api/v1/cards/trash`, { params });
+      `${this.base}/api/v1/cards/trash`,
+      { params },
+    );
   }
 
   restoreCard(id: string): Observable<CardDto> {
-    return this.http.post<CardDto>(`${this.base}/api/v1/cards/${id}/restore`, {});
+    return this.http.post<CardDto>(
+      `${this.base}/api/v1/cards/${id}/restore`,
+      {},
+    );
   }
 
   permanentlyDeleteCard(id: string): Observable<void> {
@@ -111,51 +135,74 @@ export class ApiClient {
   }
 
   ratingDistribution(days = 30): Observable<RatingDistributionDto> {
-    const params = new HttpParams().set('days', String(days));
+    const params = new HttpParams().set("days", String(days));
     return this.http.get<RatingDistributionDto>(
-      `${this.base}/api/v1/cards/rating-distribution`, { params });
+      `${this.base}/api/v1/cards/rating-distribution`,
+      { params },
+    );
   }
 
   activityHeatmap(days = 90): Observable<HeatmapDayDto[]> {
-    const params = new HttpParams().set('days', String(days));
+    const params = new HttpParams().set("days", String(days));
     return this.http.get<HeatmapDayDto[]>(
-      `${this.base}/api/v1/cards/activity-heatmap`, { params });
+      `${this.base}/api/v1/cards/activity-heatmap`,
+      { params },
+    );
   }
 
-  stuckCards(take = 10, minConsecutiveForgot = 3, maxStage = 2): Observable<StuckCardDto[]> {
+  stuckCards(
+    take = 10,
+    minConsecutiveForgot = 3,
+    maxStage = 2,
+  ): Observable<StuckCardDto[]> {
     const params = new HttpParams()
-      .set('take', String(take))
-      .set('minConsecutiveForgot', String(minConsecutiveForgot))
-      .set('maxStage', String(maxStage));
-    return this.http.get<StuckCardDto[]>(`${this.base}/api/v1/cards/stuck`, { params });
+      .set("take", String(take))
+      .set("minConsecutiveForgot", String(minConsecutiveForgot))
+      .set("maxStage", String(maxStage));
+    return this.http.get<StuckCardDto[]>(`${this.base}/api/v1/cards/stuck`, {
+      params,
+    });
   }
 
   tagAverages(take = 10, minReviews = 3): Observable<TagAverageDto[]> {
     const params = new HttpParams()
-      .set('take', String(take))
-      .set('minReviews', String(minReviews));
+      .set("take", String(take))
+      .set("minReviews", String(minReviews));
     return this.http.get<TagAverageDto[]>(
-      `${this.base}/api/v1/cards/tag-averages`, { params });
+      `${this.base}/api/v1/cards/tag-averages`,
+      { params },
+    );
   }
 
   revealReminder(reminderId: string): Observable<RevealedAnswerDto> {
     return this.http.post<RevealedAnswerDto>(
-      `${this.base}/api/v1/reminders/${reminderId}/reveal`, {});
+      `${this.base}/api/v1/reminders/${reminderId}/reveal`,
+      {},
+    );
   }
 
   skipReminder(reminderId: string): Observable<void> {
-    return this.http.post<void>(`${this.base}/api/v1/reminders/${reminderId}/skip`, {});
+    return this.http.post<void>(
+      `${this.base}/api/v1/reminders/${reminderId}/skip`,
+      {},
+    );
   }
 
   gradeAnswer(cardId: string, userAnswer: string): Observable<GradingResult> {
     return this.http.post<GradingResult>(
       `${this.base}/api/v1/cards/${cardId}/grade-answer`,
-      { userAnswer });
+      { userAnswer },
+    );
   }
 
-  recordReview(cardId: string, payload: RecordReviewPayload): Observable<ReviewDto> {
+  recordReview(
+    cardId: string,
+    payload: RecordReviewPayload,
+  ): Observable<ReviewDto> {
     return this.http.post<ReviewDto>(
-      `${this.base}/api/v1/cards/${cardId}/review`, payload);
+      `${this.base}/api/v1/cards/${cardId}/review`,
+      payload,
+    );
   }
 
   pauseCard(id: string): Observable<void> {
@@ -175,6 +222,8 @@ export class ApiClient {
   }
 
   getIdentities(): Observable<UserIdentityDto[]> {
-    return this.http.get<UserIdentityDto[]>(`${this.base}/api/v1/users/me/identities`);
+    return this.http.get<UserIdentityDto[]>(
+      `${this.base}/api/v1/users/me/identities`,
+    );
   }
 }

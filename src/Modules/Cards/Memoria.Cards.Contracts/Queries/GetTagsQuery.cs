@@ -9,3 +9,5 @@ namespace Memoria.Cards.Contracts.Queries;
 /// Список тегов пользователя со счётчиком привязанных активных карточек.
 /// </summary>
 public sealed record GetTagsQuery(Guid UserId) : IRequest<Result<IReadOnlyList<TagDto>>>;
+
+public sealed record GetPopularTagsQuery(Guid UserId, int Count) : IRequest<Result<IReadOnlyList<TagDto>>>;
