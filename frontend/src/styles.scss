@@ -242,9 +242,12 @@ body {
   border-radius: 6px;
 }
 
-// Mobile sidebar drawer transitions
-.sidebar-mobile { transform: translateX(-100%); transition: transform 220ms ease; }
-.sidebar-mobile.is-open { transform: translateX(0); }
+// Mobile sidebar drawer transitions (only translate on mobile;
+// on md+ the sidebar is static and always visible)
+@media (max-width: 767px) {
+  .sidebar-mobile { transform: translateX(-100%); transition: transform 220ms ease; }
+  .sidebar-mobile.is-open { transform: translateX(0); }
+}
 .sidebar-backdrop { opacity: 0; pointer-events: none; transition: opacity 220ms ease; }
 .sidebar-backdrop.is-open { opacity: 1; pointer-events: auto; }
 
