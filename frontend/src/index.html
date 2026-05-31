@@ -4,10 +4,37 @@
     <meta charset="utf-8" />
     <title>Memoria</title>
     <base href="/" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
+
+    <!--
+      No-flicker theme boot. Runs synchronously before Angular bootstraps:
+      reads memoria.theme cookie ('light' | 'dark' | absent → system), then
+      applies .dark on <html> immediately. The page-background fallback in
+      <style> below keeps the paint correct even before styles.scss loads.
+    -->
+    <script>
+      (function () {
+        try {
+          var match = ('; ' + document.cookie).split('; memoria.theme=');
+          var mode = match.length === 2 ? match.pop().split(';').shift() : 'system';
+          var dark = mode === 'dark' || (mode !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.classList.toggle('dark', dark);
+          document.documentElement.setAttribute('data-theme-mode', mode);
+        } catch (e) {}
+      })();
+    </script>
+    <style>
+      html { background: #F7FAFC; color: #0F172A; }
+      html.dark { background: #0A0F14; color: #E6EEF5; }
+    </style>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   </head>
-  <body class="bg-slate-50 text-slate-900 antialiased">
+  <body class="bg-page text-fg">
     <app-root></app-root>
   </body>
 </html>

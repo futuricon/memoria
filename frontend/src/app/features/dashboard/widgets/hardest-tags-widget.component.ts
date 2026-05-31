@@ -3,45 +3,55 @@ import { Component, inject, resource } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { ApiClient } from '../../../core/api/api-client';
+import { IconComponent } from '../../../core/ui/icon.component';
+
+function bandColor(score: number): string {
+  if (score >= 75) return 'var(--color-rating-good)';
+  if (score >= 40) return 'var(--color-rating-hard)';
+  return 'var(--color-rating-again)';
+}
+
+function bandBackground(score: number): string {
+  return `color-mix(in srgb, ${bandColor(score)} 14%, transparent)`;
+}
 
 @Component({
   selector: 'app-hardest-tags-widget',
   standalone: true,
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, IconComponent],
   template: `
-    <section class="bg-white border border-slate-200 rounded-lg p-5">
-      <h2 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-3">
-        Hardest tags
-      </h2>
+    <section class="bg-surface border border-default rounded-xl shadow-card p-5">
+      <div class="flex items-center gap-2 mb-2">
+        <app-icon name="trending-down" [size]="14" class="text-fg-muted" />
+        <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium">Hardest tags</h2>
+      </div>
       @if (data.isLoading()) {
-        <p class="text-sm text-slate-400">Loading…</p>
+        <div class="space-y-2">
+          <div class="skeleton h-3 w-3/4"></div>
+          <div class="skeleton h-3 w-1/2"></div>
+          <div class="skeleton h-3 w-2/3"></div>
+        </div>
       } @else if (data.error()) {
-        <p class="text-sm text-rose-600">Failed to load.</p>
+        <p class="text-sm text-danger">Failed to load.</p>
       } @else {
         @let items = data.value() ?? [];
         @if (items.length === 0) {
-          <p class="text-sm text-slate-400">
+          <p class="text-sm text-fg-muted">
             Not enough reviewed tagged cards yet. Tag your cards and review at least 3 times.
           </p>
         } @else {
-          <p class="text-xs text-slate-500 mb-2">
-            Tags ranked by lowest average score (0–100).
-          </p>
-          <ul class="divide-y divide-slate-100">
+          <p class="text-xs text-fg-muted mb-3">Ranked by lowest average.</p>
+          <ul class="-mx-2">
             @for (t of items; track t.tag) {
-              <li class="py-2 flex items-center justify-between gap-3">
-                <span class="text-sm text-slate-900 truncate">#{{ t.tag }}</span>
-                <span class="text-xs whitespace-nowrap flex items-center gap-2">
+              <li class="flex items-center justify-between gap-3 px-2 py-2 rounded-md hover:bg-surface-hover">
+                <span class="text-sm text-fg truncate">#{{ t.tag }}</span>
+                <span class="flex items-center gap-2 text-xs whitespace-nowrap">
                   <span
-                    class="px-2 py-0.5 rounded font-medium"
-                    [class.bg-emerald-100]="t.avgScore >= 75"
-                    [class.text-emerald-700]="t.avgScore >= 75"
-                    [class.bg-amber-100]="t.avgScore >= 40 && t.avgScore < 75"
-                    [class.text-amber-700]="t.avgScore >= 40 && t.avgScore < 75"
-                    [class.bg-rose-100]="t.avgScore < 40"
-                    [class.text-rose-700]="t.avgScore < 40"
+                    class="px-2 py-0.5 rounded font-medium tabular-nums"
+                    [style.color]="band(t.avgScore)"
+                    [style.background]="bandBg(t.avgScore)"
                   >{{ t.avgScore | number: '1.0-0' }}</span>
-                  <span class="text-slate-400">{{ t.cardCount }} card{{ t.cardCount === 1 ? '' : 's' }}</span>
+                  <span class="text-fg-muted">{{ t.cardCount }} card{{ t.cardCount === 1 ? '' : 's' }}</span>
                 </span>
               </li>
             }
@@ -57,4 +67,12 @@ export class HardestTagsWidgetComponent {
   readonly data = resource({
     loader: () => firstValueFrom(this.api.tagAverages(5, 3)),
   });
+
+  band(score: number): string {
+    return bandColor(score);
+  }
+
+  bandBg(score: number): string {
+    return bandBackground(score);
+  }
 }

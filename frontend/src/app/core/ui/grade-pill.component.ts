@@ -2,37 +2,42 @@ import { DecimalPipe } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
 
 import { CardType } from '../api/dto';
+import { IconComponent } from './icon.component';
 
 /**
- * Type-aware grade pill. Note cards show the rating average (📝), Question
- * cards show the AI score average if available (❓), falling back to rating.
+ * Type-aware grade pill. Note cards show the rating average, Question
+ * cards show the AI score average if available (falling back to rating).
+ * Color tracks the score band — green > 75, amber 40–74, red < 40.
  * Empty pill if no reviews exist yet.
  */
 @Component({
   selector: 'app-grade-pill',
   standalone: true,
+  imports: [DecimalPipe, IconComponent],
   template: `
     @if (display() !== null) {
       <span
         class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
-        [class.bg-emerald-100]="display()! >= 75"
-        [class.text-emerald-700]="display()! >= 75"
-        [class.bg-amber-100]="display()! >= 40 && display()! < 75"
-        [class.text-amber-700]="display()! >= 40 && display()! < 75"
-        [class.bg-rose-100]="display()! < 40"
-        [class.text-rose-700]="display()! < 40"
+        [style.color]="bandColor()"
+        [style.background]="bandBackground()"
         [title]="reviewCount() + ' reviews'"
       >
-        <span>{{ type() === 'Question' ? '❓' : '📝' }}</span>
-        <span>{{ display()! | number: '1.0-0' }}</span>
+        <app-icon
+          [name]="type() === 'Question' ? 'help-circle' : 'file-text'"
+          [size]="11"
+        />
+        <span class="tabular-nums">{{ display()! | number: '1.0-0' }}</span>
       </span>
     } @else {
-      <span class="text-xs text-slate-400" title="No reviews yet">
-        {{ type() === 'Question' ? '❓' : '📝' }} —
+      <span class="inline-flex items-center gap-1 text-xs text-fg-muted" title="No reviews yet">
+        <app-icon
+          [name]="type() === 'Question' ? 'help-circle' : 'file-text'"
+          [size]="11"
+        />
+        <span>—</span>
       </span>
     }
   `,
-  imports: [DecimalPipe],
 })
 export class GradePillComponent {
   readonly type = input.required<CardType>();
@@ -45,5 +50,20 @@ export class GradePillComponent {
       return this.avgAiScore();
     }
     return this.avgRating();
+  });
+
+  readonly bandColor = computed(() => {
+    const v = this.display();
+    if (v === null) return undefined;
+    if (v >= 75) return 'var(--color-rating-good)';
+    if (v >= 40) return 'var(--color-rating-hard)';
+    return 'var(--color-rating-again)';
+  });
+
+  readonly bandBackground = computed(() => {
+    const v = this.display();
+    if (v === null) return undefined;
+    const c = this.bandColor();
+    return `color-mix(in srgb, ${c} 14%, transparent)`;
   });
 }

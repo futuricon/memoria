@@ -1,14 +1,263 @@
 @use "tailwindcss";
 @use "@angular/cdk/overlay-prebuilt.css";
 
+// Class-based dark mode (so the theme toggle controls it).
+@custom-variant dark (&:where(.dark, .dark *));
+
+// ============================================================
+// Design tokens — "Deep Ocean Memory"
+// Light defaults in :root; .dark overrides only what flips
+// between themes. Brand / rating / status palettes are
+// constant across themes (per the design spec).
+// ============================================================
 :root {
   color-scheme: light;
+
+  /* Surfaces — light */
+  --color-page: #F7FAFC;
+  --color-sidebar: #FFFFFF;
+  --color-surface: #FFFFFF;
+  --color-surface-raised: #F1F5F9;
+  --color-surface-hover: #E8EEF3;
+  --color-border: #E2E8F0;
+  --color-border-strong: #CBD5E1;
+
+  /* Text — light */
+  --color-fg: #0F172A;
+  --color-fg-secondary: #475569;
+  --color-fg-muted: #64748B;
+
+  /* Brand (constant) */
+  --color-brand-300: #72E7DC;
+  --color-brand-400: #42D9CB;
+  --color-brand-500: #22C7B8;
+  --color-brand-on: #04221F;
+
+  /* Semantic (constant) */
+  --color-success: #2DD4BF;
+  --color-warning: #F59E0B;
+  --color-danger: #F87171;
+  --color-info: #38BDF8;
+
+  /* Spaced-repetition state (constant) */
+  --color-state-new: #38BDF8;
+  --color-state-learning: #A78BFA;
+  --color-state-review: #22C55E;
+  --color-state-hard: #F59E0B;
+  --color-state-forgotten: #EF4444;
+
+  /* Rating buttons — Anki recognition (constant) */
+  --color-rating-again: #EF4444;
+  --color-rating-hard: #F59E0B;
+  --color-rating-good: #22C55E;
+  --color-rating-easy: #38BDF8;
+
+  /* Soft elevation in light theme */
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-elevated: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-overlay: 0 16px 48px rgba(15, 23, 42, 0.18);
 }
 
-html, body { height: 100%; }
-body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+.dark {
+  color-scheme: dark;
 
-// CDK dialog wrapper — strip default centering, anchor the panel itself.
+  --color-page: #0A0F14;
+  --color-sidebar: #0D131A;
+  --color-surface: #111A22;
+  --color-surface-raised: #15212B;
+  --color-surface-hover: #1B2B38;
+  --color-border: #223242;
+  --color-border-strong: #2E4458;
+
+  --color-fg: #E6EEF5;
+  --color-fg-secondary: #A9B7C6;
+  --color-fg-muted: #708090;
+
+  /* Dark theme prefers borders over shadows */
+  --shadow-card: none;
+  --shadow-elevated: 0 1px 0 rgba(255, 255, 255, 0.03);
+  --shadow-overlay: 0 24px 64px rgba(0, 0, 0, 0.6);
+}
+
+// ============================================================
+// Base
+// ============================================================
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
+  background-color: var(--color-page);
+  color: var(--color-fg);
+}
+
+// Keyboard-only focus rings
+*:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+// Hide keyboard hints on touch devices
+@media (hover: none) {
+  .desktop-only { display: none !important; }
+}
+
+// Hide native scrollbar on horizontal strips
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.pt-safe { padding-top: env(safe-area-inset-top); }
+
+// ============================================================
+// Token-backed utility shortcuts
+// These reference our CSS vars so they auto-switch with `.dark`.
+// ============================================================
+.bg-page { background-color: var(--color-page); }
+.bg-sidebar { background-color: var(--color-sidebar); }
+.bg-surface { background-color: var(--color-surface); }
+.bg-surface-raised { background-color: var(--color-surface-raised); }
+.bg-surface-hover { background-color: var(--color-surface-hover); }
+.hover\:bg-surface-hover:hover { background-color: var(--color-surface-hover); }
+.hover\:bg-surface-raised:hover { background-color: var(--color-surface-raised); }
+
+.text-fg { color: var(--color-fg); }
+.text-fg-secondary { color: var(--color-fg-secondary); }
+.text-fg-muted { color: var(--color-fg-muted); }
+.hover\:text-fg:hover { color: var(--color-fg); }
+.hover\:text-fg-secondary:hover { color: var(--color-fg-secondary); }
+
+.text-brand { color: var(--color-brand-500); }
+.bg-brand { background-color: var(--color-brand-500); }
+.bg-brand-soft { background-color: color-mix(in srgb, var(--color-brand-500) 12%, transparent); }
+.hover\:bg-brand-400:hover { background-color: var(--color-brand-400); }
+.hover\:bg-brand-hover:hover { background-color: var(--color-brand-400); }
+.hover\:bg-brand-soft:hover { background-color: color-mix(in srgb, var(--color-brand-500) 16%, transparent); }
+.text-brand-on { color: var(--color-brand-on); }
+.border-brand { border-color: var(--color-brand-500); }
+.border-brand-soft { border-color: color-mix(in srgb, var(--color-brand-500) 35%, transparent); }
+.focus\:border-brand:focus { border-color: var(--color-brand-500); }
+.focus\:border-brand-soft:focus { border-color: color-mix(in srgb, var(--color-brand-500) 50%, transparent); }
+.focus\:ring-brand-soft:focus { box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-brand-500) 35%, transparent); }
+.focus\:ring-brand\/40:focus { box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-brand-500) 40%, transparent); }
+
+.border-default { border-color: var(--color-border); }
+.border-strong { border-color: var(--color-border-strong); }
+.divide-default > * + * { border-color: var(--color-border); }
+
+.text-success { color: var(--color-success); }
+.text-danger { color: var(--color-danger); }
+.text-warning { color: var(--color-warning); }
+.bg-success { background-color: var(--color-success); }
+.bg-danger { background-color: var(--color-danger); }
+
+.shadow-card { box-shadow: var(--shadow-card); }
+.shadow-elevated { box-shadow: var(--shadow-elevated); }
+.shadow-overlay { box-shadow: var(--shadow-overlay); }
+
+// ============================================================
+// Component patterns
+// ============================================================
+.chip-note {
+  color: var(--color-fg-secondary);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.chip-question {
+  color: var(--color-brand-500);
+  background: color-mix(in srgb, var(--color-brand-500) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-brand-500) 35%, transparent);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.tag-pill {
+  color: var(--color-fg-secondary);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.rating-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  min-height: 44px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--rc);
+  background: color-mix(in srgb, var(--rc) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--rc) 40%, transparent);
+  transition: background-color 120ms ease, box-shadow 120ms ease;
+}
+.rating-btn:hover { background: color-mix(in srgb, var(--rc) 18%, transparent); }
+.rating-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.rating-btn.is-suggested { box-shadow: 0 0 0 2px color-mix(in srgb, var(--rc) 60%, transparent); }
+.rating-again { --rc: var(--color-rating-again); }
+.rating-hard { --rc: var(--color-rating-hard); }
+.rating-good { --rc: var(--color-rating-good); }
+.rating-easy { --rc: var(--color-rating-easy); }
+
+// Heatmap cell
+.hm-cell {
+  width: 12px; height: 12px; border-radius: 3px;
+  background: var(--color-surface-raised);
+}
+.hm-cell[data-level="1"] { background: color-mix(in srgb, var(--color-brand-500) 20%, var(--color-surface-raised)); }
+.hm-cell[data-level="2"] { background: color-mix(in srgb, var(--color-brand-500) 40%, var(--color-surface-raised)); }
+.hm-cell[data-level="3"] { background: color-mix(in srgb, var(--color-brand-500) 65%, var(--color-surface-raised)); }
+.hm-cell[data-level="4"] { background: var(--color-brand-500); }
+.hm-cell.is-today { outline: 1px solid var(--color-border-strong); outline-offset: 1px; }
+
+// Loading skeleton
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.8; }
+}
+.skeleton {
+  background: var(--color-surface-raised);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+// Mobile sidebar drawer transitions
+.sidebar-mobile { transform: translateX(-100%); transition: transform 220ms ease; }
+.sidebar-mobile.is-open { transform: translateX(0); }
+.sidebar-backdrop { opacity: 0; pointer-events: none; transition: opacity 220ms ease; }
+.sidebar-backdrop.is-open { opacity: 1; pointer-events: auto; }
+
+// Toast enter
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.toast-enter { animation: toast-in 220ms ease-out; }
+
+// ============================================================
+// CDK overlay panels (drawer + dialog)
+// ============================================================
 .cdk-overlay-pane.app-right-drawer {
   position: fixed !important;
   top: 0 !important;
@@ -19,17 +268,14 @@ body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe U
   width: 480px;
   max-height: 100vh !important;
   display: block;
+
+  @media (max-width: 767px) { width: 100vw; }
 }
 
 .cdk-overlay-pane.app-confirm-dialog {
-  max-width: 400px;
-  width: 100%;
+  max-width: 420px;
+  width: calc(100% - 32px);
 }
 
-// CDK backdrop — dim the page behind dialogs/drawers.
-.cdk-overlay-backdrop.app-overlay-backdrop {
-  background: rgba(15, 23, 42, 0.45);
-}
-.cdk-overlay-backdrop.cdk-overlay-backdrop-showing {
-  opacity: 1;
-}
+.cdk-overlay-backdrop.app-overlay-backdrop { background: rgba(0, 0, 0, 0.55); }
+.cdk-overlay-backdrop.cdk-overlay-backdrop-showing { opacity: 1; }

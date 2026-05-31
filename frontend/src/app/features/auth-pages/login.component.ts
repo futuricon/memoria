@@ -11,6 +11,8 @@ import { Router } from '@angular/router';
 
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/auth/auth.service';
+import { ThemeToggleComponent } from '../../core/theme/theme-toggle.component';
+import { IconComponent } from '../../core/ui/icon.component';
 
 type Tab = 'email' | 'telegram';
 type EmailStep = 'request' | 'confirm';
@@ -34,133 +36,157 @@ declare global {
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, IconComponent, ThemeToggleComponent],
   template: `
-    <div class="min-h-screen flex items-center justify-center px-4">
-      <div class="w-full max-w-md bg-white border border-slate-200 rounded-xl shadow-sm p-8">
-        <h1 class="text-2xl font-semibold text-center mb-1">Memoria</h1>
-        <p class="text-sm text-center text-slate-500 mb-6">
-          Sign in to your spaced-repetition workspace
-        </p>
+    <div class="min-h-screen bg-page flex flex-col">
+      <div class="flex justify-end px-4 py-3">
+        <app-theme-toggle />
+      </div>
 
-        <div class="grid grid-cols-2 gap-2 mb-4">
-          <button
-            type="button"
-            (click)="signInWith('google')"
-            class="flex items-center justify-center gap-2 py-2 text-sm rounded border border-slate-300 bg-white hover:bg-slate-50"
-          >
-            <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true">
-              <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.5 29.3 35 24 35c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C33.6 5.1 29.1 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c11 0 20-8 20-21 0-1.3-.1-2.5-.4-3.5z"/>
-              <path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.6 16 18.9 13 24 13c3 0 5.7 1.1 7.8 2.9l5.7-5.7C33.6 7.1 29.1 5 24 5c-7.7 0-14.3 4.4-17.7 9.7z"/>
-              <path fill="#4CAF50" d="M24 45c5 0 9.6-1.9 13-5l-6-5c-1.8 1.3-4.2 2-7 2-5.3 0-9.7-3.5-11.3-8.4L6 33.4C9.3 39.9 16.1 45 24 45z"/>
-              <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.5l6 5c-.4.4 6.7-4.9 6.7-14.5 0-1.3-.1-2.5-.4-3.5z"/>
-            </svg>
-            <span>Google</span>
-          </button>
-          <button
-            type="button"
-            (click)="signInWith('github')"
-            class="flex items-center justify-center gap-2 py-2 text-sm rounded border border-slate-300 bg-white hover:bg-slate-50"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="#0f172a" aria-hidden="true">
-              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2 .37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
-            </svg>
-            <span>GitHub</span>
-          </button>
-        </div>
-
-        <div class="relative my-4">
-          <div class="absolute inset-0 flex items-center">
-            <div class="w-full border-t border-slate-200"></div>
+      <div class="flex-1 flex items-center justify-center px-4 pb-12">
+        <div class="w-full max-w-md bg-surface border border-default rounded-xl shadow-card p-7 md:p-8">
+          <div class="flex items-center justify-center gap-2 mb-1">
+            <span class="w-7 h-7 rounded-md bg-brand text-brand-on grid place-items-center text-xs font-semibold">M</span>
+            <h1 class="text-xl font-semibold text-fg tracking-tight">Memoria</h1>
           </div>
-          <div class="relative flex justify-center text-xs">
-            <span class="px-2 bg-white text-slate-400">or</span>
+          <p class="text-sm text-center text-fg-muted mb-6">
+            Sign in to your spaced-repetition workspace
+          </p>
+
+          <div class="grid grid-cols-2 gap-2 mb-4">
+            <button
+              type="button"
+              (click)="signInWith('google')"
+              class="h-10 flex items-center justify-center gap-2 text-sm rounded-md border border-default bg-surface hover:bg-surface-hover text-fg transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true">
+                <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.5 29.3 35 24 35c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C33.6 5.1 29.1 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c11 0 20-8 20-21 0-1.3-.1-2.5-.4-3.5z"/>
+                <path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.6 16 18.9 13 24 13c3 0 5.7 1.1 7.8 2.9l5.7-5.7C33.6 7.1 29.1 5 24 5c-7.7 0-14.3 4.4-17.7 9.7z"/>
+                <path fill="#4CAF50" d="M24 45c5 0 9.6-1.9 13-5l-6-5c-1.8 1.3-4.2 2-7 2-5.3 0-9.7-3.5-11.3-8.4L6 33.4C9.3 39.9 16.1 45 24 45z"/>
+                <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.5l6 5c-.4.4 6.7-4.9 6.7-14.5 0-1.3-.1-2.5-.4-3.5z"/>
+              </svg>
+              <span>Google</span>
+            </button>
+            <button
+              type="button"
+              (click)="signInWith('github')"
+              class="h-10 flex items-center justify-center gap-2 text-sm rounded-md border border-default bg-surface hover:bg-surface-hover text-fg transition-colors"
+            >
+              <app-icon name="github" [size]="16" />
+              <span>GitHub</span>
+            </button>
           </div>
-        </div>
 
-        <div class="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded mb-6 text-sm">
-          <button
-            type="button"
-            class="py-2 rounded transition"
-            [class.bg-white]="tab() === 'email'"
-            [class.shadow-sm]="tab() === 'email'"
-            (click)="tab.set('email')"
-          >Email</button>
-          <button
-            type="button"
-            class="py-2 rounded transition"
-            [class.bg-white]="tab() === 'telegram'"
-            [class.shadow-sm]="tab() === 'telegram'"
-            (click)="tab.set('telegram')"
-          >Telegram</button>
-        </div>
+          <div class="relative my-5">
+            <div class="absolute inset-0 flex items-center">
+              <div class="w-full border-t border-default"></div>
+            </div>
+            <div class="relative flex justify-center text-xs">
+              <span class="px-2 bg-surface text-fg-muted">or</span>
+            </div>
+          </div>
 
-        @if (tab() === 'email') {
-          @if (emailStep() === 'request') {
-            <form (ngSubmit)="requestCode()" class="space-y-3">
-              <label class="block text-sm">
-                <span class="text-slate-600">Email</span>
-                <input
-                  type="email"
-                  name="email"
-                  [(ngModel)]="email"
-                  required
-                  class="mt-1 w-full px-3 py-2 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-slate-400"
-                  placeholder="you@example.com"
-                />
-              </label>
-              <button
-                type="submit"
-                [disabled]="busy()"
-                class="w-full py-2 bg-slate-900 text-white rounded hover:bg-slate-800 disabled:opacity-50"
-              >
-                {{ busy() ? 'Sending…' : 'Send code' }}
-              </button>
-            </form>
+          <div class="grid grid-cols-2 gap-1 p-1 bg-surface-raised rounded-md mb-5 text-sm">
+            <button
+              type="button"
+              class="py-2 rounded-md transition-colors"
+              [class.bg-surface]="tab() === 'email'"
+              [class.shadow-card]="tab() === 'email'"
+              [class.text-fg]="tab() === 'email'"
+              [class.text-fg-secondary]="tab() !== 'email'"
+              (click)="tab.set('email')"
+            >Email</button>
+            <button
+              type="button"
+              class="py-2 rounded-md transition-colors"
+              [class.bg-surface]="tab() === 'telegram'"
+              [class.shadow-card]="tab() === 'telegram'"
+              [class.text-fg]="tab() === 'telegram'"
+              [class.text-fg-secondary]="tab() !== 'telegram'"
+              (click)="tab.set('telegram')"
+            >Telegram</button>
+          </div>
+
+          @if (tab() === 'email') {
+            @if (emailStep() === 'request') {
+              <form (ngSubmit)="requestCode()" class="space-y-3">
+                <label class="block">
+                  <span class="block text-xs font-medium text-fg-secondary mb-1.5">Email</span>
+                  <input
+                    type="email"
+                    name="email"
+                    [(ngModel)]="email"
+                    required
+                    class="w-full px-3 py-2 bg-surface-raised border border-default rounded-md text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
+                    placeholder="you@example.com"
+                  />
+                </label>
+                <button
+                  type="submit"
+                  [disabled]="busy()"
+                  class="w-full h-10 bg-brand text-brand-on rounded-md text-sm font-medium hover:bg-brand-hover disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                >
+                  @if (busy()) {
+                    <app-icon name="loader" [size]="14" class="animate-spin" />
+                    Sending…
+                  } @else {
+                    Send code
+                  }
+                </button>
+              </form>
+            } @else {
+              <form (ngSubmit)="confirmCode()" class="space-y-3">
+                <p class="text-sm text-fg-secondary">
+                  Code sent to <span class="font-medium text-fg">{{ email }}</span>.
+                  Check your inbox.
+                </p>
+                <label class="block">
+                  <span class="block text-xs font-medium text-fg-secondary mb-1.5">Verification code</span>
+                  <input
+                    type="text"
+                    name="code"
+                    [(ngModel)]="code"
+                    required
+                    inputmode="numeric"
+                    class="w-full px-3 py-2 bg-surface-raised border border-default rounded-md text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand tracking-widest text-center font-mono"
+                    placeholder="123456"
+                  />
+                </label>
+                <button
+                  type="submit"
+                  [disabled]="busy()"
+                  class="w-full h-10 bg-brand text-brand-on rounded-md text-sm font-medium hover:bg-brand-hover disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                >
+                  @if (busy()) {
+                    <app-icon name="loader" [size]="14" class="animate-spin" />
+                    Verifying…
+                  } @else {
+                    Sign in
+                  }
+                </button>
+                <button
+                  type="button"
+                  (click)="emailStep.set('request')"
+                  class="w-full py-2 text-sm text-fg-muted hover:text-fg-secondary inline-flex items-center justify-center gap-1.5"
+                >
+                  <app-icon name="arrow-left" [size]="14" />
+                  Use a different email
+                </button>
+              </form>
+            }
           } @else {
-            <form (ngSubmit)="confirmCode()" class="space-y-3">
-              <p class="text-sm text-slate-600">
-                Code sent to <span class="font-medium">{{ email }}</span>.
-                Check your inbox.
+            <div class="flex flex-col items-center gap-3">
+              <p class="text-sm text-fg-secondary text-center">
+                Authorize with the official Telegram Login widget. No password required.
               </p>
-              <label class="block text-sm">
-                <span class="text-slate-600">Verification code</span>
-                <input
-                  type="text"
-                  name="code"
-                  [(ngModel)]="code"
-                  required
-                  inputmode="numeric"
-                  class="mt-1 w-full px-3 py-2 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-slate-400 tracking-widest text-center"
-                  placeholder="123456"
-                />
-              </label>
-              <button
-                type="submit"
-                [disabled]="busy()"
-                class="w-full py-2 bg-slate-900 text-white rounded hover:bg-slate-800 disabled:opacity-50"
-              >
-                {{ busy() ? 'Verifying…' : 'Sign in' }}
-              </button>
-              <button
-                type="button"
-                (click)="emailStep.set('request')"
-                class="w-full py-2 text-sm text-slate-500 hover:text-slate-700"
-              >← Use a different email</button>
-            </form>
+              <div #tgMount></div>
+            </div>
           }
-        } @else {
-          <div class="flex flex-col items-center gap-3">
-            <p class="text-sm text-slate-600 text-center">
-              Authorize with the official Telegram Login widget. No password required.
-            </p>
-            <div #tgMount></div>
-          </div>
-        }
 
-        @if (error()) {
-          <p class="mt-4 text-sm text-red-600">{{ error() }}</p>
-        }
+          @if (error()) {
+            <p class="mt-4 text-sm text-danger">{{ error() }}</p>
+          }
+        </div>
       </div>
     </div>
   `,

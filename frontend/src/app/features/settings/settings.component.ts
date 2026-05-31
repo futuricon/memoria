@@ -4,165 +4,190 @@ import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 
 import { ApiClient } from '../../core/api/api-client';
+import { IconComponent } from '../../core/ui/icon.component';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [DatePipe, FormsModule],
+  imports: [DatePipe, FormsModule, IconComponent],
   template: `
-    <header class="mb-6">
-      <h1 class="text-2xl font-semibold">Settings</h1>
-      <p class="text-sm text-slate-500">Account, preferences and integrations.</p>
-    </header>
+    <div class="px-4 md:px-8 py-6 md:py-8 max-w-3xl mx-auto">
+      <header class="mb-6">
+        <h1 class="text-2xl font-semibold text-fg tracking-tight">Settings</h1>
+        <p class="text-sm text-fg-muted mt-1">Account, preferences and integrations.</p>
+      </header>
 
-    <div class="space-y-6 max-w-2xl">
-      <section class="bg-white border border-slate-200 rounded-lg p-5">
-        <h2 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-3">Account</h2>
-        @if (me.isLoading()) {
-          <p class="text-sm text-slate-400">Loading…</p>
-        } @else if (me.error()) {
-          <p class="text-sm text-rose-600">Failed to load.</p>
-        } @else if (me.value(); as u) {
-          <dl class="text-sm grid grid-cols-3 gap-y-2">
-            <dt class="text-slate-500">Display name</dt>
-            <dd class="col-span-2 text-slate-900">{{ u.displayName }}</dd>
-            <dt class="text-slate-500">Email</dt>
-            <dd class="col-span-2 text-slate-900">{{ u.email ?? '—' }}</dd>
-            <dt class="text-slate-500">Joined</dt>
-            <dd class="col-span-2 text-slate-900">
-              {{ u.createdAt | date: 'medium' }}
-            </dd>
-          </dl>
-        }
-      </section>
+      <div class="space-y-5">
+        <!-- Account -->
+        <section class="bg-surface border border-default rounded-xl shadow-card p-5">
+          <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium mb-3">Account</h2>
+          @if (me.isLoading()) {
+            <div class="space-y-2">
+              <div class="skeleton h-4 w-1/2"></div>
+              <div class="skeleton h-4 w-2/3"></div>
+            </div>
+          } @else if (me.error()) {
+            <p class="text-sm text-danger">Failed to load.</p>
+          } @else if (me.value(); as u) {
+            <dl class="text-sm grid grid-cols-[auto_1fr] gap-x-6 gap-y-2">
+              <dt class="text-fg-muted">Display name</dt>
+              <dd class="text-fg">{{ u.displayName }}</dd>
+              <dt class="text-fg-muted">Email</dt>
+              <dd class="text-fg">{{ u.email ?? '—' }}</dd>
+              <dt class="text-fg-muted">Joined</dt>
+              <dd class="text-fg">{{ u.createdAt | date: 'medium' }}</dd>
+            </dl>
+          }
+        </section>
 
-      <section class="bg-white border border-slate-200 rounded-lg p-5">
-        <h2 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-3">
-          Linked identities
-        </h2>
-        @if (identities.isLoading()) {
-          <p class="text-sm text-slate-400">Loading…</p>
-        } @else if (identities.value()?.length === 0) {
-          <p class="text-sm text-slate-400">No linked identities.</p>
-        } @else {
-          <ul class="flex flex-wrap gap-2">
-            @for (i of identities.value() ?? []; track i.provider + i.externalId) {
-              <li
-                class="px-2 py-1 text-xs rounded bg-slate-100 text-slate-700"
-                [title]="i.externalId + ' · linked ' + (i.linkedAt | date: 'shortDate')"
-              >{{ i.provider }}</li>
-            }
-          </ul>
-        }
-      </section>
-
-      <section class="bg-white border border-slate-200 rounded-lg p-5">
-        <h2 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-3">
-          Preferences
-        </h2>
-
-        <div class="space-y-3 text-sm">
-          <label class="block">
-            <span class="text-slate-600">Timezone</span>
-            <input
-              type="text"
-              list="timezones"
-              [(ngModel)]="timeZoneId"
-              name="timeZoneId"
-              class="mt-1 w-full px-3 py-2 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-slate-400"
-              placeholder="Europe/Tashkent"
-            />
-            <datalist id="timezones">
-              @for (tz of timeZones; track tz) {
-                <option [value]="tz"></option>
+        <!-- Linked identities -->
+        <section class="bg-surface border border-default rounded-xl shadow-card p-5">
+          <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium mb-3">
+            Linked identities
+          </h2>
+          @if (identities.isLoading()) {
+            <div class="skeleton h-6 w-32"></div>
+          } @else if ((identities.value() ?? []).length === 0) {
+            <p class="text-sm text-fg-muted">No linked identities.</p>
+          } @else {
+            <ul class="flex flex-wrap gap-2">
+              @for (i of identities.value() ?? []; track i.provider + i.externalId) {
+                <li
+                  class="px-2.5 py-1 text-xs rounded-md bg-surface-raised text-fg-secondary border border-default capitalize"
+                  [title]="i.externalId + ' · linked ' + (i.linkedAt | date: 'shortDate')"
+                >{{ i.provider }}</li>
               }
-            </datalist>
-            <span class="block mt-1 text-xs text-slate-400">
-              IANA name. Affects scheduling and quiet-hours interpretation.
-            </span>
-          </label>
+            </ul>
+          }
+        </section>
 
-          <div class="grid grid-cols-2 gap-3">
-            <label class="block">
-              <span class="text-slate-600">Quiet hours — start</span>
-              <input
-                type="time"
-                [(ngModel)]="quietStart"
-                name="quietStart"
-                class="mt-1 w-full px-3 py-2 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-slate-400"
-              />
-            </label>
-            <label class="block">
-              <span class="text-slate-600">Quiet hours — end</span>
-              <input
-                type="time"
-                [(ngModel)]="quietEnd"
-                name="quietEnd"
-                class="mt-1 w-full px-3 py-2 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-slate-400"
-              />
-            </label>
-          </div>
-          <button
-            type="button"
-            (click)="clearQuietHours()"
-            class="text-xs text-slate-500 hover:text-slate-700 underline"
-          >Clear quiet hours</button>
+        <!-- Preferences -->
+        <section class="bg-surface border border-default rounded-xl shadow-card p-5">
+          <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium mb-4">Preferences</h2>
 
-          <div class="flex items-center gap-3 pt-2">
+          <div class="space-y-4">
+            <label class="block">
+              <span class="block text-xs font-medium text-fg-secondary mb-1.5">Timezone</span>
+              <input
+                type="text"
+                list="timezones"
+                [(ngModel)]="timeZoneId"
+                name="timeZoneId"
+                class="w-full px-3 py-2 bg-surface-raised border border-default rounded-md text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
+                placeholder="Europe/Tashkent"
+              />
+              <datalist id="timezones">
+                @for (tz of timeZones; track tz) {
+                  <option [value]="tz"></option>
+                }
+              </datalist>
+              <span class="block mt-1.5 text-xs text-fg-muted">
+                IANA name. Affects scheduling and quiet-hours interpretation.
+              </span>
+            </label>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label class="block">
+                <span class="block text-xs font-medium text-fg-secondary mb-1.5">Quiet hours — start</span>
+                <input
+                  type="time"
+                  [(ngModel)]="quietStart"
+                  name="quietStart"
+                  class="w-full px-3 py-2 bg-surface-raised border border-default rounded-md text-sm text-fg focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
+                />
+              </label>
+              <label class="block">
+                <span class="block text-xs font-medium text-fg-secondary mb-1.5">Quiet hours — end</span>
+                <input
+                  type="time"
+                  [(ngModel)]="quietEnd"
+                  name="quietEnd"
+                  class="w-full px-3 py-2 bg-surface-raised border border-default rounded-md text-sm text-fg focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
+                />
+              </label>
+            </div>
             <button
               type="button"
-              (click)="save()"
-              [disabled]="savingPrefs()"
-              class="px-3 py-1.5 text-sm rounded bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50"
-            >{{ savingPrefs() ? 'Saving…' : 'Save preferences' }}</button>
-            @if (saveStatus()) {
-              <span class="text-xs text-emerald-600">{{ saveStatus() }}</span>
-            }
-            @if (saveError()) {
-              <span class="text-xs text-rose-600">{{ saveError() }}</span>
-            }
+              (click)="clearQuietHours()"
+              class="text-xs text-fg-muted hover:text-fg-secondary underline"
+            >Clear quiet hours</button>
+
+            <div class="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                (click)="save()"
+                [disabled]="savingPrefs()"
+                class="h-10 px-4 rounded-md text-sm font-medium bg-brand text-brand-on hover:bg-brand-hover disabled:opacity-50 inline-flex items-center gap-2"
+              >
+                @if (savingPrefs()) {
+                  <app-icon name="loader" [size]="14" class="animate-spin" />
+                  Saving…
+                } @else {
+                  Save preferences
+                }
+              </button>
+              @if (saveStatus()) {
+                <span class="text-xs inline-flex items-center gap-1.5 text-success">
+                  <app-icon name="check" [size]="14" />
+                  {{ saveStatus() }}
+                </span>
+              }
+              @if (saveError()) {
+                <span class="text-xs text-danger">{{ saveError() }}</span>
+              }
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="bg-white border border-slate-200 rounded-lg p-5">
-        <h2 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-3">
-          Telegram
-        </h2>
-        <p class="text-sm text-slate-600 mb-3">
-          Link your Telegram account so the bot can send you reminders. The link is
-          one-time and expires after 5 minutes.
-        </p>
-        <p class="text-xs text-slate-500 mb-3">
-          If this Telegram chat already has a Memoria account, opening the link will
-          <span class="font-medium">merge it into your current account</span>
-          (cards, reviews, history). The original Telegram-only account is deactivated.
-        </p>
-        <button
-          type="button"
-          (click)="generateTelegramLink()"
-          [disabled]="generatingLink()"
-          class="px-3 py-1.5 text-sm rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-50"
-        >{{ generatingLink() ? 'Generating…' : 'Generate link' }}</button>
+        <!-- Telegram -->
+        <section class="bg-surface border border-default rounded-xl shadow-card p-5">
+          <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium mb-3 inline-flex items-center gap-1.5">
+            <app-icon name="send" [size]="12" />
+            Telegram
+          </h2>
+          <p class="text-sm text-fg-secondary mb-2">
+            Link your Telegram account so the bot can send you reminders. The link is
+            one-time and expires after 5 minutes.
+          </p>
+          <p class="text-xs text-fg-muted mb-3">
+            If this Telegram chat already has a Memoria account, opening the link will
+            <span class="font-medium text-fg-secondary">merge it into your current account</span>
+            (cards, reviews, history). The original Telegram-only account is deactivated.
+          </p>
+          <button
+            type="button"
+            (click)="generateTelegramLink()"
+            [disabled]="generatingLink()"
+            class="h-9 px-4 rounded-md text-sm border border-default text-fg hover:bg-surface-hover disabled:opacity-50 inline-flex items-center gap-2"
+          >
+            @if (generatingLink()) {
+              <app-icon name="loader" [size]="14" class="animate-spin" />
+              Generating…
+            } @else {
+              <app-icon name="send" [size]="14" />
+              Generate link
+            }
+          </button>
 
-        @if (telegramLink(); as link) {
-          <div class="mt-3 p-3 rounded bg-slate-50 border border-slate-200 text-sm">
-            <a
-              [href]="link"
-              target="_blank"
-              rel="noopener"
-              class="text-slate-900 hover:underline break-all font-mono"
-            >{{ link }}</a>
-            <p class="mt-2 text-xs text-slate-500">
-              Open the link in Telegram, then press <code>Start</code> in the bot.
-            </p>
-          </div>
-        }
+          @if (telegramLink(); as link) {
+            <div class="mt-3 p-3 rounded-md bg-surface-raised border border-default text-sm">
+              <a
+                [href]="link"
+                target="_blank"
+                rel="noopener"
+                class="text-brand hover:underline break-all font-mono text-xs"
+              >{{ link }}</a>
+              <p class="mt-2 text-xs text-fg-muted">
+                Open the link in Telegram, then press <code class="px-1 py-0.5 rounded bg-surface text-fg-secondary">Start</code> in the bot.
+              </p>
+            </div>
+          }
 
-        @if (telegramError()) {
-          <p class="mt-3 text-sm text-rose-600">{{ telegramError() }}</p>
-        }
-      </section>
+          @if (telegramError()) {
+            <p class="mt-3 text-sm text-danger">{{ telegramError() }}</p>
+          }
+        </section>
+      </div>
     </div>
   `,
 })
@@ -251,7 +276,6 @@ function getSupportedTimeZones(): string[] {
   if (typeof intl.supportedValuesOf === 'function') {
     return intl.supportedValuesOf('timeZone');
   }
-  // Minimal fallback for environments without supportedValuesOf.
   return [
     'UTC', 'Europe/Tashkent', 'Europe/Moscow', 'Europe/Berlin', 'Europe/London',
     'America/New_York', 'America/Los_Angeles', 'Asia/Tokyo', 'Asia/Singapore',

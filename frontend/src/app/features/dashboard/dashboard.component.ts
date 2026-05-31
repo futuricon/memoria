@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { ApiClient } from '../../core/api/api-client';
 import { GradePillComponent } from '../../core/ui/grade-pill.component';
+import { IconComponent } from '../../core/ui/icon.component';
 import { relativeTime } from '../../core/ui/relative-time';
 import { HardestTagsWidgetComponent } from './widgets/hardest-tags-widget.component';
 import { HeatmapWidgetComponent } from './widgets/heatmap-widget.component';
@@ -20,6 +21,7 @@ const TELEGRAM_BANNER_DISMISS_KEY = 'memoria.telegramBannerDismissed';
   imports: [
     DecimalPipe,
     GradePillComponent,
+    IconComponent,
     RouterLink,
     StreakWidgetComponent,
     RatingDistributionWidgetComponent,
@@ -28,154 +30,158 @@ const TELEGRAM_BANNER_DISMISS_KEY = 'memoria.telegramBannerDismissed';
     HardestTagsWidgetComponent,
   ],
   template: `
-    <header class="mb-6">
-      <h1 class="text-2xl font-semibold">Dashboard</h1>
-      <p class="text-sm text-slate-500">A snapshot of what your brain wants next.</p>
-    </header>
+    <div class="px-4 md:px-8 py-6 md:py-8 max-w-7xl mx-auto">
+      <header class="mb-6 md:mb-8">
+        <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">Dashboard</h1>
+        <p class="text-fg-secondary mt-1 text-sm">A snapshot of what your brain wants next.</p>
+      </header>
 
-    @if (showTelegramBanner()) {
-      <div class="mb-6 flex items-start gap-3 p-4 rounded-lg border border-amber-200 bg-amber-50 text-sm">
-        <span class="text-lg leading-none">💬</span>
-        <div class="flex-1">
-          <div class="font-medium text-amber-900">Already use &#64;memoria_bot?</div>
-          <p class="text-amber-800 mt-0.5">
-            Link your Telegram in
-            <a routerLink="/settings" class="underline font-medium">Settings</a>
-            — we'll merge your existing bot data into this account automatically.
-          </p>
-        </div>
-        <button
-          type="button"
-          (click)="dismissTelegramBanner()"
-          class="text-amber-700 hover:text-amber-900 text-xs underline"
-        >Dismiss</button>
-      </div>
-    }
-
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <section class="bg-white border border-slate-200 rounded-lg p-5">
-        <h2 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-3">
-          Hardest card
-        </h2>
-        @if (worstCard.isLoading()) {
-          <p class="text-sm text-slate-400">Loading…</p>
-        } @else if (worstCard.error()) {
-          <p class="text-sm text-rose-600">Failed to load.</p>
-        } @else {
-          @let card = worstCard.value();
-          @if (card) {
-            <a [routerLink]="['/cards']" class="block">
-              <div class="flex items-start justify-between gap-3">
-                <div class="font-medium text-slate-900 truncate">{{ card.title }}</div>
-                <app-grade-pill
-                  [type]="card.type"
-                  [avgRating]="card.avgRating"
-                  [avgAiScore]="card.avgAiScore"
-                  [reviewCount]="card.reviewCount"
-                />
-              </div>
-              <p class="text-xs text-slate-500 mt-1">
-                {{ card.reviewCount }} review{{ card.reviewCount === 1 ? '' : 's' }}
-              </p>
-            </a>
-          } @else {
-            <p class="text-sm text-slate-400">
-              Need at least 3 reviews on a card to rank it.
+      @if (showTelegramBanner()) {
+        <div class="mb-6 flex items-start gap-3 p-4 rounded-xl border border-brand-soft bg-brand-soft text-sm">
+          <span class="text-brand mt-0.5"><app-icon name="message-circle" [size]="20" /></span>
+          <div class="flex-1">
+            <div class="font-medium text-fg">Already use &#64;memoria_bot?</div>
+            <p class="text-fg-secondary mt-0.5">
+              Link your Telegram in
+              <a routerLink="/settings" class="underline font-medium text-brand">Settings</a>
+              — we'll merge your existing bot data into this account automatically.
             </p>
-          }
-        }
-      </section>
-
-      <section class="bg-white border border-slate-200 rounded-lg p-5">
-        <h2 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-3">
-          Due today
-        </h2>
-        @if (dueToday.isLoading()) {
-          <p class="text-sm text-slate-400">Loading…</p>
-        } @else if (dueToday.error()) {
-          <p class="text-sm text-rose-600">Failed to load.</p>
-        } @else {
-          @let count = dueToday.value()?.length ?? 0;
-          <p class="text-3xl font-semibold text-slate-900">{{ count }}</p>
-          <p class="text-sm text-slate-500 mt-1">
-            {{ count === 0 ? 'Nothing scheduled — enjoy your day.' : 'cards waiting' }}
-          </p>
-          @if (count > 0) {
-            <a
-              routerLink="/practice"
-              class="inline-block mt-3 px-3 py-1.5 text-sm rounded bg-slate-900 text-white hover:bg-slate-800"
-            >Start practice →</a>
-          }
-        }
-      </section>
-
-      <app-streak-widget />
-      <app-rating-distribution-widget />
-      <app-stuck-cards-widget />
-      <app-hardest-tags-widget />
-
-      <section class="bg-white border border-slate-200 rounded-lg p-5 md:col-span-2">
-        <h2 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-3">
-          Coming up
-        </h2>
-        @if (upcoming.isLoading()) {
-          <p class="text-sm text-slate-400">Loading…</p>
-        } @else if (upcoming.error()) {
-          <p class="text-sm text-rose-600">Failed to load.</p>
-        } @else {
-          @let items = upcoming.value() ?? [];
-          @if (items.length === 0) {
-            <p class="text-sm text-slate-400">No pending reminders.</p>
-          } @else {
-            <ul class="divide-y divide-slate-100">
-              @for (r of items; track r.reminderId) {
-                <li class="py-2 flex items-center justify-between gap-3">
-                  <span class="text-sm text-slate-900 truncate">{{ r.cardTitle }}</span>
-                  <span class="text-xs text-slate-500 whitespace-nowrap">
-                    stage {{ r.stageNumber }} · {{ relTime(r.scheduledAt) }}
-                  </span>
-                </li>
-              }
-            </ul>
-          }
-        }
-      </section>
-
-      <section class="bg-white border border-slate-200 rounded-lg p-5 md:col-span-2">
-        <h2 class="text-sm font-medium text-slate-500 uppercase tracking-wide mb-3">
-          Library
-        </h2>
-        @if (firstPage.isLoading()) {
-          <p class="text-sm text-slate-400">Loading…</p>
-        } @else if (firstPage.error()) {
-          <p class="text-sm text-rose-600">Failed to load.</p>
-        } @else {
-          <div class="flex items-baseline gap-6">
-            <div>
-              <p class="text-3xl font-semibold text-slate-900">
-                {{ firstPage.value()?.totalCount ?? 0 }}
-              </p>
-              <p class="text-sm text-slate-500">total cards</p>
-            </div>
-            <div>
-              <p class="text-3xl font-semibold text-slate-900">
-                @if (accountAverage() !== null) {
-                  {{ accountAverage()! | number: '1.0-0' }}
-                } @else {
-                  —
-                }
-              </p>
-              <p class="text-sm text-slate-500">avg score on this page</p>
-            </div>
-            <a routerLink="/cards" class="ml-auto text-sm text-slate-600 hover:text-slate-900">
-              Browse →
-            </a>
           </div>
-        }
-      </section>
+          <button
+            type="button"
+            (click)="dismissTelegramBanner()"
+            class="text-fg-muted hover:text-fg text-xs"
+            aria-label="Dismiss"
+          ><app-icon name="x" [size]="16" /></button>
+        </div>
+      }
 
-      <div class="md:col-span-2">
-        <app-heatmap-widget />
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+        <!-- Due today -->
+        <section class="bg-surface border border-default rounded-xl shadow-card p-5">
+          <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium mb-2">Due today</h2>
+          @if (dueToday.isLoading()) {
+            <div class="skeleton h-10 w-16 mb-2"></div>
+            <div class="skeleton h-3 w-24"></div>
+          } @else if (dueToday.error()) {
+            <p class="text-sm text-danger">Failed to load.</p>
+          } @else {
+            @let count = dueToday.value()?.length ?? 0;
+            <p class="text-4xl font-semibold tabular-nums">{{ count }}</p>
+            <p class="text-xs text-fg-muted mt-1">
+              {{ count === 0 ? 'Nothing scheduled — enjoy your day.' : 'cards waiting' }}
+            </p>
+            @if (count > 0) {
+              <a
+                routerLink="/practice"
+                class="mt-4 inline-flex items-center gap-1.5 px-3 h-9 bg-brand text-brand-on text-sm font-medium rounded-md hover:bg-brand-400 transition-colors"
+              >
+                Start practice
+                <app-icon name="arrow-right" [size]="14" />
+              </a>
+            }
+          }
+        </section>
+
+        <!-- Streak -->
+        <app-streak-widget />
+
+        <!-- Hardest card -->
+        <section class="bg-surface border border-default rounded-xl shadow-card p-5">
+          <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium mb-2">Hardest card</h2>
+          @if (worstCard.isLoading()) {
+            <div class="skeleton h-4 w-3/4 mb-3"></div>
+            <div class="skeleton h-3 w-1/2"></div>
+          } @else if (worstCard.error()) {
+            <p class="text-sm text-danger">Failed to load.</p>
+          } @else {
+            @let card = worstCard.value();
+            @if (card) {
+              <a [routerLink]="['/cards']" class="block">
+                <p class="font-medium text-fg leading-snug">{{ card.title }}</p>
+                <div class="mt-3 flex items-center gap-3 text-xs">
+                  <app-grade-pill
+                    [type]="card.type"
+                    [avgRating]="card.avgRating"
+                    [avgAiScore]="card.avgAiScore"
+                    [reviewCount]="card.reviewCount"
+                  />
+                  <span class="text-fg-muted">{{ card.reviewCount }} reviews</span>
+                </div>
+              </a>
+            } @else {
+              <p class="text-sm text-fg-muted">Need at least 3 reviews on a card to rank it.</p>
+            }
+          }
+        </section>
+
+        <app-rating-distribution-widget />
+        <app-stuck-cards-widget />
+        <app-hardest-tags-widget />
+
+        <!-- Coming up -->
+        <section class="bg-surface border border-default rounded-xl shadow-card p-5 md:col-span-2">
+          <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium mb-3">Coming up</h2>
+          @if (upcoming.isLoading()) {
+            <div class="space-y-2">
+              <div class="skeleton h-4 w-full"></div>
+              <div class="skeleton h-4 w-5/6"></div>
+              <div class="skeleton h-4 w-4/6"></div>
+            </div>
+          } @else if (upcoming.error()) {
+            <p class="text-sm text-danger">Failed to load.</p>
+          } @else {
+            @let items = upcoming.value() ?? [];
+            @if (items.length === 0) {
+              <p class="text-sm text-fg-muted">No pending reminders.</p>
+            } @else {
+              <ul class="divide-y divide-default -mx-1">
+                @for (r of items; track r.reminderId) {
+                  <li class="flex items-center justify-between gap-3 px-1 py-2.5 text-sm">
+                    <span class="text-fg truncate">{{ r.cardTitle }}</span>
+                    <span class="text-xs text-fg-muted whitespace-nowrap">
+                      stage {{ r.stageNumber }} · {{ relTime(r.scheduledAt) }}
+                    </span>
+                  </li>
+                }
+              </ul>
+            }
+          }
+        </section>
+
+        <!-- Library -->
+        <section class="bg-surface border border-default rounded-xl shadow-card p-5">
+          <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium mb-2">Library</h2>
+          @if (firstPage.isLoading()) {
+            <div class="skeleton h-10 w-32"></div>
+          } @else if (firstPage.error()) {
+            <p class="text-sm text-danger">Failed to load.</p>
+          } @else {
+            <div class="flex items-baseline gap-6">
+              <div>
+                <p class="text-3xl font-semibold tabular-nums">{{ firstPage.value()?.totalCount ?? 0 }}</p>
+                <p class="text-xs text-fg-muted mt-1">total cards</p>
+              </div>
+              <div>
+                <p class="text-3xl font-semibold tabular-nums">
+                  @if (accountAverage() !== null) {
+                    {{ accountAverage()! | number: '1.0-0' }}
+                  } @else { — }
+                </p>
+                <p class="text-xs text-fg-muted mt-1">avg score</p>
+              </div>
+              <a routerLink="/cards" class="ml-auto inline-flex items-center gap-1 text-xs text-brand hover:underline">
+                Browse <app-icon name="arrow-right" [size]="12" />
+              </a>
+            </div>
+          }
+        </section>
+
+        <!-- Heatmap -->
+        <div class="md:col-span-2 lg:col-span-3">
+          <app-heatmap-widget />
+        </div>
       </div>
     </div>
   `,
@@ -216,17 +222,15 @@ export class DashboardComponent {
     loader: () => firstValueFrom(this.api.getIdentities()),
   });
 
-  /** Local dismissal flag — survives page reloads but not localStorage clear. */
   readonly bannerDismissed = signal<boolean>(
     typeof localStorage !== 'undefined'
       && localStorage.getItem(TELEGRAM_BANNER_DISMISS_KEY) === 'true',
   );
 
-  /** Banner is visible only when the user has no Telegram identity yet AND hasn't dismissed it. */
   readonly showTelegramBanner = computed<boolean>(() => {
     if (this.bannerDismissed()) return false;
     const list = this.identities.value();
-    if (!list) return false; // still loading — hide so it doesn't flash
+    if (!list) return false;
     return !list.some((i) => i.provider === 'Telegram');
   });
 
@@ -235,8 +239,7 @@ export class DashboardComponent {
     try {
       localStorage.setItem(TELEGRAM_BANNER_DISMISS_KEY, 'true');
     } catch {
-      // localStorage may be unavailable (private mode etc.) — banner just
-      // re-appears next session, which is acceptable.
+      /* ignored */
     }
   }
 

@@ -10,17 +10,18 @@ import {
   GradingResult,
   Rating,
 } from '../../core/api/dto';
+import { IconComponent, type IconName } from '../../core/ui/icon.component';
 
 type Phase =
   | 'loading-queue'
   | 'loading-card'
-  | 'note-question'    // Note: title shown, awaiting "Show answer"
-  | 'note-revealed'    // Note: answer shown, awaiting rating
-  | 'question-prompt'  // Question: title shown, textarea + Submit
-  | 'question-grading' // Question: AI grading in flight
-  | 'question-graded'  // Question: AI result shown, awaiting accept/override
-  | 'submitting'       // POST review in flight
-  | 'done';            // all reminders handled
+  | 'note-question'
+  | 'note-revealed'
+  | 'question-prompt'
+  | 'question-grading'
+  | 'question-graded'
+  | 'submitting'
+  | 'done';
 
 interface CurrentCard {
   reminder: DueReminderDto;
@@ -30,215 +31,216 @@ interface CurrentCard {
 @Component({
   selector: 'app-practice',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, IconComponent],
   template: `
-    <header class="mb-6 flex items-end justify-between gap-4">
-      <div>
-        <h1 class="text-2xl font-semibold">Practice</h1>
-        <p class="text-sm text-slate-500">
-          Review the cards due today, one at a time.
-        </p>
-      </div>
-      @if (queue().length > 0) {
-        <div class="text-sm text-slate-500 whitespace-nowrap">
-          {{ position() }} of {{ queue().length }}
-        </div>
-      }
-    </header>
-
-    @if (phase() === 'loading-queue' || phase() === 'loading-card') {
-      <p class="text-sm text-slate-400">Loading…</p>
-    } @else if (phase() === 'done') {
-      <div class="bg-white border border-slate-200 rounded-lg p-8 text-center">
-        @if (queue().length === 0) {
-          <p class="text-slate-500">Nothing due today. Enjoy your day.</p>
-        } @else {
-          <p class="text-2xl mb-2">🎉</p>
-          <p class="font-medium text-slate-900">All done.</p>
-          <p class="text-sm text-slate-500 mt-1">
-            Reviewed {{ reviewedCount() }} card{{ reviewedCount() === 1 ? '' : 's' }}, skipped {{ skippedCount() }}.
+    <div class="px-4 md:px-8 py-6 md:py-8 max-w-3xl mx-auto">
+      <header class="mb-6 flex items-end justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-semibold text-fg tracking-tight">Practice</h1>
+          <p class="text-sm text-fg-muted mt-1">
+            Review the cards due today, one at a time.
           </p>
-        }
-        <a routerLink="/" class="inline-block mt-4 text-sm text-slate-600 hover:text-slate-900">
-          ← Back to dashboard
-        </a>
-      </div>
-    } @else if (current(); as cur) {
-      <div class="bg-white border border-slate-200 rounded-lg p-6 max-w-2xl">
-        <div class="flex items-center gap-2 mb-3">
-          <span
-            class="text-xs px-2 py-0.5 rounded font-medium"
-            [class.bg-blue-100]="cur.card.type === 'Question'"
-            [class.text-blue-700]="cur.card.type === 'Question'"
-            [class.bg-slate-100]="cur.card.type === 'Note'"
-            [class.text-slate-700]="cur.card.type === 'Note'"
-          >{{ cur.card.type === 'Question' ? '❓ Question' : '📝 Note' }}</span>
-          <span class="text-xs text-slate-400">stage {{ cur.reminder.stageNumber }}</span>
         </div>
-
-        <h2 class="text-lg font-semibold text-slate-900 mb-3">{{ cur.card.title }}</h2>
-
-        @if (cur.card.tags.length > 0) {
-          <div class="mb-4 flex flex-wrap gap-1">
-            @for (t of cur.card.tags; track t) {
-              <span class="text-xs text-slate-500">#{{ t }}</span>
-            }
+        @if (queue().length > 0 && phase() !== 'done') {
+          <div class="text-xs text-fg-muted whitespace-nowrap tabular-nums px-2.5 py-1 rounded-md bg-surface border border-default">
+            {{ position() }} / {{ queue().length }}
           </div>
         }
+      </header>
 
-        <!-- ===== Note flow ===== -->
-        @if (phase() === 'note-question') {
-          <p class="text-sm text-slate-600 italic">
-            Recall the answer, then reveal it to rate yourself.
-          </p>
-          <div class="mt-5 flex items-center gap-2">
-            <button
-              type="button"
-              (click)="onReveal()"
-              [disabled]="actionBusy()"
-              class="px-3 py-1.5 text-sm rounded bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50"
-            >📖 Show answer</button>
-            <button
-              type="button"
-              (click)="onSkip()"
-              [disabled]="actionBusy()"
-              class="px-3 py-1.5 text-sm rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40"
-            >⏭ Skip</button>
-          </div>
-        }
-
-        @if (phase() === 'note-revealed') {
-          <div class="mt-4 p-4 rounded bg-slate-50 border border-slate-200 whitespace-pre-wrap text-sm text-slate-800 font-mono">{{ cur.card.body }}</div>
-          <p class="mt-4 text-sm text-slate-600">How well did you remember?</p>
-          <div class="mt-2 grid grid-cols-4 gap-2">
-            <button
-              type="button"
-              (click)="onRate('Forgot')"
-              [disabled]="actionBusy()"
-              class="px-2 py-2 text-sm rounded border border-rose-200 bg-white hover:bg-rose-50 text-rose-700 disabled:opacity-40"
-            >😕 Forgot</button>
-            <button
-              type="button"
-              (click)="onRate('Hard')"
-              [disabled]="actionBusy()"
-              class="px-2 py-2 text-sm rounded border border-amber-200 bg-white hover:bg-amber-50 text-amber-700 disabled:opacity-40"
-            >🤔 Hard</button>
-            <button
-              type="button"
-              (click)="onRate('Good')"
-              [disabled]="actionBusy()"
-              class="px-2 py-2 text-sm rounded border border-emerald-200 bg-white hover:bg-emerald-50 text-emerald-700 disabled:opacity-40"
-            >🙂 Good</button>
-            <button
-              type="button"
-              (click)="onRate('Easy')"
-              [disabled]="actionBusy()"
-              class="px-2 py-2 text-sm rounded border border-sky-200 bg-white hover:bg-sky-50 text-sky-700 disabled:opacity-40"
-            >😎 Easy</button>
-          </div>
-        }
-
-        <!-- ===== Question flow ===== -->
-        @if (phase() === 'question-prompt' || phase() === 'question-grading') {
-          <label class="block text-sm">
-            <span class="text-slate-600">Your answer</span>
-            <textarea
-              [(ngModel)]="userAnswer"
-              name="answer"
-              rows="6"
-              [maxlength]="2000"
-              [disabled]="phase() === 'question-grading'"
-              class="mt-1 w-full px-3 py-2 border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-slate-400 disabled:bg-slate-50"
-              placeholder="Type your answer. The AI will grade it against the reference."
-            ></textarea>
-            <span class="mt-1 block text-right text-xs text-slate-400">
-              {{ userAnswer.length }} / 2000
-            </span>
-          </label>
-          <div class="mt-3 flex items-center gap-2">
-            <button
-              type="button"
-              (click)="onGrade()"
-              [disabled]="actionBusy() || userAnswer.trim().length === 0"
-              class="px-3 py-1.5 text-sm rounded bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50"
-            >{{ phase() === 'question-grading' ? 'Grading…' : 'Submit answer' }}</button>
-            <button
-              type="button"
-              (click)="onSkip()"
-              [disabled]="actionBusy()"
-              class="px-3 py-1.5 text-sm rounded border border-slate-300 bg-white hover:bg-slate-100 disabled:opacity-40"
-            >⏭ Skip</button>
-          </div>
-        }
-
-        @if (phase() === 'question-graded' && grade(); as g) {
-          <div
-            class="mt-4 p-4 rounded border"
-            [class.bg-emerald-50]="g.verdict === 'Correct'"
-            [class.border-emerald-200]="g.verdict === 'Correct'"
-            [class.bg-amber-50]="g.verdict === 'Partial'"
-            [class.border-amber-200]="g.verdict === 'Partial'"
-            [class.bg-rose-50]="g.verdict === 'Incorrect'"
-            [class.border-rose-200]="g.verdict === 'Incorrect'"
-          >
-            <div class="flex items-baseline justify-between gap-3 mb-2">
-              <p class="text-sm font-semibold">
-                {{ verdictIcon(g.verdict) }} {{ g.score }} / 100 — {{ g.verdict }}
-              </p>
-              <span class="text-xs text-slate-500">suggested: {{ suggestedRating(g.score) }}</span>
+      @if (phase() === 'loading-queue' || phase() === 'loading-card') {
+        <div class="bg-surface border border-default rounded-xl p-6 space-y-3">
+          <div class="skeleton h-5 w-1/3"></div>
+          <div class="skeleton h-6 w-3/4"></div>
+          <div class="skeleton h-24 w-full"></div>
+        </div>
+      } @else if (phase() === 'done') {
+        <div class="bg-surface border border-default rounded-xl shadow-card p-10 text-center">
+          @if (queue().length === 0) {
+            <div class="inline-flex w-14 h-14 rounded-full items-center justify-center mb-4"
+                 [style.background]="'color-mix(in srgb, var(--color-brand-500) 14%, transparent)'">
+              <app-icon name="check-circle" [size]="28" class="text-brand" />
             </div>
-            <p class="text-sm text-slate-700 whitespace-pre-wrap">{{ g.feedback }}</p>
+            <p class="text-lg font-semibold text-fg">Nothing due today.</p>
+            <p class="text-sm text-fg-muted mt-1">Enjoy your day — come back tomorrow.</p>
+          } @else {
+            <div class="inline-flex w-14 h-14 rounded-full items-center justify-center mb-4"
+                 [style.background]="'color-mix(in srgb, var(--color-brand-500) 14%, transparent)'">
+              <app-icon name="party-popper" [size]="28" class="text-brand" />
+            </div>
+            <p class="text-lg font-semibold text-fg">All done.</p>
+            <p class="text-sm text-fg-muted mt-1">
+              Reviewed <span class="text-fg font-medium">{{ reviewedCount() }}</span> card{{ reviewedCount() === 1 ? '' : 's' }},
+              skipped <span class="text-fg font-medium">{{ skippedCount() }}</span>.
+            </p>
+          }
+          <a routerLink="/" class="inline-flex items-center gap-1.5 mt-6 text-sm text-brand hover:underline">
+            <app-icon name="arrow-left" [size]="14" />
+            Back to dashboard
+          </a>
+        </div>
+      } @else if (current(); as cur) {
+        <article class="bg-surface border border-default rounded-xl shadow-card p-5 md:p-7">
+          <div class="flex items-center gap-2 mb-4">
+            <span
+              class="inline-flex items-center gap-1 text-[11px] font-medium tracking-wide"
+              [class]="cur.card.type === 'Question' ? 'chip-question' : 'chip-note'"
+            >
+              <app-icon [name]="cur.card.type === 'Question' ? 'help-circle' : 'file-text'" [size]="11" />
+              {{ cur.card.type }}
+            </span>
+            <span class="text-[11px] text-fg-muted">stage {{ cur.reminder.stageNumber }}</span>
           </div>
 
-          <details class="mt-3">
-            <summary class="text-xs text-slate-500 cursor-pointer">Show reference answer</summary>
-            <div class="mt-2 p-3 rounded bg-slate-50 border border-slate-200 whitespace-pre-wrap text-sm text-slate-700 font-mono">{{ cur.card.body }}</div>
-          </details>
+          <h2 class="text-lg md:text-xl font-semibold text-fg leading-snug mb-3">{{ cur.card.title }}</h2>
 
-          <p class="mt-4 text-sm text-slate-600">
-            Accept the AI rating, or override with your own:
-          </p>
-          <div class="mt-2 grid grid-cols-4 gap-2">
-            <button
-              type="button"
-              (click)="onRate('Forgot')"
-              [disabled]="actionBusy()"
-              [class.ring-2]="suggestedRating(g.score) === 'Forgot'"
-              [class.ring-rose-400]="suggestedRating(g.score) === 'Forgot'"
-              class="px-2 py-2 text-sm rounded border border-rose-200 bg-white hover:bg-rose-50 text-rose-700 disabled:opacity-40"
-            >😕 Forgot</button>
-            <button
-              type="button"
-              (click)="onRate('Hard')"
-              [disabled]="actionBusy()"
-              [class.ring-2]="suggestedRating(g.score) === 'Hard'"
-              [class.ring-amber-400]="suggestedRating(g.score) === 'Hard'"
-              class="px-2 py-2 text-sm rounded border border-amber-200 bg-white hover:bg-amber-50 text-amber-700 disabled:opacity-40"
-            >🤔 Hard</button>
-            <button
-              type="button"
-              (click)="onRate('Good')"
-              [disabled]="actionBusy()"
-              [class.ring-2]="suggestedRating(g.score) === 'Good'"
-              [class.ring-emerald-400]="suggestedRating(g.score) === 'Good'"
-              class="px-2 py-2 text-sm rounded border border-emerald-200 bg-white hover:bg-emerald-50 text-emerald-700 disabled:opacity-40"
-            >🙂 Good</button>
-            <button
-              type="button"
-              (click)="onRate('Easy')"
-              [disabled]="actionBusy()"
-              [class.ring-2]="suggestedRating(g.score) === 'Easy'"
-              [class.ring-sky-400]="suggestedRating(g.score) === 'Easy'"
-              class="px-2 py-2 text-sm rounded border border-sky-200 bg-white hover:bg-sky-50 text-sky-700 disabled:opacity-40"
-            >😎 Easy</button>
-          </div>
-        }
+          @if (cur.card.tags.length > 0) {
+            <div class="mb-5 flex flex-wrap gap-1.5">
+              @for (t of cur.card.tags; track t) {
+                <span class="tag-pill">#{{ t }}</span>
+              }
+            </div>
+          }
 
-        @if (error()) {
-          <p class="mt-3 text-sm text-rose-600">{{ error() }}</p>
-        }
-      </div>
-    }
+          <!-- ===== Note flow ===== -->
+          @if (phase() === 'note-question') {
+            <p class="text-sm text-fg-secondary italic">
+              Recall the answer, then reveal it to rate yourself.
+            </p>
+            <div class="mt-5 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                (click)="onReveal()"
+                [disabled]="actionBusy()"
+                class="h-10 px-4 rounded-md text-sm font-medium bg-brand text-brand-on hover:bg-brand-hover disabled:opacity-50 inline-flex items-center gap-2"
+              >
+                <app-icon name="eye" [size]="16" />
+                Show answer
+              </button>
+              <button
+                type="button"
+                (click)="onSkip()"
+                [disabled]="actionBusy()"
+                class="h-10 px-4 rounded-md text-sm border border-default text-fg-secondary hover:bg-surface-hover hover:text-fg disabled:opacity-40 inline-flex items-center gap-2"
+              >
+                <app-icon name="skip-forward" [size]="14" />
+                Skip
+              </button>
+            </div>
+          }
+
+          @if (phase() === 'note-revealed') {
+            <div class="mt-4 p-4 rounded-md bg-surface-raised border border-default whitespace-pre-wrap text-sm text-fg font-mono">{{ cur.card.body }}</div>
+            <p class="mt-5 text-sm text-fg-secondary">How well did you remember?</p>
+            <div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
+              @for (b of ratingButtons; track b.rating) {
+                <button
+                  type="button"
+                  (click)="onRate(b.rating)"
+                  [disabled]="actionBusy()"
+                  class="rating-btn"
+                  [class]="b.class"
+                >
+                  <app-icon [name]="b.icon" [size]="16" />
+                  <span>{{ b.rating }}</span>
+                </button>
+              }
+            </div>
+          }
+
+          <!-- ===== Question flow ===== -->
+          @if (phase() === 'question-prompt' || phase() === 'question-grading') {
+            <label class="block">
+              <span class="block text-xs font-medium text-fg-secondary mb-1.5">Your answer</span>
+              <textarea
+                [(ngModel)]="userAnswer"
+                name="answer"
+                rows="6"
+                [maxlength]="2000"
+                [disabled]="phase() === 'question-grading'"
+                class="w-full px-3 py-2 bg-surface-raised border border-default rounded-md text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand disabled:opacity-60"
+                placeholder="Type your answer. The AI will grade it against the reference."
+              ></textarea>
+              <span class="mt-1.5 block text-right text-xs text-fg-muted tabular-nums">
+                {{ userAnswer.length }} / 2000
+              </span>
+            </label>
+            <div class="mt-3 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                (click)="onGrade()"
+                [disabled]="actionBusy() || userAnswer.trim().length === 0"
+                class="h-10 px-4 rounded-md text-sm font-medium bg-brand text-brand-on hover:bg-brand-hover disabled:opacity-50 inline-flex items-center gap-2"
+              >
+                @if (phase() === 'question-grading') {
+                  <app-icon name="loader" [size]="14" class="animate-spin" />
+                  Grading…
+                } @else {
+                  <app-icon name="sparkles" [size]="14" />
+                  Submit answer
+                }
+              </button>
+              <button
+                type="button"
+                (click)="onSkip()"
+                [disabled]="actionBusy()"
+                class="h-10 px-4 rounded-md text-sm border border-default text-fg-secondary hover:bg-surface-hover hover:text-fg disabled:opacity-40 inline-flex items-center gap-2"
+              >
+                <app-icon name="skip-forward" [size]="14" />
+                Skip
+              </button>
+            </div>
+          }
+
+          @if (phase() === 'question-graded' && grade(); as g) {
+            <div
+              class="mt-4 p-4 rounded-lg border"
+              [style.color]="verdictColor(g.verdict)"
+              [style.background]="verdictBg(g.verdict)"
+              [style.border-color]="verdictBorder(g.verdict)"
+            >
+              <div class="flex items-baseline justify-between gap-3 mb-2">
+                <p class="text-sm font-semibold flex items-center gap-2">
+                  <app-icon [name]="verdictIcon(g.verdict)" [size]="16" />
+                  <span class="tabular-nums">{{ g.score }} / 100</span>
+                  <span class="opacity-80">— {{ g.verdict }}</span>
+                </p>
+                <span class="text-xs opacity-80">suggested: {{ suggestedRating(g.score) }}</span>
+              </div>
+              <p class="text-sm whitespace-pre-wrap" style="color: var(--color-fg)">{{ g.feedback }}</p>
+            </div>
+
+            <details class="mt-3">
+              <summary class="text-xs text-fg-muted cursor-pointer hover:text-fg-secondary">Show reference answer</summary>
+              <div class="mt-2 p-3 rounded-md bg-surface-raised border border-default whitespace-pre-wrap text-sm text-fg font-mono">{{ cur.card.body }}</div>
+            </details>
+
+            <p class="mt-5 text-sm text-fg-secondary">
+              Accept the AI rating, or override with your own:
+            </p>
+            <div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
+              @for (b of ratingButtons; track b.rating) {
+                <button
+                  type="button"
+                  (click)="onRate(b.rating)"
+                  [disabled]="actionBusy()"
+                  class="rating-btn relative"
+                  [class]="b.class"
+                  [class.is-suggested]="suggestedRating(g.score) === b.rating"
+                >
+                  <app-icon [name]="b.icon" [size]="16" />
+                  <span>{{ b.rating }}</span>
+                </button>
+              }
+            </div>
+          }
+
+          @if (error()) {
+            <p class="mt-4 text-sm text-danger">{{ error() }}</p>
+          }
+        </article>
+      }
+    </div>
   `,
 })
 export class PracticeComponent {
@@ -259,6 +261,13 @@ export class PracticeComponent {
   readonly position = computed(() => this.queueIndex() + 1);
 
   userAnswer = '';
+
+  readonly ratingButtons: Array<{ rating: Rating; icon: IconName; class: string }> = [
+    { rating: 'Forgot', icon: 'x-circle', class: 'rating-again' },
+    { rating: 'Hard', icon: 'circle-help', class: 'rating-hard' },
+    { rating: 'Good', icon: 'check', class: 'rating-good' },
+    { rating: 'Easy', icon: 'sparkles', class: 'rating-easy' },
+  ];
 
   constructor() {
     void this.loadQueue();
@@ -295,7 +304,6 @@ export class PracticeComponent {
       this.phase.set(card.type === 'Question' ? 'question-prompt' : 'note-question');
     } catch (e) {
       this.error.set(this.describe(e, 'Could not load the card.'));
-      // Skip to next instead of getting stuck.
       this.advance();
     }
   }
@@ -306,9 +314,6 @@ export class PracticeComponent {
     this.actionBusy.set(true);
     this.error.set(null);
     try {
-      // Reveal returns the body which we already have on the loaded card;
-      // call the endpoint anyway so server-side validation runs (status
-      // check, ownership) — this surfaces forbidden / not-found cleanly.
       await firstValueFrom(this.api.revealReminder(cur.reminder.reminderId));
       this.phase.set('note-revealed');
     } catch (e) {
@@ -396,17 +401,30 @@ export class PracticeComponent {
   }
 
   suggestedRating(score: number): Rating {
-    // Mirrors AnswerRatingMapper on the backend.
     if (score >= 85) return 'Easy';
     if (score >= 65) return 'Good';
     if (score >= 40) return 'Hard';
     return 'Forgot';
   }
 
-  verdictIcon(v: GradingResult['verdict']): string {
-    if (v === 'Correct') return '✅';
-    if (v === 'Partial') return '🟡';
-    return '❌';
+  verdictIcon(v: GradingResult['verdict']): IconName {
+    if (v === 'Correct') return 'check-circle';
+    if (v === 'Partial') return 'info';
+    return 'x-circle';
+  }
+
+  verdictColor(v: GradingResult['verdict']): string {
+    if (v === 'Correct') return 'var(--color-rating-good)';
+    if (v === 'Partial') return 'var(--color-rating-hard)';
+    return 'var(--color-rating-again)';
+  }
+
+  verdictBg(v: GradingResult['verdict']): string {
+    return `color-mix(in srgb, ${this.verdictColor(v)} 12%, transparent)`;
+  }
+
+  verdictBorder(v: GradingResult['verdict']): string {
+    return `color-mix(in srgb, ${this.verdictColor(v)} 35%, transparent)`;
   }
 
   private describe(e: unknown, fallback: string): string {

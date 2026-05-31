@@ -13,25 +13,25 @@ export interface ConfirmDialogData {
   selector: 'app-confirm-dialog',
   standalone: true,
   template: `
-    <div class="bg-white rounded-lg shadow-xl border border-slate-200">
+    <div class="bg-surface border border-default rounded-xl shadow-overlay">
       <div class="p-6">
-        <h2 class="text-lg font-semibold text-slate-900 mb-2">{{ data.title }}</h2>
-        <p class="text-sm text-slate-600">{{ data.message }}</p>
+        <h2 class="text-lg font-semibold text-fg mb-2">{{ data.title }}</h2>
+        <p class="text-sm text-fg-secondary leading-relaxed">{{ data.message }}</p>
       </div>
-      <div class="flex justify-end gap-2 px-6 py-4 bg-slate-50 rounded-b-lg">
+      <div class="flex justify-end gap-2 px-6 py-4 border-t border-default rounded-b-xl bg-surface-raised">
         <button
           type="button"
           (click)="cancel()"
-          class="px-3 py-1.5 text-sm rounded border border-slate-300 bg-white hover:bg-slate-100"
+          class="px-3 h-9 text-sm rounded-md border border-default text-fg-secondary hover:bg-surface-hover transition-colors"
         >{{ data.cancelLabel ?? 'Cancel' }}</button>
         <button
           type="button"
           (click)="confirm()"
-          class="px-3 py-1.5 text-sm rounded text-white"
-          [class.bg-rose-600]="data.destructive"
-          [class.hover:bg-rose-700]="data.destructive"
-          [class.bg-slate-900]="!data.destructive"
-          [class.hover:bg-slate-800]="!data.destructive"
+          class="px-3 h-9 text-sm font-medium rounded-md text-white transition-colors"
+          [class.bg-brand]="!data.destructive"
+          [class.text-brand-on]="!data.destructive"
+          [class.hover:bg-brand-400]="!data.destructive"
+          [style.background]="data.destructive ? 'var(--color-rating-again)' : null"
         >{{ data.confirmLabel ?? 'OK' }}</button>
       </div>
     </div>
