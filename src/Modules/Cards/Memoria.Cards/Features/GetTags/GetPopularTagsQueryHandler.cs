@@ -23,24 +23,27 @@ internal sealed class GetPopularTagsQueryHandler : IRequestHandler<GetPopularTag
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var count = Math.Clamp(request.Count, 1, 50);
-    
-        var query = from tag in _db.Tags
-            where tag.UserId == request.UserId
-            join ct in _db.CardTags on tag.Id equals ct.TagId
-            join card in _db.Cards on ct.CardId equals card.Id
-            where card.DeletedAt == null
-            group ct by new { tag.Id, tag.NormalizedName } into g
-            select new TagDto(
-                g.Key.Id,
-                g.Key.NormalizedName,
-                g.Count()
-            );
-
-        var items = await query
-            .OrderByDescending(x => x.CardCount)
-            .ThenBy(x => x.Name)
-            .Take(count)
+        var items = await (
+                from ct in _db.CardTags
+                join t in _db.Tags on ct.TagId equals t.Id
+                join c in _db.Cards on ct.CardId equals c.Id
+                where c.UserId == request.UserId
+                      && c.DeletedAt == null
+                group ct by new
+                {
+                    t.Id,
+                    t.NormalizedName
+                }
+                into g
+                orderby g.Count() descending
+                select new TagDto(
+                
+                    g.Key.Id,
+                    g.Key.NormalizedName,
+                    g.Count()
+                )
+            )
+            .Take(request.Count)
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
