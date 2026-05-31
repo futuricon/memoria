@@ -126,6 +126,12 @@ export interface TagAverageDto {
   avgScore: number;
 }
 
+export interface TagDto {
+  id: string;
+  name: string;
+  cardCount: number;
+}
+
 export type Rating = 'Forgot' | 'Hard' | 'Good' | 'Easy';
 
 export interface RevealedAnswerDto {

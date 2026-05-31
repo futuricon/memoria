@@ -20,6 +20,7 @@ import {
   StreakDto,
   StuckCardDto,
   TagAverageDto,
+  TagDto,
   TelegramLinkingTokenDto,
   TrashedCardDto,
   UpdateCardPayload,
@@ -50,8 +51,8 @@ export class ApiClient {
     return this.http.get<CardDto>(`${this.base}/api/v1/cards/${id}`);
   }
 
-  listTags(): Observable<string[]> {
-    return this.http.get<string[]>(`${this.base}/api/v1/tags`);
+  listTags(): Observable<TagDto[]> {
+    return this.http.get<TagDto[]>(`${this.base}/api/v1/tags`);
   }
 
   dueToday(): Observable<DueReminderDto[]> {

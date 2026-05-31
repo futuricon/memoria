@@ -59,20 +59,23 @@ const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
       @if (tags.value(); as availableTags) {
         @if (availableTags.length > 0) {
           <div class="flex flex-wrap gap-1.5 mb-4">
-            @for (t of availableTags; track t) {
+            @for (t of availableTags; track t.id) {
               <button
                 type="button"
-                class="px-2.5 py-1 text-xs rounded-full border transition-colors"
-                [class.bg-brand-soft]="isTagActive(t)"
-                [class.border-brand-soft]="isTagActive(t)"
-                [class.text-brand]="isTagActive(t)"
-                [class.font-medium]="isTagActive(t)"
-                [class.bg-surface]="!isTagActive(t)"
-                [class.border-default]="!isTagActive(t)"
-                [class.text-fg-secondary]="!isTagActive(t)"
-                [class.hover:bg-surface-hover]="!isTagActive(t)"
-                (click)="toggleTag(t)"
-              >#{{ t }}</button>
+                class="px-2.5 py-1 text-xs rounded-full border transition-colors inline-flex items-center gap-1"
+                [class.bg-brand-soft]="isTagActive(t.name)"
+                [class.border-brand-soft]="isTagActive(t.name)"
+                [class.text-brand]="isTagActive(t.name)"
+                [class.font-medium]="isTagActive(t.name)"
+                [class.bg-surface]="!isTagActive(t.name)"
+                [class.border-default]="!isTagActive(t.name)"
+                [class.text-fg-secondary]="!isTagActive(t.name)"
+                [class.hover:bg-surface-hover]="!isTagActive(t.name)"
+                (click)="toggleTag(t.name)"
+              >
+                <span>#{{ t.name }}</span>
+                <span class="text-fg-muted tabular-nums">{{ t.cardCount }}</span>
+              </button>
             }
           </div>
         }
