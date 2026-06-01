@@ -229,8 +229,8 @@ export class SettingsComponent {
       await firstValueFrom(
         this.api.updateMe({
           timeZoneId: this.timeZoneId.trim() || 'UTC',
-          quietHoursStart: this.quietStart || null,
-          quietHoursEnd: this.quietEnd || null,
+          quietHoursStart: toTimeOnlyWire(this.quietStart),
+          quietHoursEnd: toTimeOnlyWire(this.quietEnd),
         }),
       );
       this.saveStatus.set('Saved.');
@@ -265,3 +265,12 @@ export class SettingsComponent {
   }
 }
 
+/**
+ * <input type="time"> emits "HH:mm" but the backend's TimeOnly converter
+ * requires the full "HH:mm:ss" form. Pad the seconds so the request body
+ * deserializes; an empty value becomes null (the column is nullable).
+ */
+function toTimeOnlyWire(v: string): string | null {
+  if (!v) return null;
+  return /^\d{2}:\d{2}$/.test(v) ? `${v}:00` : v;
+}
