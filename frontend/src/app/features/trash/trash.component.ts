@@ -1,6 +1,6 @@
 import { Dialog } from '@angular/cdk/dialog';
 import { DatePipe } from '@angular/common';
-import { Component, inject, resource, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, resource, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { ApiClient } from '../../core/api/api-client';
@@ -13,6 +13,7 @@ import { IconComponent } from '../../core/ui/icon/icon.component';
   standalone: true,
   imports: [DatePipe, IconComponent],
   templateUrl: './trash.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TrashComponent {
   private readonly api = inject(ApiClient);

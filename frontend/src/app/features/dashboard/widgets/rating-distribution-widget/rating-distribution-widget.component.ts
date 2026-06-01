@@ -1,4 +1,4 @@
-import { Component, computed, inject, resource } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, resource } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { ApiClient } from '../../../../core/api/api-client';
@@ -14,6 +14,7 @@ interface Row {
   selector: 'app-rating-distribution-widget',
   standalone: true,
   templateUrl: './rating-distribution-widget.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RatingDistributionWidgetComponent {
   private readonly api = inject(ApiClient);

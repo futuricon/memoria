@@ -1,4 +1,5 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   ElementRef,
   HostListener,
@@ -17,6 +18,7 @@ import { IconComponent } from '../icon/icon.component';
   standalone: true,
   imports: [IconComponent],
   templateUrl: './timezone-picker.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TimeZonePickerComponent {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);

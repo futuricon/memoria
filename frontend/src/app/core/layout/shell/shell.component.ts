@@ -1,4 +1,4 @@
-import { Component, inject, signal } from "@angular/core";
+import { ChangeDetectionStrategy, Component, inject, signal } from "@angular/core";
 import {
   NavigationEnd,
   Router,
@@ -30,6 +30,7 @@ interface NavItem {
     ThemeToggleComponent,
   ],
   templateUrl: "./shell.component.html",
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ShellComponent {
   private readonly auth = inject(AuthService);

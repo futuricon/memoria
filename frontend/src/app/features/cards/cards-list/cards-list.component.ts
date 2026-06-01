@@ -1,5 +1,5 @@
 import { Dialog } from "@angular/cdk/dialog";
-import { Component, inject, resource, signal } from "@angular/core";
+import { ChangeDetectionStrategy, Component, inject, resource, signal } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { firstValueFrom } from "rxjs";
 
@@ -18,6 +18,7 @@ const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
   standalone: true,
   imports: [FormsModule, GradePillComponent, IconComponent],
   templateUrl: "./cards-list.component.html",
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CardsListComponent {
   private readonly api = inject(ApiClient);

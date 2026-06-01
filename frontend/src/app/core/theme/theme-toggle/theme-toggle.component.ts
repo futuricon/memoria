@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
 import { IconComponent, type IconName } from '../../ui/icon/icon.component';
 import { ThemeService } from '../theme.service';
@@ -8,6 +8,7 @@ import { ThemeService } from '../theme.service';
   standalone: true,
   imports: [IconComponent],
   templateUrl: './theme-toggle.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ThemeToggleComponent {
   protected readonly theme = inject(ThemeService);

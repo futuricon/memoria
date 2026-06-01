@@ -1,5 +1,5 @@
 import { DecimalPipe } from '@angular/common';
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { CardType } from '../../api/dto';
 import { IconComponent } from '../icon/icon.component';
@@ -15,6 +15,7 @@ import { IconComponent } from '../icon/icon.component';
   standalone: true,
   imports: [DecimalPipe, IconComponent],
   templateUrl: './grade-pill.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GradePillComponent {
   readonly type = input.required<CardType>();

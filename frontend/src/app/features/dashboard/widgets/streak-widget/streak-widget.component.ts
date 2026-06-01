@@ -1,4 +1,4 @@
-import { Component, inject, resource } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, resource } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { ApiClient } from '../../../../core/api/api-client';
@@ -9,6 +9,7 @@ import { IconComponent } from '../../../../core/ui/icon/icon.component';
   standalone: true,
   imports: [IconComponent],
   templateUrl: './streak-widget.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StreakWidgetComponent {
   private readonly api = inject(ApiClient);

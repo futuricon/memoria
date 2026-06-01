@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, resource, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, resource, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 
@@ -12,6 +12,7 @@ import { TimeZonePickerComponent } from '../../core/ui/timezone-picker/timezone-
   standalone: true,
   imports: [DatePipe, FormsModule, IconComponent, TimeZonePickerComponent],
   templateUrl: './settings.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SettingsComponent {
   private readonly api = inject(ApiClient);

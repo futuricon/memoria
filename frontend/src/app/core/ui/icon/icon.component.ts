@@ -1,4 +1,4 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 /**
@@ -139,6 +139,7 @@ const PATHS: Record<IconName, string> = {
     :host { display: inline-flex; line-height: 0; flex-shrink: 0; }
     svg { display: block; }
   `],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class IconComponent {
   private readonly sanitizer = inject(DomSanitizer);

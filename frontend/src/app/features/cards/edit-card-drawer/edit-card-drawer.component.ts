@@ -1,5 +1,5 @@
 import { Dialog, DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ApiClient } from '../../../core/api/api-client';
@@ -15,6 +15,7 @@ export interface EditCardDrawerData {
   standalone: true,
   imports: [FormsModule, IconComponent],
   templateUrl: './edit-card-drawer.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditCardDrawerComponent {
   readonly data = inject<EditCardDrawerData>(DIALOG_DATA);

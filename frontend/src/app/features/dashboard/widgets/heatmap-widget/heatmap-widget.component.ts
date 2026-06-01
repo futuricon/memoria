@@ -1,4 +1,4 @@
-import { Component, computed, inject, resource } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, resource } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { ApiClient } from '../../../../core/api/api-client';
@@ -19,6 +19,7 @@ const DAYS_BACK = 84; // 12 weeks
   selector: 'app-heatmap-widget',
   standalone: true,
   templateUrl: './heatmap-widget.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HeatmapWidgetComponent {
   private readonly api = inject(ApiClient);

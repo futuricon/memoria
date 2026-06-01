@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -34,6 +34,7 @@ interface CurrentCard {
   standalone: true,
   imports: [FormsModule, RouterLink, IconComponent],
   templateUrl: './practice.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PracticeComponent {
   private readonly api = inject(ApiClient);

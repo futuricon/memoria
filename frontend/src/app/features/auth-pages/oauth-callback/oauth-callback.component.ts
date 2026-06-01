@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
@@ -9,6 +9,7 @@ import { IconComponent } from '../../../core/ui/icon/icon.component';
   standalone: true,
   imports: [RouterLink, IconComponent],
   templateUrl: './oauth-callback.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OAuthCallbackComponent implements OnInit {
   private readonly auth = inject(AuthService);

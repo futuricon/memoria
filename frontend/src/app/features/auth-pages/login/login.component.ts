@@ -1,5 +1,6 @@
 import {
   AfterViewInit,
+  ChangeDetectionStrategy,
   Component,
   ElementRef,
   ViewChild,
@@ -38,6 +39,7 @@ declare global {
   standalone: true,
   imports: [FormsModule, IconComponent, ThemeToggleComponent],
   templateUrl: "./login.component.html",
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginComponent implements AfterViewInit {
   @ViewChild("tgMount") tgMount?: ElementRef<HTMLElement>;
