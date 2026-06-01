@@ -124,6 +124,7 @@ public static class DependencyInjection
         app.UseForwardedHeaders();
         app.UseMiddleware<OperationContextMiddleware>();
         app.UseExceptionHandler();
+        app.UseMiddleware<BadRequestLoggingMiddleware>();
         app.UseCors(CorsConfiguration.PolicyName);
         app.UseAuthentication();
         app.UseAuthorization();
