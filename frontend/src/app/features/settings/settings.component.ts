@@ -5,11 +5,12 @@ import { firstValueFrom } from 'rxjs';
 
 import { ApiClient } from '../../core/api/api-client';
 import { IconComponent } from '../../core/ui/icon.component';
+import { TimeZonePickerComponent } from '../../core/ui/timezone-picker.component';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [DatePipe, FormsModule, IconComponent],
+  imports: [DatePipe, FormsModule, IconComponent, TimeZonePickerComponent],
   template: `
     <div class="px-4 md:px-8 py-6 md:py-8 max-w-3xl mx-auto">
       <header class="mb-6">
@@ -66,25 +67,16 @@ import { IconComponent } from '../../core/ui/icon.component';
           <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium mb-4">Preferences</h2>
 
           <div class="space-y-4">
-            <label class="block">
+            <div>
               <span class="block text-xs font-medium text-fg-secondary mb-1.5">Timezone</span>
-              <input
-                type="text"
-                list="timezones"
-                [(ngModel)]="timeZoneId"
-                name="timeZoneId"
-                class="w-full px-3 py-2 bg-surface-raised border border-default rounded-md text-sm text-fg placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"
-                placeholder="Europe/Tashkent"
+              <app-timezone-picker
+                [options]="timeZones.value()"
+                [(value)]="timeZoneId"
               />
-              <datalist id="timezones">
-                @for (tz of timeZones.value() ?? []; track tz.id) {
-                  <option [value]="tz.id" [label]="tz.displayName"></option>
-                }
-              </datalist>
               <span class="block mt-1.5 text-xs text-fg-muted">
                 IANA name. Affects scheduling and quiet-hours interpretation.
               </span>
-            </label>
+            </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <label class="block">
