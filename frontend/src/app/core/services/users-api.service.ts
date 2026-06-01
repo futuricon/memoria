@@ -9,7 +9,7 @@ import {
   TimeZoneDto,
   UpdateMePayload,
   UserIdentityDto,
-} from '../api/dto';
+} from '../models/user.model';
 
 @Injectable({ providedIn: 'root' })
 export class UsersApiService {

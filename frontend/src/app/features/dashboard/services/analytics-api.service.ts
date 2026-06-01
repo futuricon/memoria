@@ -10,7 +10,7 @@ import {
   StreakDto,
   StuckCardDto,
   TagAverageDto,
-} from '../../../core/api/dto';
+} from '../models/analytics.model';
 
 @Injectable({ providedIn: 'root' })
 export class AnalyticsApiService {

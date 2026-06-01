@@ -3,12 +3,9 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
-import {
-  CardDto,
-  DueReminderDto,
-  GradingResult,
-  Rating,
-} from '../../core/api/dto';
+import { CardDto } from '../cards/models/card.model';
+import { DueReminderDto } from './models/reminder.model';
+import { GradingResult, Rating } from './models/review.model';
 import { IconComponent, type IconName } from '../../core/ui/icon/icon.component';
 import { CardsApiService } from '../cards/services/cards-api.service';
 import { RemindersApiService } from './services/reminders-api.service';

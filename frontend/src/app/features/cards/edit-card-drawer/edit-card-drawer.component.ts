@@ -2,7 +2,7 @@ import { Dialog, DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { CardDto } from '../../../core/api/dto';
+import { CardDto } from '../models/card.model';
 import { IconComponent } from '../../../core/ui/icon/icon.component';
 import { CardsApiService } from '../services/cards-api.service';
 

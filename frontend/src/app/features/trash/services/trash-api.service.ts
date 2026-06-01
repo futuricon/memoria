@@ -3,7 +3,9 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
-import { CardDto, PagedResult, TrashedCardDto } from '../../../core/api/dto';
+import { PagedResult } from '../../../shared/models/paged-result.model';
+import { CardDto } from '../../cards/models/card.model';
+import { TrashedCardDto } from '../models/trashed-card.model';
 
 @Injectable({ providedIn: 'root' })
 export class TrashApiService {

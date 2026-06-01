@@ -3,7 +3,7 @@ import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, resource, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-import { TrashedCardDto } from '../../core/api/dto';
+import { TrashedCardDto } from './models/trashed-card.model';
 import { openConfirm } from '../../core/ui/confirm-dialog/confirm-dialog.component';
 import { IconComponent } from '../../core/ui/icon/icon.component';
 import { TrashApiService } from './services/trash-api.service';

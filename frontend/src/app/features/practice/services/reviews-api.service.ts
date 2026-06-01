@@ -7,7 +7,7 @@ import {
   GradingResult,
   RecordReviewPayload,
   ReviewDto,
-} from '../../../core/api/dto';
+} from '../models/review.model';
 
 @Injectable({ providedIn: 'root' })
 export class ReviewsApiService {

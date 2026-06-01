@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
-import { TagDto } from '../../../core/api/dto';
+import { TagDto } from '../models/tag.model';
 
 @Injectable({ providedIn: 'root' })
 export class TagsApiService {

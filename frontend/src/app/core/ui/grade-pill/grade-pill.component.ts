@@ -1,7 +1,7 @@
 import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-import { CardType } from '../../api/dto';
+import { CardType } from '../../../features/cards/models/card.model';
 import { IconComponent } from '../icon/icon.component';
 
 /**

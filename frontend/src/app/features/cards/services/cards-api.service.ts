@@ -3,13 +3,13 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
+import { PagedResult } from '../../../shared/models/paged-result.model';
 import {
   AddCardPayload,
   CardDto,
   CardSummaryDto,
-  PagedResult,
   UpdateCardPayload,
-} from '../../../core/api/dto';
+} from '../models/card.model';
 
 @Injectable({ providedIn: 'root' })
 export class CardsApiService {

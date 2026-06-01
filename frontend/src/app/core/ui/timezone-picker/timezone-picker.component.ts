@@ -10,7 +10,7 @@ import {
   signal,
 } from '@angular/core';
 
-import { TimeZoneDto } from '../../api/dto';
+import { TimeZoneDto } from '../../models/user.model';
 import { IconComponent } from '../icon/icon.component';
 
 @Component({

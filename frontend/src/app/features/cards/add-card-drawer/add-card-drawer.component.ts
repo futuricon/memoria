@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 
-import { CardDto } from '../../../core/api/dto';
+import { CardDto } from '../models/card.model';
 import { IconComponent } from '../../../core/ui/icon/icon.component';
 import { CardsApiService } from '../services/cards-api.service';
 

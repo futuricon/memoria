@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, resource, signal } from "@a
 import { FormsModule } from "@angular/forms";
 import { firstValueFrom } from "rxjs";
 
-import { CardSummaryDto } from "../../../core/api/dto";
+import { CardSummaryDto } from "../models/card.model";
 import { openConfirm } from "../../../core/ui/confirm-dialog/confirm-dialog.component";
 import { GradePillComponent } from "../../../core/ui/grade-pill/grade-pill.component";
 import { IconComponent } from "../../../core/ui/icon/icon.component";
