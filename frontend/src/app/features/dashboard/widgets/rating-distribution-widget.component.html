@@ -1,0 +1,38 @@
+<section class="bg-surface border border-default rounded-xl shadow-card p-5">
+  <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium mb-2">
+    Ratings · last 30 days
+  </h2>
+  @if (data.isLoading()) {
+    <div class="skeleton h-3 w-24 mb-3"></div>
+    <div class="space-y-2">
+      <div class="skeleton h-2 w-full"></div>
+      <div class="skeleton h-2 w-full"></div>
+      <div class="skeleton h-2 w-full"></div>
+      <div class="skeleton h-2 w-full"></div>
+    </div>
+  } @else if (data.error()) {
+    <p class="text-sm text-danger">Failed to load.</p>
+  } @else if (data.value(); as d) {
+    @if (d.total === 0) {
+      <p class="text-sm text-fg-muted">No reviews in this window yet.</p>
+    } @else {
+      <p class="text-xs text-fg-muted mb-3">{{ d.total }} reviews</p>
+      <ul class="space-y-2">
+        @for (row of rows(); track row.label) {
+          <li class="text-xs">
+            <div class="flex items-center justify-between mb-1">
+              <span class="flex items-center gap-1.5 text-fg-secondary">
+                <span class="w-1.5 h-1.5 rounded-full" [style.background]="row.color"></span>
+                {{ row.label }}
+              </span>
+              <span class="text-fg-muted tabular-nums">{{ row.count }} · {{ row.pct }}%</span>
+            </div>
+            <div class="h-1.5 rounded-full bg-surface-raised overflow-hidden">
+              <div class="h-full transition-all" [style.width.%]="row.pct" [style.background]="row.color"></div>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  }
+</section>

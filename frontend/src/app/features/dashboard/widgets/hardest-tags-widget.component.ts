@@ -19,47 +19,7 @@ function bandBackground(score: number): string {
   selector: 'app-hardest-tags-widget',
   standalone: true,
   imports: [DecimalPipe, IconComponent],
-  template: `
-    <section class="bg-surface border border-default rounded-xl shadow-card p-5">
-      <div class="flex items-center gap-2 mb-2">
-        <app-icon name="trending-down" [size]="14" class="text-fg-muted" />
-        <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium">Hardest tags</h2>
-      </div>
-      @if (data.isLoading()) {
-        <div class="space-y-2">
-          <div class="skeleton h-3 w-3/4"></div>
-          <div class="skeleton h-3 w-1/2"></div>
-          <div class="skeleton h-3 w-2/3"></div>
-        </div>
-      } @else if (data.error()) {
-        <p class="text-sm text-danger">Failed to load.</p>
-      } @else {
-        @let items = data.value() ?? [];
-        @if (items.length === 0) {
-          <p class="text-sm text-fg-muted">
-            Not enough reviewed tagged cards yet. Tag your cards and review at least 3 times.
-          </p>
-        } @else {
-          <p class="text-xs text-fg-muted mb-3">Ranked by lowest average.</p>
-          <ul class="-mx-2">
-            @for (t of items; track t.tag) {
-              <li class="flex items-center justify-between gap-3 px-2 py-2 rounded-md hover:bg-surface-hover">
-                <span class="text-sm text-fg truncate">#{{ t.tag }}</span>
-                <span class="flex items-center gap-2 text-xs whitespace-nowrap">
-                  <span
-                    class="px-2 py-0.5 rounded font-medium tabular-nums"
-                    [style.color]="band(t.avgScore)"
-                    [style.background]="bandBg(t.avgScore)"
-                  >{{ t.avgScore | number: '1.0-0' }}</span>
-                  <span class="text-fg-muted">{{ t.cardCount }} card{{ t.cardCount === 1 ? '' : 's' }}</span>
-                </span>
-              </li>
-            }
-          </ul>
-        }
-      }
-    </section>
-  `,
+  templateUrl: './hardest-tags-widget.component.html',
 })
 export class HardestTagsWidgetComponent {
   private readonly api = inject(ApiClient);

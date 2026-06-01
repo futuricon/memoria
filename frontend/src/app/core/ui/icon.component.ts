@@ -134,20 +134,7 @@ const PATHS: Record<IconName, string> = {
 @Component({
   selector: 'app-icon',
   standalone: true,
-  template: `
-    <svg
-      [attr.width]="size()"
-      [attr.height]="size()"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      aria-hidden="true"
-      [innerHTML]="paths()"
-    ></svg>
-  `,
+  templateUrl: './icon.component.html',
   styles: [`
     :host { display: inline-flex; line-height: 0; flex-shrink: 0; }
     svg { display: block; }

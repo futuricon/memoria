@@ -7,20 +7,7 @@ import { ThemeService } from './theme.service';
   selector: 'app-theme-toggle',
   standalone: true,
   imports: [IconComponent],
-  template: `
-    @if (!theme.isInMiniApp) {
-      <button
-        type="button"
-        (click)="cycle()"
-        class="h-9 px-2.5 rounded-md text-fg-secondary hover:bg-surface-hover hover:text-fg text-xs flex items-center gap-1.5 transition-colors"
-        [attr.title]="title()"
-        [attr.aria-label]="title()"
-      >
-        <app-icon [name]="iconName()" [size]="16" />
-        <span class="hidden sm:inline capitalize">{{ mode() }}</span>
-      </button>
-    }
-  `,
+  templateUrl: './theme-toggle.component.html',
 })
 export class ThemeToggleComponent {
   protected readonly theme = inject(ThemeService);

@@ -1,0 +1,112 @@
+<div class="min-h-screen flex flex-col md:flex-row bg-page">
+  <!-- Mobile top bar -->
+  <header
+    class="md:hidden sticky top-0 z-30 h-12 px-3 flex items-center gap-2 bg-page border-b border-default"
+  >
+    <button
+      type="button"
+      (click)="openSidebar()"
+      class="w-10 h-10 -ml-1 rounded-md text-fg-secondary hover:bg-surface-hover flex items-center justify-center"
+      aria-label="Open menu"
+    >
+      <app-icon name="menu" [size]="20" />
+    </button>
+    <div class="h-12 px-5 flex items-center gap-2 border-b border-default">
+      <svg
+        class="w-5 h-5 shrink-0 text-brand"
+        viewBox="590 200 350 350"
+        fill="currentColor"
+      >
+        <path
+          d="M881.5904,280.71062c0.6748,-0.09128 0.308,-0.05684 0.84,-0.08512c20.1208,-1.07044 36.6632,14.39004 36.4588,34.64888c-0.1008,9.87056 0.0224,19.92228 0.0196,29.78164l0.0028,55.2132v26.6028c0.0028,4.9616 0.2324,12.9304 -0.5964,17.5224c-1.2152,6.4876 -4.326,12.4712 -8.9376,17.1948c-6.4204,6.608 -14.7364,10.0184 -23.9148,10.0576c-8.9264,0.1288 -17.5252,-3.3516 -23.8476,-9.6544c-4.1692,-4.1468 -7.1568,-9.3268 -8.6604,-15.0108c-1.7808,-6.7648 -1.246,-17.3404 -1.2488,-24.6428l-0.0056,-28.504c-1.8088,2.5004 -11.0516,11.382 -13.7172,14.0448l-29.4896,29.4868l-15.1508,15.1872c-4.186,4.2 -9.6936,10.1808 -14.4984,13.23c-4.0292,2.5536 -8.5708,4.1916 -13.3028,4.7992c-8.86676,1.19 -17.84216,-1.1984 -24.94604,-6.636c-7.18592,-5.53 -11.82468,-13.734 -12.85732,-22.7416c-1.04104,-8.9068 1.52992,-17.8612 7.13832,-24.8612c1.96672,-2.4444 5.77276,-6.076 8.06932,-8.372l13.64496,-13.6444l45.40956,-45.40368l41.2832,-41.27508l11.8188,-11.8566c8.736,-8.76596 13.5352,-13.6444 26.488,-15.08164z"
+          id="Path-1-1"
+          fill="#22c7b8"
+        ></path>
+        <path
+          d="M766.68484,280.71622c8.61196,0.01036 15.98716,2.28424 22.66236,7.91336c6.8376,5.80216 11.0768,14.09492 11.774,23.03672c0.7168,8.90708 -2.1812,17.72792 -8.0416,24.47424c-2.7524,3.14664 -6.6836,6.86672 -9.702,9.8826l-16.43768,16.42732l-51.87224,51.86916l-32.79584,32.802c-4.09808,4.1076 -8.35856,8.274 -12.40344,12.418c-7.24612,7.4256 -14.02688,10.6596 -24.40508,11.3372c-7.7896,0.658 -17.13068,-3.1948 -22.9404,-8.2488c-6.77936,-5.9024 -10.9018,-14.28 -11.43968,-23.2512c-1.04972,-15.9572 7.44576,-23.4612 17.6022,-33.6224l16.93216,-16.9344l52.52548,-52.52044l32.32516,-32.31928c3.67052,-3.67304 7.60676,-7.46648 11.18404,-11.21232c7.34748,-7.69384 14.29624,-11.40048 25.03256,-12.05176z"
+          id="Path-1-2"
+          fill="#22c7b8"
+        ></path>
+      </svg>
+
+      <span class="text-sm font-semibold tracking-tight"> Memoria </span>
+    </div>
+    <app-theme-toggle />
+  </header>
+
+  <!-- Mobile backdrop -->
+  <div
+    class="sidebar-backdrop fixed inset-0 bg-black/55 z-40 md:hidden"
+    [class.is-open]="sidebarOpen()"
+    (click)="closeSidebar()"
+  ></div>
+
+  <!-- Sidebar — sticky on md+, off-canvas drawer on mobile -->
+  <aside
+    class="sidebar-mobile md:translate-x-0 md:sticky md:top-0 md:h-screen md:self-start fixed inset-y-0 left-0 z-40 w-64 bg-sidebar border-r border-default flex flex-col pb-safe"
+    [class.is-open]="sidebarOpen()"
+  >
+    <div class="h-12 px-5 flex items-center gap-2 border-b border-default">
+      <svg
+        class="w-6 h-6 shrink-0 text-brand"
+        viewBox="590 200 350 350"
+        fill="currentColor"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M881.5904,280.71062c0.6748,-0.09128 0.308,-0.05684 0.84,-0.08512c20.1208,-1.07044 36.6632,14.39004 36.4588,34.64888c-0.1008,9.87056 0.0224,19.92228 0.0196,29.78164l0.0028,55.2132v26.6028c0.0028,4.9616 0.2324,12.9304 -0.5964,17.5224c-1.2152,6.4876 -4.326,12.4712 -8.9376,17.1948c-6.4204,6.608 -14.7364,10.0184 -23.9148,10.0576c-8.9264,0.1288 -17.5252,-3.3516 -23.8476,-9.6544c-4.1692,-4.1468 -7.1568,-9.3268 -8.6604,-15.0108c-1.7808,-6.7648 -1.246,-17.3404 -1.2488,-24.6428l-0.0056,-28.504c-1.8088,2.5004 -11.0516,11.382 -13.7172,14.0448l-29.4896,29.4868l-15.1508,15.1872c-4.186,4.2 -9.6936,10.1808 -14.4984,13.23c-4.0292,2.5536 -8.5708,4.1916 -13.3028,4.7992c-8.86676,1.19 -17.84216,-1.1984 -24.94604,-6.636c-7.18592,-5.53 -11.82468,-13.734 -12.85732,-22.7416c-1.04104,-8.9068 1.52992,-17.8612 7.13832,-24.8612c1.96672,-2.4444 5.77276,-6.076 8.06932,-8.372l13.64496,-13.6444l45.40956,-45.40368l41.2832,-41.27508l11.8188,-11.8566c8.736,-8.76596 13.5352,-13.6444 26.488,-15.08164z"
+          id="Path-1-1"
+          fill="#22c7b8"
+        ></path>
+        <path
+          d="M766.68484,280.71622c8.61196,0.01036 15.98716,2.28424 22.66236,7.91336c6.8376,5.80216 11.0768,14.09492 11.774,23.03672c0.7168,8.90708 -2.1812,17.72792 -8.0416,24.47424c-2.7524,3.14664 -6.6836,6.86672 -9.702,9.8826l-16.43768,16.42732l-51.87224,51.86916l-32.79584,32.802c-4.09808,4.1076 -8.35856,8.274 -12.40344,12.418c-7.24612,7.4256 -14.02688,10.6596 -24.40508,11.3372c-7.7896,0.658 -17.13068,-3.1948 -22.9404,-8.2488c-6.77936,-5.9024 -10.9018,-14.28 -11.43968,-23.2512c-1.04972,-15.9572 7.44576,-23.4612 17.6022,-33.6224l16.93216,-16.9344l52.52548,-52.52044l32.32516,-32.31928c3.67052,-3.67304 7.60676,-7.46648 11.18404,-11.21232c7.34748,-7.69384 14.29624,-11.40048 25.03256,-12.05176z"
+          id="Path-1-2"
+          fill="#22c7b8"
+        ></path>
+      </svg>
+
+      <span class="text-sm font-semibold tracking-tight"> Memoria </span>
+    </div>
+
+    <nav class="flex-1 px-3 py-4 text-sm flex flex-col gap-0.5">
+      @for (item of navItems; track item.path) {
+        <a
+          [routerLink]="item.path"
+          [routerLinkActiveOptions]="{ exact: !!item.exact }"
+          routerLinkActive="!bg-brand-soft !text-fg border border-brand-soft"
+          class="flex items-center gap-2.5 px-3 py-2 rounded-md text-fg-secondary hover:bg-surface-hover hover:text-fg border border-transparent transition-colors"
+          (click)="closeSidebar()"
+        >
+          <app-icon [name]="item.icon" [size]="16" />
+          <span>{{ item.label }}</span>
+        </a>
+      }
+    </nav>
+
+    <div
+      class="px-3 pb-3 hidden md:flex justify-between items-center gap-2 border-t border-default pt-3"
+    >
+      <app-theme-toggle />
+      <button
+        type="button"
+        (click)="logout()"
+        class="h-9 px-2.5 rounded-md text-fg-secondary hover:bg-surface-hover hover:text-fg text-xs flex items-center gap-1.5 transition-colors"
+      >
+        <app-icon name="log-out" [size]="16" />
+        Log out
+      </button>
+    </div>
+    <button
+      type="button"
+      (click)="logout()"
+      class="md:hidden mx-3 mb-3 mt-auto h-10 rounded-md border border-default text-fg-secondary hover:bg-surface-hover text-sm flex items-center justify-center gap-1.5"
+    >
+      <app-icon name="log-out" [size]="16" />
+      Log out
+    </button>
+  </aside>
+
+  <main class="flex-1 min-w-0">
+    <router-outlet />
+  </main>
+</div>

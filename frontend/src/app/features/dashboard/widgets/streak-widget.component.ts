@@ -8,37 +8,7 @@ import { IconComponent } from '../../../core/ui/icon.component';
   selector: 'app-streak-widget',
   standalone: true,
   imports: [IconComponent],
-  template: `
-    <section class="bg-surface border border-default rounded-xl shadow-card p-5">
-      <div class="flex items-center gap-2 mb-2">
-        <app-icon name="flame" [size]="14" class="text-fg-muted" />
-        <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium">Streak</h2>
-      </div>
-
-      @if (data.isLoading()) {
-        <div class="skeleton h-10 w-24 mb-2"></div>
-        <div class="skeleton h-3 w-32"></div>
-      } @else if (data.error()) {
-        <p class="text-sm text-danger">Failed to load.</p>
-      } @else if (data.value(); as d) {
-        <div class="flex items-baseline gap-5">
-          <div>
-            <p class="text-4xl font-semibold tabular-nums text-brand">{{ d.current }}</p>
-            <p class="text-xs text-fg-muted mt-0.5">current · {{ d.current === 1 ? 'day' : 'days' }}</p>
-          </div>
-          <div>
-            <p class="text-2xl font-medium tabular-nums text-fg-secondary">{{ d.longest }}</p>
-            <p class="text-xs text-fg-muted mt-0.5">longest</p>
-          </div>
-        </div>
-        @if (d.current === 0 && d.longest === 0) {
-          <p class="mt-3 text-xs text-fg-muted">Review a card today to start your streak.</p>
-        } @else if (d.current === 0) {
-          <p class="mt-3 text-xs text-warning">Streak broken — review a card today to restart.</p>
-        }
-      }
-    </section>
-  `,
+  templateUrl: './streak-widget.component.html',
 })
 export class StreakWidgetComponent {
   private readonly api = inject(ApiClient);

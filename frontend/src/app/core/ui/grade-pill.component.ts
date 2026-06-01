@@ -14,30 +14,7 @@ import { IconComponent } from './icon.component';
   selector: 'app-grade-pill',
   standalone: true,
   imports: [DecimalPipe, IconComponent],
-  template: `
-    @if (display() !== null) {
-      <span
-        class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
-        [style.color]="bandColor()"
-        [style.background]="bandBackground()"
-        [title]="reviewCount() + ' reviews'"
-      >
-        <app-icon
-          [name]="type() === 'Question' ? 'help-circle' : 'file-text'"
-          [size]="11"
-        />
-        <span class="tabular-nums">{{ display()! | number: '1.0-0' }}</span>
-      </span>
-    } @else {
-      <span class="inline-flex items-center gap-1 text-xs text-fg-muted" title="No reviews yet">
-        <app-icon
-          [name]="type() === 'Question' ? 'help-circle' : 'file-text'"
-          [size]="11"
-        />
-        <span>—</span>
-      </span>
-    }
-  `,
+  templateUrl: './grade-pill.component.html',
 })
 export class GradePillComponent {
   readonly type = input.required<CardType>();

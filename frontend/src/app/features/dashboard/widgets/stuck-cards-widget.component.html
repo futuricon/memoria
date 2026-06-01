@@ -1,0 +1,39 @@
+<section class="bg-surface border border-default rounded-xl shadow-card p-5">
+  <div class="flex items-center gap-2 mb-2">
+    <app-icon name="trending-down" [size]="14" class="text-fg-muted" />
+    <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium">Stuck cards</h2>
+  </div>
+  @if (data.isLoading()) {
+    <div class="space-y-2">
+      <div class="skeleton h-3 w-3/4"></div>
+      <div class="skeleton h-3 w-1/2"></div>
+      <div class="skeleton h-3 w-2/3"></div>
+    </div>
+  } @else if (data.error()) {
+    <p class="text-sm text-danger">Failed to load.</p>
+  } @else {
+    @let items = data.value() ?? [];
+    @if (items.length === 0) {
+      <p class="text-sm text-fg-muted">No stuck cards — you're recalling everything cleanly.</p>
+    } @else {
+      <p class="text-xs text-fg-muted mb-3">Forgotten 3+ times in a row.</p>
+      <ul class="-mx-2">
+        @for (c of items; track c.cardId) {
+          <li class="flex items-center justify-between gap-2 px-2 py-2 rounded-md hover:bg-surface-hover">
+            <span class="text-sm text-fg truncate">{{ c.title }}</span>
+            <span
+              class="text-xs whitespace-nowrap flex items-center gap-1"
+              [style.color]="'var(--color-state-forgotten)'"
+            >
+              <app-icon name="x-circle" [size]="12" />
+              {{ c.consecutiveForgotCount }}
+              @if (c.currentStage !== null) {
+                <span class="text-fg-muted">· st.{{ c.currentStage }}</span>
+              }
+            </span>
+          </li>
+        }
+      </ul>
+    }
+  }
+</section>
