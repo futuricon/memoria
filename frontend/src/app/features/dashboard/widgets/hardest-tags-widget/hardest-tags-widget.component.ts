@@ -2,8 +2,8 @@ import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, resource } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-import { ApiClient } from '../../../../core/api/api-client';
 import { IconComponent } from '../../../../core/ui/icon/icon.component';
+import { AnalyticsApiService } from '../../services/analytics-api.service';
 
 function bandColor(score: number): string {
   if (score >= 75) return 'var(--color-rating-good)';
@@ -23,7 +23,7 @@ function bandBackground(score: number): string {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HardestTagsWidgetComponent {
-  private readonly api = inject(ApiClient);
+  private readonly api = inject(AnalyticsApiService);
 
   readonly data = resource({
     loader: () => firstValueFrom(this.api.tagAverages(5, 3)),

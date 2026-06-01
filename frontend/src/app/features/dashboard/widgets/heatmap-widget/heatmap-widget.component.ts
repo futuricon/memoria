@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, resource } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-import { ApiClient } from '../../../../core/api/api-client';
+import { AnalyticsApiService } from '../../services/analytics-api.service';
 
 interface Week {
   cells: Cell[];
@@ -22,7 +22,7 @@ const DAYS_BACK = 84; // 12 weeks
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HeatmapWidgetComponent {
-  private readonly api = inject(ApiClient);
+  private readonly api = inject(AnalyticsApiService);
 
   readonly data = resource({
     loader: () => firstValueFrom(this.api.activityHeatmap(DAYS_BACK)),

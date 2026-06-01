@@ -3,10 +3,10 @@ import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, resource, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-import { ApiClient } from '../../core/api/api-client';
 import { TrashedCardDto } from '../../core/api/dto';
 import { openConfirm } from '../../core/ui/confirm-dialog/confirm-dialog.component';
 import { IconComponent } from '../../core/ui/icon/icon.component';
+import { TrashApiService } from './services/trash-api.service';
 
 @Component({
   selector: 'app-trash',
@@ -16,7 +16,7 @@ import { IconComponent } from '../../core/ui/icon/icon.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TrashComponent {
-  private readonly api = inject(ApiClient);
+  private readonly api = inject(TrashApiService);
   private readonly dialog = inject(Dialog);
 
   readonly pageNum = signal(1);

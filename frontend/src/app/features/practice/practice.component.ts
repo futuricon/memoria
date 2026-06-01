@@ -3,7 +3,6 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
-import { ApiClient } from '../../core/api/api-client';
 import {
   CardDto,
   DueReminderDto,
@@ -11,6 +10,9 @@ import {
   Rating,
 } from '../../core/api/dto';
 import { IconComponent, type IconName } from '../../core/ui/icon/icon.component';
+import { CardsApiService } from '../cards/services/cards-api.service';
+import { RemindersApiService } from './services/reminders-api.service';
+import { ReviewsApiService } from './services/reviews-api.service';
 
 type Phase =
   | 'loading-queue'
@@ -37,7 +39,9 @@ interface CurrentCard {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PracticeComponent {
-  private readonly api = inject(ApiClient);
+  private readonly cardsApi = inject(CardsApiService);
+  private readonly remindersApi = inject(RemindersApiService);
+  private readonly reviewsApi = inject(ReviewsApiService);
   private readonly router = inject(Router);
 
   readonly phase = signal<Phase>('loading-queue');
@@ -73,7 +77,7 @@ export class PracticeComponent {
     this.phase.set('loading-queue');
     this.error.set(null);
     try {
-      const due = await firstValueFrom(this.api.dueToday());
+      const due = await firstValueFrom(this.remindersApi.dueToday());
       this.queue.set(due);
       this.queueIndex.set(0);
       if (due.length === 0) {
@@ -96,7 +100,7 @@ export class PracticeComponent {
 
     const reminder = this.queue()[this.queueIndex()];
     try {
-      const card = await firstValueFrom(this.api.getCard(reminder.cardId));
+      const card = await firstValueFrom(this.cardsApi.getCard(reminder.cardId));
       this.current.set({ reminder, card });
       this.phase.set(card.type === 'Question' ? 'question-prompt' : 'note-question');
     } catch (e) {
@@ -111,7 +115,7 @@ export class PracticeComponent {
     this.actionBusy.set(true);
     this.error.set(null);
     try {
-      await firstValueFrom(this.api.revealReminder(cur.reminder.reminderId));
+      await firstValueFrom(this.remindersApi.revealReminder(cur.reminder.reminderId));
       this.phase.set('note-revealed');
     } catch (e) {
       this.error.set(this.describe(e, 'Could not reveal the answer.'));
@@ -128,7 +132,7 @@ export class PracticeComponent {
     this.phase.set('question-grading');
     try {
       const result = await firstValueFrom(
-        this.api.gradeAnswer(cur.card.id, this.userAnswer));
+        this.reviewsApi.gradeAnswer(cur.card.id, this.userAnswer));
       this.grade.set(result);
       this.aiFailed.set(false);
       this.phase.set('question-graded');
@@ -171,7 +175,7 @@ export class PracticeComponent {
     const autoGraded = aiGraded && this.suggestedRating(g!.score) === rating;
 
     try {
-      await firstValueFrom(this.api.recordReview(cur.card.id, {
+      await firstValueFrom(this.reviewsApi.recordReview(cur.card.id, {
         reminderId: cur.reminder.reminderId,
         rating,
         answerText: isQuestion && typedAnswer ? this.userAnswer : null,
@@ -195,7 +199,7 @@ export class PracticeComponent {
     this.actionBusy.set(true);
     this.error.set(null);
     try {
-      await firstValueFrom(this.api.skipReminder(cur.reminder.reminderId));
+      await firstValueFrom(this.remindersApi.skipReminder(cur.reminder.reminderId));
       this.skippedCount.update((n) => n + 1);
       this.advance();
     } catch (e) {

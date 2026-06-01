@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, resource } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-import { ApiClient } from '../../../../core/api/api-client';
 import { IconComponent } from '../../../../core/ui/icon/icon.component';
+import { AnalyticsApiService } from '../../services/analytics-api.service';
 
 @Component({
   selector: 'app-streak-widget',
@@ -12,7 +12,7 @@ import { IconComponent } from '../../../../core/ui/icon/icon.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StreakWidgetComponent {
-  private readonly api = inject(ApiClient);
+  private readonly api = inject(AnalyticsApiService);
 
   readonly data = resource({
     loader: () => firstValueFrom(this.api.streak()),

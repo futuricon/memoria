@@ -2,9 +2,9 @@ import { Dialog, DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { ApiClient } from '../../../core/api/api-client';
 import { CardDto } from '../../../core/api/dto';
 import { IconComponent } from '../../../core/ui/icon/icon.component';
+import { CardsApiService } from '../services/cards-api.service';
 
 export interface EditCardDrawerData {
   card: CardDto;
@@ -20,7 +20,7 @@ export interface EditCardDrawerData {
 export class EditCardDrawerComponent {
   readonly data = inject<EditCardDrawerData>(DIALOG_DATA);
   private readonly ref = inject<DialogRef<CardDto | null, EditCardDrawerComponent>>(DialogRef);
-  private readonly api = inject(ApiClient);
+  private readonly api = inject(CardsApiService);
 
   title = this.data.card.title;
   body = this.data.card.body;

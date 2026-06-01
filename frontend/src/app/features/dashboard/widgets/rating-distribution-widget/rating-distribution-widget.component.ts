@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, resource } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-import { ApiClient } from '../../../../core/api/api-client';
+import { AnalyticsApiService } from '../../services/analytics-api.service';
 
 interface Row {
   label: string;
@@ -17,7 +17,7 @@ interface Row {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RatingDistributionWidgetComponent {
-  private readonly api = inject(ApiClient);
+  private readonly api = inject(AnalyticsApiService);
 
   readonly data = resource({
     loader: () => firstValueFrom(this.api.ratingDistribution(30)),

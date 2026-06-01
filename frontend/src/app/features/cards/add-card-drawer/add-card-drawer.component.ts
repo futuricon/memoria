@@ -3,9 +3,9 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 
-import { ApiClient } from '../../../core/api/api-client';
 import { CardDto } from '../../../core/api/dto';
 import { IconComponent } from '../../../core/ui/icon/icon.component';
+import { CardsApiService } from '../services/cards-api.service';
 
 const TITLE_MAX = 200;
 const BODY_MAX = 4000;
@@ -20,7 +20,7 @@ const TAGS_MAX = 5;
 })
 export class AddCardDrawerComponent {
   private readonly ref = inject<DialogRef<CardDto | null, AddCardDrawerComponent>>(DialogRef);
-  private readonly api = inject(ApiClient);
+  private readonly api = inject(CardsApiService);
 
   readonly TITLE_MAX = TITLE_MAX;
   readonly BODY_MAX = BODY_MAX;

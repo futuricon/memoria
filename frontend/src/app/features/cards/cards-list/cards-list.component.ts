@@ -3,11 +3,12 @@ import { ChangeDetectionStrategy, Component, inject, resource, signal } from "@a
 import { FormsModule } from "@angular/forms";
 import { firstValueFrom } from "rxjs";
 
-import { ApiClient } from "../../../core/api/api-client";
 import { CardSummaryDto } from "../../../core/api/dto";
 import { openConfirm } from "../../../core/ui/confirm-dialog/confirm-dialog.component";
 import { GradePillComponent } from "../../../core/ui/grade-pill/grade-pill.component";
 import { IconComponent } from "../../../core/ui/icon/icon.component";
+import { CardsApiService } from "../services/cards-api.service";
+import { TagsApiService } from "../services/tags-api.service";
 import { openAddDrawer } from "../add-card-drawer/add-card-drawer.component";
 import { openEditDrawer } from "../edit-card-drawer/edit-card-drawer.component";
 
@@ -21,7 +22,8 @@ const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CardsListComponent {
-  private readonly api = inject(ApiClient);
+  private readonly cardsApi = inject(CardsApiService);
+  private readonly tagsApi = inject(TagsApiService);
   private readonly dialog = inject(Dialog);
 
   readonly search = signal("");
@@ -37,7 +39,7 @@ export class CardsListComponent {
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly tags = resource({
-    loader: () => firstValueFrom(this.api.listPopularTags(5)),
+    loader: () => firstValueFrom(this.tagsApi.listPopularTags(5)),
   });
 
   readonly page = resource({
@@ -49,7 +51,7 @@ export class CardsListComponent {
     }),
     loader: ({ params }) =>
       firstValueFrom(
-        this.api.listCards({
+        this.cardsApi.listCards({
           search: params.search,
           tags: params.tags,
           page: params.page,
@@ -116,7 +118,7 @@ export class CardsListComponent {
   async onEdit(card: CardSummaryDto): Promise<void> {
     this.actionError.set(null);
     try {
-      const full = await firstValueFrom(this.api.getCard(card.id));
+      const full = await firstValueFrom(this.cardsApi.getCard(card.id));
       const ref = openEditDrawer(this.dialog, { card: full });
       ref.closed.subscribe((updated) => {
         if (updated) this.refresh();
@@ -130,7 +132,7 @@ export class CardsListComponent {
     this.actionError.set(null);
     this.actionBusy.set(card.id);
     try {
-      await firstValueFrom(this.api.pauseCard(card.id));
+      await firstValueFrom(this.cardsApi.pauseCard(card.id));
       this.refresh();
     } catch (e) {
       this.actionError.set(this.describe(e, "Could not pause the card."));
@@ -143,7 +145,7 @@ export class CardsListComponent {
     this.actionError.set(null);
     this.actionBusy.set(card.id);
     try {
-      await firstValueFrom(this.api.unpauseCard(card.id));
+      await firstValueFrom(this.cardsApi.unpauseCard(card.id));
       this.refresh();
     } catch (e) {
       this.actionError.set(this.describe(e, "Could not unpause the card."));
@@ -165,7 +167,7 @@ export class CardsListComponent {
       this.actionError.set(null);
       this.actionBusy.set(card.id);
       try {
-        await firstValueFrom(this.api.softDeleteCard(card.id));
+        await firstValueFrom(this.cardsApi.softDeleteCard(card.id));
         this.refresh();
       } catch (e) {
         this.actionError.set(this.describe(e, "Could not delete the card."));

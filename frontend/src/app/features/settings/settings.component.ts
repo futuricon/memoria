@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, resource, signal } from '@a
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 
-import { ApiClient } from '../../core/api/api-client';
+import { UsersApiService } from '../../core/services/users-api.service';
 import { IconComponent } from '../../core/ui/icon/icon.component';
 import { TimeZonePickerComponent } from '../../core/ui/timezone-picker/timezone-picker.component';
 
@@ -15,7 +15,7 @@ import { TimeZonePickerComponent } from '../../core/ui/timezone-picker/timezone-
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SettingsComponent {
-  private readonly api = inject(ApiClient);
+  private readonly api = inject(UsersApiService);
 
   readonly timeZones = resource({
     loader: () => firstValueFrom(this.api.listTimeZones()),
