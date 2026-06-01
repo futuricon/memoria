@@ -66,6 +66,7 @@ public static class DependencyInjection
         services.AddProblemDetails();
 
         services.AddSingleton<TelegramWidgetValidator>();
+        services.AddSingleton<TelegramMiniAppInitDataValidator>();
 
         return services;
     }
@@ -144,6 +145,7 @@ public static class DependencyInjection
         app.MapBotCodeAndRefreshEndpoints();
         app.MapEmailAuthEndpoints();
         app.MapTelegramWidgetEndpoint();
+        app.MapTelegramMiniAppEndpoint();
         app.MapOAuthAuthEndpoints();
 
         app.MapUsersEndpoints();
