@@ -11,6 +11,7 @@ import { filter } from "rxjs";
 import { AuthService } from "../../auth/auth.service";
 import { ThemeToggleComponent } from "../../theme/theme-toggle/theme-toggle.component";
 import { IconComponent } from "../../ui/icon/icon.component";
+import { LogoComponent } from "../../../shared/components/logo/logo.component";
 
 interface NavItem {
   path: string;
@@ -27,6 +28,7 @@ interface NavItem {
     RouterLinkActive,
     RouterOutlet,
     IconComponent,
+    LogoComponent,
     ThemeToggleComponent,
   ],
   templateUrl: "./shell.component.html",

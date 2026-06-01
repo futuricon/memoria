@@ -14,6 +14,7 @@ import { environment } from "../../../../environments/environment";
 import { AuthService } from "../../../core/auth/auth.service";
 import { ThemeToggleComponent } from "../../../core/theme/theme-toggle/theme-toggle.component";
 import { IconComponent } from "../../../core/ui/icon/icon.component";
+import { LogoComponent } from "../../../shared/components/logo/logo.component";
 
 type Tab = "email" | "telegram";
 type EmailStep = "request" | "confirm";
@@ -37,7 +38,7 @@ declare global {
 @Component({
   selector: "app-login",
   standalone: true,
-  imports: [FormsModule, IconComponent, ThemeToggleComponent],
+  imports: [FormsModule, IconComponent, LogoComponent, ThemeToggleComponent],
   templateUrl: "./login.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
