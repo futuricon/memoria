@@ -22,6 +22,7 @@ import {
   TagAverageDto,
   TagDto,
   TelegramLinkingTokenDto,
+  TimeZoneDto,
   TrashedCardDto,
   UpdateCardPayload,
   UpdateMePayload,
@@ -225,5 +226,9 @@ export class ApiClient {
     return this.http.get<UserIdentityDto[]>(
       `${this.base}/api/v1/users/me/identities`,
     );
+  }
+
+  listTimeZones(): Observable<TimeZoneDto[]> {
+    return this.http.get<TimeZoneDto[]>(`${this.base}/api/v1/timezones`);
   }
 }

@@ -154,6 +154,7 @@ public static class DependencyInjection
         app.MapCardsActivityEndpoints();
         app.MapRemindersEndpoints();
         app.MapTagsEndpoints();
+        app.MapTimeZonesEndpoints();
 
         return app;
     }

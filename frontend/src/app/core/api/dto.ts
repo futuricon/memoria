@@ -132,6 +132,11 @@ export interface TagDto {
   cardCount: number;
 }
 
+export interface TimeZoneDto {
+  id: string;
+  displayName: string;
+}
+
 export type Rating = 'Forgot' | 'Hard' | 'Good' | 'Easy';
 
 export interface RevealedAnswerDto {

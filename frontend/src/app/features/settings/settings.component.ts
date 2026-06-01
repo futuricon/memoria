@@ -77,8 +77,8 @@ import { IconComponent } from '../../core/ui/icon.component';
                 placeholder="Europe/Tashkent"
               />
               <datalist id="timezones">
-                @for (tz of timeZones; track tz) {
-                  <option [value]="tz"></option>
+                @for (tz of timeZones.value() ?? []; track tz.id) {
+                  <option [value]="tz.id" [label]="tz.displayName"></option>
                 }
               </datalist>
               <span class="block mt-1.5 text-xs text-fg-muted">
@@ -194,7 +194,9 @@ import { IconComponent } from '../../core/ui/icon.component';
 export class SettingsComponent {
   private readonly api = inject(ApiClient);
 
-  readonly timeZones = getSupportedTimeZones();
+  readonly timeZones = resource({
+    loader: () => firstValueFrom(this.api.listTimeZones()),
+  });
 
   readonly me = resource({
     loader: async () => {
@@ -271,13 +273,3 @@ export class SettingsComponent {
   }
 }
 
-function getSupportedTimeZones(): string[] {
-  const intl = Intl as unknown as { supportedValuesOf?: (key: 'timeZone') => string[] };
-  if (typeof intl.supportedValuesOf === 'function') {
-    return intl.supportedValuesOf('timeZone');
-  }
-  return [
-    'UTC', 'Europe/Tashkent', 'Europe/Moscow', 'Europe/Berlin', 'Europe/London',
-    'America/New_York', 'America/Los_Angeles', 'Asia/Tokyo', 'Asia/Singapore',
-  ];
-}
