@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, resource } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-import { IconComponent } from '../../../../core/ui/icon/icon.component';
+import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { AnalyticsApiService } from '../../services/analytics-api.service';
 
 @Component({

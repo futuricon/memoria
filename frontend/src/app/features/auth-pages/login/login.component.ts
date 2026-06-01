@@ -11,10 +11,10 @@ import { FormsModule } from "@angular/forms";
 import { Router } from "@angular/router";
 
 import { environment } from "../../../../environments/environment";
-import { AuthService } from "../../../core/auth/auth.service";
-import { ThemeToggleComponent } from "../../../core/theme/theme-toggle/theme-toggle.component";
-import { IconComponent } from "../../../core/ui/icon/icon.component";
+import { AuthService } from "../../../core/services/auth.service";
+import { IconComponent } from "../../../shared/components/icon/icon.component";
 import { LogoComponent } from "../../../shared/components/logo/logo.component";
+import { ThemeToggleComponent } from "../../../shared/components/theme-toggle/theme-toggle.component";
 
 type Tab = "email" | "telegram";
 type EmailStep = "request" | "confirm";

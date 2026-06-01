@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 
 import { CardDto } from '../models/card.model';
-import { IconComponent } from '../../../core/ui/icon/icon.component';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { CardsApiService } from '../services/cards-api.service';
 
 const TITLE_MAX = 200;

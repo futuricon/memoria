@@ -1,6 +1,6 @@
 import { Injectable, effect, inject, signal } from '@angular/core';
 
-import { TelegramWebAppService } from '../telegram/telegram-web-app.service';
+import { TelegramWebAppService } from './telegram-web-app.service';
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 

@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
-import { AuthService } from '../../../core/auth/auth.service';
-import { IconComponent } from '../../../core/ui/icon/icon.component';
+import { AuthService } from '../../../core/services/auth.service';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 @Component({
   selector: 'app-oauth-callback',

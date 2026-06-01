@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
-import { IconComponent, type IconName } from '../../ui/icon/icon.component';
-import { ThemeService } from '../theme.service';
+import { ThemeService } from '../../../core/services/theme.service';
+import { IconComponent, type IconName } from '../icon/icon.component';
 
 @Component({
   selector: 'app-theme-toggle',

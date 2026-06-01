@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 
 import { CardDto } from '../models/card.model';
-import { IconComponent } from '../../../core/ui/icon/icon.component';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { CardsApiService } from '../services/cards-api.service';
 
 export interface EditCardDrawerData {

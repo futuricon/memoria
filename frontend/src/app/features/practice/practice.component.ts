@@ -6,7 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { CardDto } from '../cards/models/card.model';
 import { DueReminderDto } from './models/reminder.model';
 import { GradingResult, Rating } from './models/review.model';
-import { IconComponent, type IconName } from '../../core/ui/icon/icon.component';
+import { IconComponent, type IconName } from '../../shared/components/icon/icon.component';
 import { CardsApiService } from '../cards/services/cards-api.service';
 import { RemindersApiService } from './services/reminders-api.service';
 import { ReviewsApiService } from './services/reviews-api.service';

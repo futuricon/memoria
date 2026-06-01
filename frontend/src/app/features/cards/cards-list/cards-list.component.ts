@@ -4,9 +4,9 @@ import { FormsModule } from "@angular/forms";
 import { firstValueFrom } from "rxjs";
 
 import { CardSummaryDto } from "../models/card.model";
-import { openConfirm } from "../../../core/ui/confirm-dialog/confirm-dialog.component";
-import { GradePillComponent } from "../../../core/ui/grade-pill/grade-pill.component";
-import { IconComponent } from "../../../core/ui/icon/icon.component";
+import { openConfirm } from "../../../shared/components/confirm-dialog/confirm-dialog.component";
+import { GradePillComponent } from "../../../shared/components/grade-pill/grade-pill.component";
+import { IconComponent } from "../../../shared/components/icon/icon.component";
 import { CardsApiService } from "../services/cards-api.service";
 import { TagsApiService } from "../services/tags-api.service";
 import { openAddDrawer } from "../add-card-drawer/add-card-drawer.component";

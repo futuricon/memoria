@@ -3,9 +3,9 @@ import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 
 import { APP_ROUTES } from './app.routes';
-import { AuthService } from './core/auth/auth.service';
-import { authInterceptor } from './core/auth/auth.interceptor';
-import { TelegramWebAppService } from './core/telegram/telegram-web-app.service';
+import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { AuthService } from './core/services/auth.service';
+import { TelegramWebAppService } from './core/services/telegram-web-app.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [

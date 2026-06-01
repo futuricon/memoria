@@ -4,9 +4,9 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { UsersApiService } from '../../core/services/users-api.service';
-import { GradePillComponent } from '../../core/ui/grade-pill/grade-pill.component';
-import { IconComponent } from '../../core/ui/icon/icon.component';
-import { relativeTime } from '../../core/ui/relative-time';
+import { GradePillComponent } from '../../shared/components/grade-pill/grade-pill.component';
+import { IconComponent } from '../../shared/components/icon/icon.component';
+import { relativeTime } from '../../shared/utils/relative-time';
 import { CardsApiService } from '../cards/services/cards-api.service';
 import { RemindersApiService } from '../practice/services/reminders-api.service';
 import { AnalyticsApiService } from './services/analytics-api.service';

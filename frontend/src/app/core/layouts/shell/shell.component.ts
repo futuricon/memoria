@@ -8,10 +8,10 @@ import {
 } from "@angular/router";
 import { filter } from "rxjs";
 
-import { AuthService } from "../../auth/auth.service";
-import { ThemeToggleComponent } from "../../theme/theme-toggle/theme-toggle.component";
-import { IconComponent } from "../../ui/icon/icon.component";
+import { AuthService } from "../../services/auth.service";
+import { IconComponent } from "../../../shared/components/icon/icon.component";
 import { LogoComponent } from "../../../shared/components/logo/logo.component";
+import { ThemeToggleComponent } from "../../../shared/components/theme-toggle/theme-toggle.component";
 
 interface NavItem {
   path: string;
