@@ -33,6 +33,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+    <!--
+      Telegram Mini App SDK. Loaded synchronously so window.Telegram.WebApp
+      is available before the Angular APP_INITIALIZER runs and decides
+      whether to authenticate via initData. No-op when the page is loaded
+      outside Telegram.
+    -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
   </head>
   <body class="bg-page text-fg">
     <app-root></app-root>

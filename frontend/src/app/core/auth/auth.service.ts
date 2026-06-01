@@ -42,6 +42,16 @@ export class AuthService {
     this.applyTokens(bundle);
   }
 
+  async authenticateMiniApp(initData: string): Promise<void> {
+    const bundle = await firstValueFrom(
+      this.http.post<TokenBundle>(
+        `${environment.apiBase}/api/v1/auth/telegram-miniapp`,
+        { initData },
+      ),
+    );
+    this.applyTokens(bundle);
+  }
+
   async authenticateTelegram(payload: TelegramWidgetPayload): Promise<void> {
     const body: Record<string, string> = {
       id: String(payload.id),
