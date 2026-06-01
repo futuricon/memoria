@@ -16,12 +16,22 @@ interface TelegramWidgetPayload {
   hash: string;
 }
 
+/** Shape returned by every backend endpoint that issues a JWT pair. */
+interface JwtTokenPairWire {
+  readonly accessToken: string;
+  readonly accessExpiresAt: string;
+  readonly refreshToken: string;
+  readonly refreshExpiresAt: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
 
   private readonly _tokens = signal<TokenBundle | null>(tokenStorage.read());
+  /** In-flight refresh, shared across concurrent 401 retries. */
+  private refreshInFlight: Promise<string | null> | null = null;
 
   readonly isAuthenticated = computed(() => this._tokens() !== null);
   readonly accessToken = computed(() => this._tokens()?.accessToken ?? null);
@@ -33,23 +43,23 @@ export class AuthService {
   }
 
   async confirmEmail(email: string, code: string): Promise<void> {
-    const bundle = await firstValueFrom(
-      this.http.post<TokenBundle>(
+    const pair = await firstValueFrom(
+      this.http.post<JwtTokenPairWire>(
         `${environment.apiBase}/api/v1/auth/email/confirm`,
         { email, code },
       ),
     );
-    this.applyTokens(bundle);
+    this.applyTokens(this.mapPair(pair));
   }
 
   async authenticateMiniApp(initData: string): Promise<void> {
-    const bundle = await firstValueFrom(
-      this.http.post<TokenBundle>(
+    const pair = await firstValueFrom(
+      this.http.post<JwtTokenPairWire>(
         `${environment.apiBase}/api/v1/auth/telegram-miniapp`,
         { initData },
       ),
     );
-    this.applyTokens(bundle);
+    this.applyTokens(this.mapPair(pair));
   }
 
   async authenticateTelegram(payload: TelegramWidgetPayload): Promise<void> {
@@ -63,13 +73,45 @@ export class AuthService {
     if (payload.username) body['username'] = payload.username;
     if (payload.photo_url) body['photo_url'] = payload.photo_url;
 
-    const bundle = await firstValueFrom(
-      this.http.post<TokenBundle>(
+    const pair = await firstValueFrom(
+      this.http.post<JwtTokenPairWire>(
         `${environment.apiBase}/api/v1/auth/telegram-widget`,
         body,
       ),
     );
-    this.applyTokens(bundle);
+    this.applyTokens(this.mapPair(pair));
+  }
+
+  /**
+   * Exchanges the current refresh token for a fresh JWT pair. Concurrent
+   * callers (multiple requests all hitting 401 at once) share a single
+   * in-flight refresh promise so we don't burn through a chain of
+   * one-shot refresh tokens. Resolves to the new access token, or null
+   * when refresh fails (expired / revoked / no token at all).
+   */
+  refresh(): Promise<string | null> {
+    if (this.refreshInFlight) return this.refreshInFlight;
+
+    const current = this._tokens();
+    if (!current?.refreshToken) return Promise.resolve(null);
+
+    this.refreshInFlight = firstValueFrom(
+      this.http.post<JwtTokenPairWire>(
+        `${environment.apiBase}/api/v1/auth/refresh`,
+        { refreshToken: current.refreshToken },
+      ),
+    )
+      .then((pair) => {
+        const bundle = this.mapPair(pair);
+        this.applyTokens(bundle);
+        return bundle.accessToken;
+      })
+      .catch(() => null)
+      .finally(() => {
+        this.refreshInFlight = null;
+      });
+
+    return this.refreshInFlight;
   }
 
   logout(): void {
@@ -94,6 +136,14 @@ export class AuthService {
   /** Accepts a token bundle delivered via the OAuth redirect fragment. */
   applyExternalTokens(bundle: TokenBundle): void {
     this.applyTokens(bundle);
+  }
+
+  private mapPair(p: JwtTokenPairWire): TokenBundle {
+    return {
+      accessToken: p.accessToken,
+      refreshToken: p.refreshToken,
+      expiresAt: p.accessExpiresAt,
+    };
   }
 
   private applyTokens(b: TokenBundle): void {
