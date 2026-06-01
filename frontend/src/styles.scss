@@ -112,6 +112,18 @@ body {
   border-radius: 4px;
 }
 
+// iOS Safari zooms into any focused form control whose font-size is
+// below 16px. Our inputs use text-sm (14px), so on small screens we
+// bump them to 16px to suppress the zoom (which also causes horizontal
+// scroll). Visual size stays the same on desktop.
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
 // Hide keyboard hints on touch devices
 @media (hover: none) {
   .desktop-only {
@@ -438,6 +450,11 @@ body {
 
   @media (max-width: 767px) {
     width: 100vw;
+    // Mobile: scroll the whole drawer as one piece (footer flows after
+    // content instead of sticking to the bottom). On desktop the inner
+    // flex column handles overflow so the footer stays pinned.
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 

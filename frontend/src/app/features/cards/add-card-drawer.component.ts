@@ -16,7 +16,7 @@ const TAGS_MAX = 5;
   standalone: true,
   imports: [FormsModule, IconComponent],
   template: `
-    <div class="bg-surface h-full flex flex-col">
+    <div class="bg-surface flex flex-col md:h-full">
       <header class="px-5 md:px-6 py-4 border-b border-default flex items-center justify-between">
         <div class="flex items-center gap-2">
           <app-icon name="plus" [size]="18" class="text-brand" />
@@ -32,7 +32,7 @@ const TAGS_MAX = 5;
         </button>
       </header>
 
-      <div class="flex-1 overflow-y-auto px-5 md:px-6 py-5 space-y-5">
+      <div class="md:flex-1 md:overflow-y-auto px-5 md:px-6 py-5 space-y-5">
         <label class="block">
           <span class="block text-xs font-medium text-fg-secondary mb-1.5">Title</span>
           <input
