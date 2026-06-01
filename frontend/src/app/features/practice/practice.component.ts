@@ -20,6 +20,7 @@ type Phase =
   | 'question-prompt'
   | 'question-grading'
   | 'question-graded'
+  | 'question-self-grade'
   | 'submitting'
   | 'done';
 
@@ -182,6 +183,16 @@ interface CurrentCard {
               </button>
               <button
                 type="button"
+                (click)="onGradeMyself()"
+                [disabled]="actionBusy()"
+                class="h-10 px-4 rounded-md text-sm border border-default text-fg-secondary hover:bg-surface-hover hover:text-fg disabled:opacity-40 inline-flex items-center gap-2"
+                title="Reveal the reference answer and grade yourself, without AI."
+              >
+                <app-icon name="eye" [size]="14" />
+                Grade myself
+              </button>
+              <button
+                type="button"
                 (click)="onSkip()"
                 [disabled]="actionBusy()"
                 class="h-10 px-4 rounded-md text-sm border border-default text-fg-secondary hover:bg-surface-hover hover:text-fg disabled:opacity-40 inline-flex items-center gap-2"
@@ -235,7 +246,71 @@ interface CurrentCard {
             </div>
           }
 
-          @if (error()) {
+          <!-- ===== Self-grading fallback (AI down OR user opted out) ===== -->
+          @if (phase() === 'question-self-grade') {
+            @if (aiFailed()) {
+              <div
+                class="mt-4 p-3 rounded-md border text-sm flex items-start gap-2"
+                [style.color]="'var(--color-rating-hard)'"
+                [style.background]="'color-mix(in srgb, var(--color-rating-hard) 12%, transparent)'"
+                [style.border-color]="'color-mix(in srgb, var(--color-rating-hard) 35%, transparent)'"
+              >
+                <app-icon name="info" [size]="16" />
+                <span>AI grading is unavailable right now — grade yourself against the reference, or retry.</span>
+              </div>
+            }
+
+            @if (userAnswer.trim().length > 0) {
+              <div class="mt-4">
+                <p class="text-xs font-medium text-fg-secondary mb-1.5">Your answer</p>
+                <div class="p-3 rounded-md bg-surface-raised border border-default whitespace-pre-wrap text-sm text-fg font-mono">{{ userAnswer }}</div>
+              </div>
+            }
+
+            <div class="mt-4">
+              <p class="text-xs font-medium text-fg-secondary mb-1.5">Reference answer</p>
+              <div class="p-3 rounded-md bg-surface-raised border border-default whitespace-pre-wrap text-sm text-fg font-mono">{{ cur.card.body }}</div>
+            </div>
+
+            <p class="mt-5 text-sm text-fg-secondary">How close was your answer?</p>
+            <div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
+              @for (b of ratingButtons; track b.rating) {
+                <button
+                  type="button"
+                  (click)="onRate(b.rating)"
+                  [disabled]="actionBusy()"
+                  class="rating-btn"
+                  [class]="b.class"
+                >
+                  <app-icon [name]="b.icon" [size]="16" />
+                  <span>{{ b.rating }}</span>
+                </button>
+              }
+            </div>
+
+            <div class="mt-4 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                (click)="onGrade()"
+                [disabled]="actionBusy() || userAnswer.trim().length === 0"
+                class="h-9 px-3 rounded-md text-xs border border-default text-fg-secondary hover:bg-surface-hover hover:text-fg disabled:opacity-40 inline-flex items-center gap-1.5"
+              >
+                <app-icon name="sparkles" [size]="12" />
+                Try AI again
+              </button>
+              <button
+                type="button"
+                (click)="onSkip()"
+                [disabled]="actionBusy()"
+                class="h-9 px-3 rounded-md text-xs border border-default text-fg-secondary hover:bg-surface-hover hover:text-fg disabled:opacity-40 inline-flex items-center gap-1.5"
+              >
+                <app-icon name="skip-forward" [size]="12" />
+                Skip
+              </button>
+            </div>
+          }
+
+          @if (error() && phase() !== 'question-self-grade') {
             <p class="mt-4 text-sm text-danger">{{ error() }}</p>
           }
         </article>
@@ -254,6 +329,9 @@ export class PracticeComponent {
   readonly grade = signal<GradingResult | null>(null);
   readonly actionBusy = signal(false);
   readonly error = signal<string | null>(null);
+  // Whether we landed in question-self-grade because AI threw, vs the user
+  // opting out via "Grade myself". Drives the in-card warning banner.
+  readonly aiFailed = signal(false);
 
   readonly reviewedCount = signal(0);
   readonly skippedCount = signal(0);
@@ -295,6 +373,7 @@ export class PracticeComponent {
     this.phase.set('loading-card');
     this.userAnswer = '';
     this.grade.set(null);
+    this.aiFailed.set(false);
     this.error.set(null);
 
     const reminder = this.queue()[this.queueIndex()];
@@ -333,13 +412,27 @@ export class PracticeComponent {
       const result = await firstValueFrom(
         this.api.gradeAnswer(cur.card.id, this.userAnswer));
       this.grade.set(result);
+      this.aiFailed.set(false);
       this.phase.set('question-graded');
     } catch (e) {
-      this.error.set(this.describe(e, 'AI grading is unavailable right now. Try again or skip.'));
-      this.phase.set('question-prompt');
+      // Don't strand the user — drop into self-grading with the reference
+      // answer revealed. They can still record a review (without an AI
+      // score) or hit "Try AI again" later.
+      this.grade.set(null);
+      this.aiFailed.set(true);
+      this.error.set(this.describe(e, 'AI grading is unavailable right now.'));
+      this.phase.set('question-self-grade');
     } finally {
       this.actionBusy.set(false);
     }
+  }
+
+  /** User chose to skip AI grading and grade themselves. */
+  onGradeMyself(): void {
+    this.grade.set(null);
+    this.aiFailed.set(false);
+    this.error.set(null);
+    this.phase.set('question-self-grade');
   }
 
   async onRate(rating: Rating): Promise<void> {
@@ -351,16 +444,21 @@ export class PracticeComponent {
     this.phase.set('submitting');
 
     const g = this.grade();
-    const wasGraded = cur.card.type === 'Question' && g !== null;
-    const autoGraded = wasGraded && this.suggestedRating(g!.score) === rating;
+    const isQuestion = cur.card.type === 'Question';
+    const typedAnswer = this.userAnswer.trim().length > 0;
+    // For Question cards we always capture what the user typed (even if AI
+    // never ran). aiScore/aiFeedback are populated only when AI returned a
+    // grade; autoGraded is true only if the user accepted that suggestion.
+    const aiGraded = isQuestion && g !== null;
+    const autoGraded = aiGraded && this.suggestedRating(g!.score) === rating;
 
     try {
       await firstValueFrom(this.api.recordReview(cur.card.id, {
         reminderId: cur.reminder.reminderId,
         rating,
-        answerText: wasGraded ? this.userAnswer : null,
-        aiScore: wasGraded ? g!.score : null,
-        aiFeedback: wasGraded ? g!.feedback : null,
+        answerText: isQuestion && typedAnswer ? this.userAnswer : null,
+        aiScore: aiGraded ? g!.score : null,
+        aiFeedback: aiGraded ? g!.feedback : null,
         autoGraded,
       }));
       this.reviewedCount.update((n) => n + 1);
