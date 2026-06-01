@@ -1,5 +1,5 @@
 import { Dialog } from "@angular/cdk/dialog";
-import { ChangeDetectionStrategy, Component, inject, resource, signal } from "@angular/core";
+import { ChangeDetectionStrategy, Component, computed, inject, resource, signal } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { firstValueFrom } from "rxjs";
 
@@ -29,6 +29,10 @@ export class CardsListComponent {
 
   readonly search = signal("");
   readonly selectedTags = signal<string[]>([]);
+  /** O(1) lookup for template chips — beats calling isTagActive() N×8 per CD. */
+  readonly activeTagSet = computed<ReadonlySet<string>>(
+    () => new Set(this.selectedTags()),
+  );
   readonly pageNum = signal(1);
   readonly refreshTick = signal(0);
   readonly pageSize = 10;
@@ -65,10 +69,6 @@ export class CardsListComponent {
     const p = this.page.value();
     if (!p) return 1;
     return Math.max(1, Math.ceil(p.totalCount / p.pageSize));
-  }
-
-  isTagActive(tag: string): boolean {
-    return this.selectedTags().includes(tag);
   }
 
   toggleTag(tag: string): void {

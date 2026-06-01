@@ -168,6 +168,7 @@
       }
 
       @if (phase() === 'question-graded' && grade(); as g) {
+        @let suggested = suggestedRating(g.score);
         <div
           class="mt-4 p-4 rounded-lg border"
           [style.color]="verdictColor(g.verdict)"
@@ -180,7 +181,7 @@
               <span class="tabular-nums">{{ g.score }} / 100</span>
               <span class="opacity-80">— {{ g.verdict }}</span>
             </p>
-            <span class="text-xs opacity-80">suggested: {{ suggestedRating(g.score) }}</span>
+            <span class="text-xs opacity-80">suggested: {{ suggested }}</span>
           </div>
           <p class="text-sm whitespace-pre-wrap" style="color: var(--color-fg)">{{ g.feedback }}</p>
         </div>
@@ -201,7 +202,7 @@
               [disabled]="actionBusy()"
               class="rating-btn relative"
               [class]="b.class"
-              [class.is-suggested]="suggestedRating(g.score) === b.rating"
+              [class.is-suggested]="suggested === b.rating"
             >
               <app-icon [name]="b.icon" [size]="16" />
               <span>{{ b.rating }}</span>
