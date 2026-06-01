@@ -1,0 +1,17 @@
+<button
+  [type]="type()"
+  [disabled]="disabled() || loading()"
+  [attr.title]="title()"
+  [attr.aria-label]="ariaLabel()"
+  [class]="classes()"
+>
+  @if (loading()) {
+    <app-icon name="loader" [size]="iconSize()" class="animate-spin" />
+  } @else if (leadingIcon()) {
+    <app-icon [name]="leadingIcon()!" [size]="iconSize()" />
+  }
+  <ng-content />
+  @if (!loading() && trailingIcon()) {
+    <app-icon [name]="trailingIcon()!" [size]="iconSize()" />
+  }
+</button>

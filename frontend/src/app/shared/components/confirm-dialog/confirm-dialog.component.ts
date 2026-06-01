@@ -1,6 +1,8 @@
 import { Dialog, DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
+import { ButtonComponent } from '../button/button.component';
+
 export interface ConfirmDialogData {
   title: string;
   message: string;
@@ -12,6 +14,7 @@ export interface ConfirmDialogData {
 @Component({
   selector: 'app-confirm-dialog',
   standalone: true,
+  imports: [ButtonComponent],
   templateUrl: './confirm-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

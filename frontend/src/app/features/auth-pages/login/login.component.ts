@@ -12,6 +12,7 @@ import { Router } from "@angular/router";
 
 import { environment } from "../../../../environments/environment";
 import { AuthService } from "../../../core/services/auth.service";
+import { ButtonComponent } from "../../../shared/components/button/button.component";
 import { IconComponent } from "../../../shared/components/icon/icon.component";
 import { LogoComponent } from "../../../shared/components/logo/logo.component";
 import { ThemeToggleComponent } from "../../../shared/components/theme-toggle/theme-toggle.component";
@@ -38,7 +39,7 @@ declare global {
 @Component({
   selector: "app-login",
   standalone: true,
-  imports: [FormsModule, IconComponent, LogoComponent, ThemeToggleComponent],
+  imports: [ButtonComponent, FormsModule, IconComponent, LogoComponent, ThemeToggleComponent],
   templateUrl: "./login.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

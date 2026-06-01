@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 
 import { CardDto } from '../models/card.model';
+import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { CardsApiService } from '../services/cards-api.service';
 
@@ -14,7 +15,7 @@ const TAGS_MAX = 5;
 @Component({
   selector: 'app-add-card-drawer',
   standalone: true,
-  imports: [FormsModule, IconComponent],
+  imports: [ButtonComponent, FormsModule, IconComponent],
   templateUrl: './add-card-drawer.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

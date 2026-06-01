@@ -4,13 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 
 import { UsersApiService } from '../../core/services/users-api.service';
+import { ButtonComponent } from '../../shared/components/button/button.component';
 import { IconComponent } from '../../shared/components/icon/icon.component';
 import { TimeZonePickerComponent } from '../../shared/components/timezone-picker/timezone-picker.component';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [DatePipe, FormsModule, IconComponent, TimeZonePickerComponent],
+  imports: [ButtonComponent, DatePipe, FormsModule, IconComponent, TimeZonePickerComponent],
   templateUrl: './settings.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

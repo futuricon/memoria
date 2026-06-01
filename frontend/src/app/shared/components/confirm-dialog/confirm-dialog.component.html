@@ -4,19 +4,11 @@
     <p class="text-sm text-fg-secondary leading-relaxed">{{ data.message }}</p>
   </div>
   <div class="flex justify-end gap-2 px-6 py-4 border-t border-default rounded-b-xl bg-surface-raised">
-    <button
-      type="button"
-      (click)="cancel()"
-      class="px-3 h-9 text-sm rounded-md border border-default text-fg-secondary hover:bg-surface-hover transition-colors"
-    >{{ data.cancelLabel ?? 'Cancel' }}</button>
-    <button
-      type="button"
+    <app-button variant="secondary" size="sm" (click)="cancel()">{{ data.cancelLabel ?? 'Cancel' }}</app-button>
+    <app-button
+      [variant]="data.destructive ? 'danger' : 'primary'"
+      size="sm"
       (click)="confirm()"
-      class="px-3 h-9 text-sm font-medium rounded-md text-white transition-colors"
-      [class.bg-brand]="!data.destructive"
-      [class.text-brand-on]="!data.destructive"
-      [class.hover:bg-brand-400]="!data.destructive"
-      [style.background]="data.destructive ? 'var(--color-rating-again)' : null"
-    >{{ data.confirmLabel ?? 'OK' }}</button>
+    >{{ data.confirmLabel ?? 'OK' }}</app-button>
   </div>
 </div>

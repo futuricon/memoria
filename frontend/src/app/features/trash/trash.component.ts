@@ -4,6 +4,7 @@ import { ChangeDetectionStrategy, Component, inject, resource, signal } from '@a
 import { firstValueFrom } from 'rxjs';
 
 import { TrashedCardDto } from './models/trashed-card.model';
+import { ButtonComponent } from '../../shared/components/button/button.component';
 import { openConfirm } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { IconComponent } from '../../shared/components/icon/icon.component';
 import { TrashApiService } from './services/trash-api.service';
@@ -11,7 +12,7 @@ import { TrashApiService } from './services/trash-api.service';
 @Component({
   selector: 'app-trash',
   standalone: true,
-  imports: [DatePipe, IconComponent],
+  imports: [ButtonComponent, DatePipe, IconComponent],
   templateUrl: './trash.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

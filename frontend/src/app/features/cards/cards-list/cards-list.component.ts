@@ -4,6 +4,7 @@ import { FormsModule } from "@angular/forms";
 import { firstValueFrom } from "rxjs";
 
 import { CardSummaryDto } from "../models/card.model";
+import { ButtonComponent } from "../../../shared/components/button/button.component";
 import { openConfirm } from "../../../shared/components/confirm-dialog/confirm-dialog.component";
 import { GradePillComponent } from "../../../shared/components/grade-pill/grade-pill.component";
 import { IconComponent } from "../../../shared/components/icon/icon.component";
@@ -17,7 +18,7 @@ const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 @Component({
   selector: "app-cards-list",
   standalone: true,
-  imports: [FormsModule, GradePillComponent, IconComponent],
+  imports: [ButtonComponent, FormsModule, GradePillComponent, IconComponent],
   templateUrl: "./cards-list.component.html",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

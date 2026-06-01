@@ -47,52 +47,41 @@
             </div>
 
             <div class="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
+              <app-button
+                variant="secondary"
+                size="sm"
+                leadingIcon="rotate-ccw"
+                [disabled]="actionBusy() === card.id"
                 (click)="onRestore(card)"
+              >Restore</app-button>
+              <app-button
+                variant="danger"
+                size="sm"
+                leadingIcon="trash-2"
                 [disabled]="actionBusy() === card.id"
-                class="h-9 px-3 rounded-md text-xs font-medium border border-default text-fg hover:bg-surface-hover disabled:opacity-40 inline-flex items-center gap-1.5"
-              >
-                <app-icon name="rotate-ccw" [size]="14" />
-                Restore
-              </button>
-              <button
-                type="button"
                 (click)="onPurge(card)"
-                [disabled]="actionBusy() === card.id"
-                class="h-9 px-3 rounded-md text-xs font-medium disabled:opacity-40 inline-flex items-center gap-1.5"
-                [style.color]="'var(--color-rating-again)'"
-                [style.background]="'color-mix(in srgb, var(--color-rating-again) 10%, transparent)'"
-                [style.border]="'1px solid color-mix(in srgb, var(--color-rating-again) 40%, transparent)'"
-              >
-                <app-icon name="trash-2" [size]="14" />
-                Delete forever
-              </button>
+              >Delete forever</app-button>
             </div>
           </div>
         }
       </div>
 
       <div class="mt-4 flex items-center justify-between text-sm">
-        <button
-          type="button"
-          (click)="prev()"
+        <app-button
+          variant="secondary"
+          size="sm"
+          leadingIcon="chevron-left"
           [disabled]="pageNum() === 1"
-          class="h-9 px-3 rounded-md border border-default text-fg-secondary hover:bg-surface-hover hover:text-fg disabled:opacity-40 inline-flex items-center gap-1.5"
-        >
-          <app-icon name="chevron-left" [size]="14" />
-          Prev
-        </button>
+          (click)="prev()"
+        >Prev</app-button>
         <span class="text-fg-muted text-xs tabular-nums">Page {{ pageNum() }} of {{ totalPages() }}</span>
-        <button
-          type="button"
-          (click)="next()"
+        <app-button
+          variant="secondary"
+          size="sm"
+          trailingIcon="chevron-right"
           [disabled]="pageNum() >= totalPages()"
-          class="h-9 px-3 rounded-md border border-default text-fg-secondary hover:bg-surface-hover hover:text-fg disabled:opacity-40 inline-flex items-center gap-1.5"
-        >
-          Next
-          <app-icon name="chevron-right" [size]="14" />
-        </button>
+          (click)="next()"
+        >Next</app-button>
       </div>
     }
 

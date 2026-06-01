@@ -111,18 +111,12 @@
                 placeholder="you@example.com"
               />
             </label>
-            <button
+            <app-button
+              variant="primary"
               type="submit"
-              [disabled]="busy()"
-              class="w-full h-10 bg-brand text-brand-on rounded-md text-sm font-medium hover:bg-brand-hover disabled:opacity-50 inline-flex items-center justify-center gap-2"
-            >
-              @if (busy()) {
-                <app-icon name="loader" [size]="14" class="animate-spin" />
-                Sending…
-              } @else {
-                Send code
-              }
-            </button>
+              [loading]="busy()"
+              [block]="true"
+            >{{ busy() ? 'Sending…' : 'Send code' }}</app-button>
           </form>
         } @else {
           <form (ngSubmit)="confirmCode()" class="space-y-3">
@@ -146,18 +140,12 @@
                 placeholder="123456"
               />
             </label>
-            <button
+            <app-button
+              variant="primary"
               type="submit"
-              [disabled]="busy()"
-              class="w-full h-10 bg-brand text-brand-on rounded-md text-sm font-medium hover:bg-brand-hover disabled:opacity-50 inline-flex items-center justify-center gap-2"
-            >
-              @if (busy()) {
-                <app-icon name="loader" [size]="14" class="animate-spin" />
-                Verifying…
-              } @else {
-                Sign in
-              }
-            </button>
+              [loading]="busy()"
+              [block]="true"
+            >{{ busy() ? 'Verifying…' : 'Sign in' }}</app-button>
             <button
               type="button"
               (click)="emailStep.set('request')"

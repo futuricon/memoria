@@ -306,6 +306,17 @@ body {
   font-size: 11px;
 }
 
+// Danger variant for the shared <app-button>. Backed by --color-rating-again
+// so it matches the SR-state palette used elsewhere (Forgot, x-circle, etc).
+.btn-danger {
+  color: var(--color-rating-again);
+  background: color-mix(in srgb, var(--color-rating-again) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-rating-again) 40%, transparent);
+}
+.btn-danger:hover {
+  background: color-mix(in srgb, var(--color-rating-again) 18%, transparent);
+}
+
 .rating-btn {
   display: inline-flex;
   align-items: center;

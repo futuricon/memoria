@@ -91,19 +91,11 @@
         >Clear quiet hours</button>
 
         <div class="flex items-center gap-3 pt-2">
-          <button
-            type="button"
+          <app-button
+            variant="primary"
+            [loading]="savingPrefs()"
             (click)="save()"
-            [disabled]="savingPrefs()"
-            class="h-10 px-4 rounded-md text-sm font-medium bg-brand text-brand-on hover:bg-brand-hover disabled:opacity-50 inline-flex items-center gap-2"
-          >
-            @if (savingPrefs()) {
-              <app-icon name="loader" [size]="14" class="animate-spin" />
-              Saving…
-            } @else {
-              Save preferences
-            }
-          </button>
+          >{{ savingPrefs() ? 'Saving…' : 'Save preferences' }}</app-button>
           @if (saveStatus()) {
             <span class="text-xs inline-flex items-center gap-1.5 text-success">
               <app-icon name="check" [size]="14" />
@@ -132,20 +124,12 @@
         <span class="font-medium text-fg-secondary">merge it into your current account</span>
         (cards, reviews, history). The original Telegram-only account is deactivated.
       </p>
-      <button
-        type="button"
+      <app-button
+        variant="secondary"
+        [loading]="generatingLink()"
+        [leadingIcon]="generatingLink() ? null : 'send'"
         (click)="generateTelegramLink()"
-        [disabled]="generatingLink()"
-        class="h-9 px-4 rounded-md text-sm border border-default text-fg hover:bg-surface-hover disabled:opacity-50 inline-flex items-center gap-2"
-      >
-        @if (generatingLink()) {
-          <app-icon name="loader" [size]="14" class="animate-spin" />
-          Generating…
-        } @else {
-          <app-icon name="send" [size]="14" />
-          Generate link
-        }
-      </button>
+      >{{ generatingLink() ? 'Generating…' : 'Generate link' }}</app-button>
 
       @if (telegramLink(); as link) {
         <div class="mt-3 p-3 rounded-md bg-surface-raised border border-default text-sm">

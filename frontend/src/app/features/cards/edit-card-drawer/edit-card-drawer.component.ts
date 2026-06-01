@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 
 import { CardDto } from '../models/card.model';
+import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { CardsApiService } from '../services/cards-api.service';
 
@@ -13,7 +14,7 @@ export interface EditCardDrawerData {
 @Component({
   selector: 'app-edit-card-drawer',
   standalone: true,
-  imports: [FormsModule, IconComponent],
+  imports: [ButtonComponent, FormsModule, IconComponent],
   templateUrl: './edit-card-drawer.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

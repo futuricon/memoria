@@ -12,14 +12,12 @@
         </p>
       }
     </div>
-    <button
-      type="button"
+    <app-button
+      variant="primary"
+      size="sm"
+      leadingIcon="plus"
       (click)="onAdd()"
-      class="inline-flex items-center gap-1.5 px-3 h-9 bg-brand text-brand-on text-sm font-medium rounded-md hover:bg-brand-400 transition-colors"
-    >
-      <app-icon name="plus" [size]="14" />
-      New card
-    </button>
+    >New card</app-button>
   </header>
 
   <!-- Search -->

@@ -54,23 +54,11 @@
   </div>
 
   <footer class="px-5 md:px-6 py-4 border-t border-default flex justify-end gap-2 bg-surface-raised pb-safe">
-    <button
-      type="button"
-      (click)="cancel()"
-      class="h-9 px-4 rounded-md text-sm border border-default text-fg hover:bg-surface-hover transition-colors"
-    >Cancel</button>
-    <button
-      type="button"
+    <app-button variant="secondary" (click)="cancel()">Cancel</app-button>
+    <app-button
+      variant="primary"
+      [loading]="busy()"
       (click)="save()"
-      [disabled]="busy()"
-      class="h-9 px-4 rounded-md text-sm font-medium bg-brand text-brand-on hover:bg-brand-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
-    >
-      @if (busy()) {
-        <app-icon name="loader" [size]="14" class="animate-spin" />
-        Saving…
-      } @else {
-        Save
-      }
-    </button>
+    >{{ busy() ? 'Saving…' : 'Save' }}</app-button>
   </footer>
 </div>
