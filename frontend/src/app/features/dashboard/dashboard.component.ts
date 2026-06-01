@@ -4,14 +4,14 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { ApiClient } from '../../core/api/api-client';
-import { GradePillComponent } from '../../core/ui/grade-pill.component';
-import { IconComponent } from '../../core/ui/icon.component';
+import { GradePillComponent } from '../../core/ui/grade-pill/grade-pill.component';
+import { IconComponent } from '../../core/ui/icon/icon.component';
 import { relativeTime } from '../../core/ui/relative-time';
-import { HardestTagsWidgetComponent } from './widgets/hardest-tags-widget.component';
-import { HeatmapWidgetComponent } from './widgets/heatmap-widget.component';
-import { RatingDistributionWidgetComponent } from './widgets/rating-distribution-widget.component';
-import { StreakWidgetComponent } from './widgets/streak-widget.component';
-import { StuckCardsWidgetComponent } from './widgets/stuck-cards-widget.component';
+import { HardestTagsWidgetComponent } from './widgets/hardest-tags-widget/hardest-tags-widget.component';
+import { HeatmapWidgetComponent } from './widgets/heatmap-widget/heatmap-widget.component';
+import { RatingDistributionWidgetComponent } from './widgets/rating-distribution-widget/rating-distribution-widget.component';
+import { StreakWidgetComponent } from './widgets/streak-widget/streak-widget.component';
+import { StuckCardsWidgetComponent } from './widgets/stuck-cards-widget/stuck-cards-widget.component';
 
 const TELEGRAM_BANNER_DISMISS_KEY = 'memoria.telegramBannerDismissed';
 

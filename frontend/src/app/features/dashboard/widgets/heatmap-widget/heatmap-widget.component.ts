@@ -1,7 +1,7 @@
 import { Component, computed, inject, resource } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-import { ApiClient } from '../../../core/api/api-client';
+import { ApiClient } from '../../../../core/api/api-client';
 
 interface Week {
   cells: Cell[];

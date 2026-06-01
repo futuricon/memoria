@@ -5,8 +5,8 @@ import { firstValueFrom } from 'rxjs';
 
 import { ApiClient } from '../../core/api/api-client';
 import { TrashedCardDto } from '../../core/api/dto';
-import { openConfirm } from '../../core/ui/confirm-dialog.component';
-import { IconComponent } from '../../core/ui/icon.component';
+import { openConfirm } from '../../core/ui/confirm-dialog/confirm-dialog.component';
+import { IconComponent } from '../../core/ui/icon/icon.component';
 
 @Component({
   selector: 'app-trash',

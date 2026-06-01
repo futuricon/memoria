@@ -9,10 +9,10 @@ import {
 import { FormsModule } from "@angular/forms";
 import { Router } from "@angular/router";
 
-import { environment } from "../../../environments/environment";
-import { AuthService } from "../../core/auth/auth.service";
-import { ThemeToggleComponent } from "../../core/theme/theme-toggle.component";
-import { IconComponent } from "../../core/ui/icon.component";
+import { environment } from "../../../../environments/environment";
+import { AuthService } from "../../../core/auth/auth.service";
+import { ThemeToggleComponent } from "../../../core/theme/theme-toggle/theme-toggle.component";
+import { IconComponent } from "../../../core/ui/icon/icon.component";
 
 type Tab = "email" | "telegram";
 type EmailStep = "request" | "confirm";

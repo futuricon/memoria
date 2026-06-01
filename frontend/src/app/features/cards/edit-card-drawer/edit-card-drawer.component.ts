@@ -2,9 +2,9 @@ import { Dialog, DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { ApiClient } from '../../core/api/api-client';
-import { CardDto } from '../../core/api/dto';
-import { IconComponent } from '../../core/ui/icon.component';
+import { ApiClient } from '../../../core/api/api-client';
+import { CardDto } from '../../../core/api/dto';
+import { IconComponent } from '../../../core/ui/icon/icon.component';
 
 export interface EditCardDrawerData {
   card: CardDto;

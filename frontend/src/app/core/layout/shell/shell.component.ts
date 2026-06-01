@@ -8,9 +8,9 @@ import {
 } from "@angular/router";
 import { filter } from "rxjs";
 
-import { AuthService } from "../auth/auth.service";
-import { ThemeToggleComponent } from "../theme/theme-toggle.component";
-import { IconComponent } from "../ui/icon.component";
+import { AuthService } from "../../auth/auth.service";
+import { ThemeToggleComponent } from "../../theme/theme-toggle/theme-toggle.component";
+import { IconComponent } from "../../ui/icon/icon.component";
 
 interface NavItem {
   path: string;

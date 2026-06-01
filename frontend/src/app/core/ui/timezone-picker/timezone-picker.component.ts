@@ -9,8 +9,8 @@ import {
   signal,
 } from '@angular/core';
 
-import { TimeZoneDto } from '../api/dto';
-import { IconComponent } from './icon.component';
+import { TimeZoneDto } from '../../api/dto';
+import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-timezone-picker',

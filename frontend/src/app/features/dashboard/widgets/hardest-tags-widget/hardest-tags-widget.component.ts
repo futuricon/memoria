@@ -2,8 +2,8 @@ import { DecimalPipe } from '@angular/common';
 import { Component, inject, resource } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-import { ApiClient } from '../../../core/api/api-client';
-import { IconComponent } from '../../../core/ui/icon.component';
+import { ApiClient } from '../../../../core/api/api-client';
+import { IconComponent } from '../../../../core/ui/icon/icon.component';
 
 function bandColor(score: number): string {
   if (score >= 75) return 'var(--color-rating-good)';

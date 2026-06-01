@@ -3,9 +3,9 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 
-import { ApiClient } from '../../core/api/api-client';
-import { CardDto } from '../../core/api/dto';
-import { IconComponent } from '../../core/ui/icon.component';
+import { ApiClient } from '../../../core/api/api-client';
+import { CardDto } from '../../../core/api/dto';
+import { IconComponent } from '../../../core/ui/icon/icon.component';
 
 const TITLE_MAX = 200;
 const BODY_MAX = 4000;

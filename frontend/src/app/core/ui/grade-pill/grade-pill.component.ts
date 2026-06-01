@@ -1,8 +1,8 @@
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
 
-import { CardType } from '../api/dto';
-import { IconComponent } from './icon.component';
+import { CardType } from '../../api/dto';
+import { IconComponent } from '../icon/icon.component';
 
 /**
  * Type-aware grade pill. Note cards show the rating average, Question

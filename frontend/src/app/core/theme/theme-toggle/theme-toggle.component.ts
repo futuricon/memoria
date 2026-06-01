@@ -1,7 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 
-import { IconComponent, type IconName } from '../ui/icon.component';
-import { ThemeService } from './theme.service';
+import { IconComponent, type IconName } from '../../ui/icon/icon.component';
+import { ThemeService } from '../theme.service';
 
 @Component({
   selector: 'app-theme-toggle',

@@ -4,8 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 
 import { ApiClient } from '../../core/api/api-client';
-import { IconComponent } from '../../core/ui/icon.component';
-import { TimeZonePickerComponent } from '../../core/ui/timezone-picker.component';
+import { IconComponent } from '../../core/ui/icon/icon.component';
+import { TimeZonePickerComponent } from '../../core/ui/timezone-picker/timezone-picker.component';
 
 @Component({
   selector: 'app-settings',

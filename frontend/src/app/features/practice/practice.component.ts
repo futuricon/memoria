@@ -10,7 +10,7 @@ import {
   GradingResult,
   Rating,
 } from '../../core/api/dto';
-import { IconComponent, type IconName } from '../../core/ui/icon.component';
+import { IconComponent, type IconName } from '../../core/ui/icon/icon.component';
 
 type Phase =
   | 'loading-queue'

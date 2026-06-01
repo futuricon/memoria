@@ -6,12 +6,12 @@ export const APP_ROUTES: Routes = [
   {
     path: 'login',
     loadComponent: () =>
-      import('./features/auth-pages/login.component').then((m) => m.LoginComponent),
+      import('./features/auth-pages/login/login.component').then((m) => m.LoginComponent),
   },
   {
     path: 'auth/callback',
     loadComponent: () =>
-      import('./features/auth-pages/oauth-callback.component').then(
+      import('./features/auth-pages/oauth-callback/oauth-callback.component').then(
         (m) => m.OAuthCallbackComponent,
       ),
   },
@@ -19,7 +19,7 @@ export const APP_ROUTES: Routes = [
     path: '',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./core/layout/shell.component').then((m) => m.ShellComponent),
+      import('./core/layout/shell/shell.component').then((m) => m.ShellComponent),
     children: [
       {
         path: '',
@@ -39,7 +39,7 @@ export const APP_ROUTES: Routes = [
       {
         path: 'cards',
         loadComponent: () =>
-          import('./features/cards/cards-list.component').then(
+          import('./features/cards/cards-list/cards-list.component').then(
             (m) => m.CardsListComponent,
           ),
       },

@@ -3,13 +3,13 @@ import { Component, inject, resource, signal } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { firstValueFrom } from "rxjs";
 
-import { ApiClient } from "../../core/api/api-client";
-import { CardSummaryDto } from "../../core/api/dto";
-import { openConfirm } from "../../core/ui/confirm-dialog.component";
-import { GradePillComponent } from "../../core/ui/grade-pill.component";
-import { IconComponent } from "../../core/ui/icon.component";
-import { openAddDrawer } from "./add-card-drawer.component";
-import { openEditDrawer } from "./edit-card-drawer.component";
+import { ApiClient } from "../../../core/api/api-client";
+import { CardSummaryDto } from "../../../core/api/dto";
+import { openConfirm } from "../../../core/ui/confirm-dialog/confirm-dialog.component";
+import { GradePillComponent } from "../../../core/ui/grade-pill/grade-pill.component";
+import { IconComponent } from "../../../core/ui/icon/icon.component";
+import { openAddDrawer } from "../add-card-drawer/add-card-drawer.component";
+import { openEditDrawer } from "../edit-card-drawer/edit-card-drawer.component";
 
 const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
