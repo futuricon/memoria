@@ -37,7 +37,8 @@ internal static class AuthTelegramWidgetEndpoint
 
                 var result = await mediator.Send(new AuthenticateTelegramWidgetCommand(
                     p.Id.ToString(CultureInfo.InvariantCulture),
-                    displayName), ct).ConfigureAwait(false);
+                    displayName,
+                    p.Username), ct).ConfigureAwait(false);
 
                 return result.ToHttpResult();
             })

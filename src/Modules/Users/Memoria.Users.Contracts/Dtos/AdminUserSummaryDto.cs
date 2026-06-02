@@ -18,4 +18,4 @@ public sealed record AdminUserSummaryDto(
     DateTime? LastSeenAt,
     bool IsBlocked,
     DateTime? DeletedAt,
-    IReadOnlyList<string> Identities);
+    IReadOnlyList<AdminUserIdentityDto> Identities);

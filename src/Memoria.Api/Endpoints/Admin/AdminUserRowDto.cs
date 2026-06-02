@@ -17,7 +17,7 @@ public sealed record AdminUserRowDto(
     DateTime? LastSeenAt,
     bool IsBlocked,
     DateTime? DeletedAt,
-    IReadOnlyList<string> Identities,
+    IReadOnlyList<AdminUserIdentityDto> Identities,
     long TotalInputTokens,
     long TotalOutputTokens,
     decimal EstimatedCostUsd,

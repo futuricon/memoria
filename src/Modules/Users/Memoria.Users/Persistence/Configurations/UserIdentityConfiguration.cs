@@ -18,6 +18,7 @@ internal sealed class UserIdentityConfiguration : IEntityTypeConfiguration<UserI
         builder.Property(i => i.Provider).HasConversion<string>().HasMaxLength(32).IsRequired();
         builder.Property(i => i.ExternalId).HasMaxLength(256).IsRequired();
         builder.Property(i => i.LinkedAt).IsRequired();
+        builder.Property(i => i.ExternalDisplayName).HasMaxLength(64);
 
         builder.HasIndex(i => new { i.Provider, i.ExternalId }).IsUnique();
         builder.HasIndex(i => i.UserId);

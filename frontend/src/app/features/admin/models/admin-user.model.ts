@@ -6,6 +6,11 @@ export type UserSortKey =
   | 'LastSeenAtDesc'
   | 'DisplayNameAsc';
 
+export interface AdminUserIdentityDto {
+  readonly provider: string;
+  readonly handle: string | null;
+}
+
 export interface AdminUserRowDto {
   readonly id: string;
   readonly displayName: string;
@@ -15,7 +20,7 @@ export interface AdminUserRowDto {
   readonly lastSeenAt: string | null;
   readonly isBlocked: boolean;
   readonly deletedAt: string | null;
-  readonly identities: ReadonlyArray<string>;
+  readonly identities: ReadonlyArray<AdminUserIdentityDto>;
   readonly totalInputTokens: number;
   readonly totalOutputTokens: number;
   readonly estimatedCostUsd: number;

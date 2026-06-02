@@ -84,13 +84,22 @@ internal sealed class GetUsersPageQueryHandler
         var identitiesByUser = await _db.Identities
             .Where(i => ids.Contains(i.UserId))
             .OrderBy(i => i.LinkedAt)
-            .Select(i => new { i.UserId, Provider = i.Provider.ToString() })
+            .Select(i => new
+            {
+                i.UserId,
+                Provider = i.Provider.ToString(),
+                Handle = i.ExternalDisplayName,
+            })
             .ToListAsync(ct)
             .ConfigureAwait(false);
 
-        var providerMap = identitiesByUser
+        var identityMap = identitiesByUser
             .GroupBy(x => x.UserId)
-            .ToDictionary(g => g.Key, g => (IReadOnlyList<string>)g.Select(x => x.Provider).ToList());
+            .ToDictionary(
+                g => g.Key,
+                g => (IReadOnlyList<AdminUserIdentityDto>)g
+                    .Select(x => new AdminUserIdentityDto(x.Provider, x.Handle))
+                    .ToList());
 
         var items = pageItems.Select(u => new AdminUserSummaryDto(
             u.Id,
@@ -101,7 +110,7 @@ internal sealed class GetUsersPageQueryHandler
             u.LastSeenAt,
             u.IsBlocked,
             u.DeletedAt,
-            providerMap.TryGetValue(u.Id, out var p) ? p : Array.Empty<string>()))
+            identityMap.TryGetValue(u.Id, out var p) ? p : Array.Empty<AdminUserIdentityDto>()))
             .ToList();
 
         return Result<PagedResult<AdminUserSummaryDto>>.Success(

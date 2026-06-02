@@ -12,4 +12,5 @@ namespace Memoria.Users.Contracts.Commands;
 /// </summary>
 public sealed record AuthenticateTelegramWidgetCommand(
     string TelegramId,
-    string DisplayName) : IRequest<Result<JwtTokenPairDto>>;
+    string DisplayName,
+    string? Username = null) : IRequest<Result<JwtTokenPairDto>>;

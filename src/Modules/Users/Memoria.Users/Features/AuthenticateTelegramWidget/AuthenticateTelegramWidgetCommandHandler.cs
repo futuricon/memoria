@@ -64,6 +64,9 @@ internal sealed class AuthenticateTelegramWidgetCommandHandler
                     "users.not_found", "User linked to this Telegram identity is missing."));
             }
 
+            // Refresh the cached @username on every login — users rename
+            // their Telegram handle, and we want the admin view to track it.
+            identity.UpdateExternalDisplayName(request.Username);
             user = existing;
         }
         else
@@ -73,7 +76,8 @@ internal sealed class AuthenticateTelegramWidgetCommandHandler
                 userId: user.Id,
                 provider: IdentityProvider.Telegram,
                 externalId: request.TelegramId,
-                linkedAt: now);
+                linkedAt: now,
+                externalDisplayName: request.Username);
             _db.Users.Add(user);
             _db.Identities.Add(newIdentity);
         }

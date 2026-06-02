@@ -15,5 +15,9 @@ namespace Memoria.Users.Contracts.Commands;
 /// </summary>
 /// <param name="Token">Токен из deep-link.</param>
 /// <param name="TelegramId">Telegram chat/user id (строкой, как Telegram отдаёт).</param>
-public sealed record CompleteTelegramLinkingCommand(string Token, string TelegramId)
+/// <param name="Username">Опциональный <c>@username</c> — кешируется в UserIdentity для админ-обзора.</param>
+public sealed record CompleteTelegramLinkingCommand(
+    string Token,
+    string TelegramId,
+    string? Username = null)
     : IRequest<Result<TelegramLinkingResultDto>>;

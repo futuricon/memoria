@@ -90,7 +90,8 @@ internal sealed class StartCommandHandler : ITextCommandHandler
 
         var registration = await _mediator.Send(new AuthenticateTelegramWidgetCommand(
             message.From.Id.ToString(CultureInfo.InvariantCulture),
-            displayName), ct).ConfigureAwait(false);
+            displayName,
+            message.From.Username), ct).ConfigureAwait(false);
 
         if (registration.IsFailure)
         {
@@ -121,7 +122,7 @@ internal sealed class StartCommandHandler : ITextCommandHandler
 
         var telegramId = message.From.Id.ToString(CultureInfo.InvariantCulture);
         var result = await _mediator.Send(
-            new CompleteTelegramLinkingCommand(token, telegramId), ct).ConfigureAwait(false);
+            new CompleteTelegramLinkingCommand(token, telegramId, message.From.Username), ct).ConfigureAwait(false);
 
         var reply = result.IsSuccess
             ? FormatLinkingSuccess(result.Value!)

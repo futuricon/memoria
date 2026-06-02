@@ -76,7 +76,8 @@ internal sealed class CompleteTelegramLinkingCommandHandler
                 userId: targetUserId,
                 provider: IdentityProvider.Telegram,
                 externalId: request.TelegramId,
-                linkedAt: now));
+                linkedAt: now,
+                externalDisplayName: request.Username));
             verification.MarkConsumed(now);
             await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             return Result<TelegramLinkingResultDto>.Success(
@@ -85,8 +86,10 @@ internal sealed class CompleteTelegramLinkingCommandHandler
 
         if (existing.UserId == targetUserId)
         {
-            // Idempotent re-tap of the deep-link by the same user. No work,
-            // still consume the token so it can't be replayed.
+            // Idempotent re-tap of the deep-link by the same user. Refresh
+            // the cached handle in case it changed; still consume the token
+            // so it can't be replayed.
+            existing.UpdateExternalDisplayName(request.Username);
             verification.MarkConsumed(now);
             await _db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
             return Result<TelegramLinkingResultDto>.Success(
