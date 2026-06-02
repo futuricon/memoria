@@ -12,20 +12,29 @@ namespace Memoria.AI.UnitTests.Infrastructure;
 /// </summary>
 internal sealed class FakeLlmToolClient : ILlmToolClient
 {
-    private readonly Result<JsonElement> _result;
+    public const string FakeModel = "fake-model";
+    public const int FakeInputTokens = 11;
+    public const int FakeOutputTokens = 7;
 
-    private FakeLlmToolClient(Result<JsonElement> result) => _result = result;
+    private readonly Result<LlmToolInvocation> _result;
+
+    private FakeLlmToolClient(Result<LlmToolInvocation> result) => _result = result;
 
     public static FakeLlmToolClient Returning(JsonObject toolInput)
     {
         using var doc = JsonDocument.Parse(toolInput.ToJsonString());
-        return new FakeLlmToolClient(Result<JsonElement>.Success(doc.RootElement.Clone()));
+        var invocation = new LlmToolInvocation(
+            doc.RootElement.Clone(),
+            FakeInputTokens,
+            FakeOutputTokens,
+            FakeModel);
+        return new FakeLlmToolClient(Result<LlmToolInvocation>.Success(invocation));
     }
 
     public static FakeLlmToolClient Failing(Error error) =>
-        new(Result<JsonElement>.Failure(error));
+        new(Result<LlmToolInvocation>.Failure(error));
 
-    public Task<Result<JsonElement>> InvokeToolAsync(
+    public Task<Result<LlmToolInvocation>> InvokeToolAsync(
         string model,
         string system,
         string userMessage,

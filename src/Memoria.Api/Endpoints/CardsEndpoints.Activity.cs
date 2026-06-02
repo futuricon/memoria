@@ -385,7 +385,7 @@ internal static class CardsActivityEndpoints
                 }
 
                 var gradeResult = await grader
-                    .GradeAsync(new GradingRequest(card.Title, card.Body, req.UserAnswer), ct)
+                    .GradeAsync(new GradingRequest(user.Id, card.Title, card.Body, req.UserAnswer), ct)
                     .ConfigureAwait(false);
                 return gradeResult.ToHttpResult();
             });

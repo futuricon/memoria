@@ -36,12 +36,12 @@ public sealed class AddCardCommandHandlerTests
 
     private void StubValidation(bool isCoherent, string? reason = null) =>
         _questionValidator
-            .ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .ValidateAsync(Arg.Any<QuestionCardValidationRequest>(), Arg.Any<CancellationToken>())
             .Returns(Result<QuestionCardValidation>.Success(new QuestionCardValidation(isCoherent, reason)));
 
     private void StubValidationUnavailable() =>
         _questionValidator
-            .ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .ValidateAsync(Arg.Any<QuestionCardValidationRequest>(), Arg.Any<CancellationToken>())
             .Returns(Result<QuestionCardValidation>.Failure(Error.Unexpected("ai.request_failed", "down")));
 
     [Fact]
@@ -137,7 +137,7 @@ public sealed class AddCardCommandHandlerTests
         result.IsSuccess.Should().BeTrue();
         result.Value!.Type.Should().Be(CardType.Note);
         await _questionValidator.DidNotReceive()
-            .ValidateAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+            .ValidateAsync(Arg.Any<QuestionCardValidationRequest>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

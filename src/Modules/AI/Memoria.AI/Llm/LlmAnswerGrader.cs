@@ -1,11 +1,15 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
+using MediatR;
+
 using Memoria.AI.Contracts.Abstractions;
 using Memoria.AI.Contracts.Dtos;
+using Memoria.AI.Contracts.Events;
 using Memoria.AI.Options;
 using Memoria.Shared.Kernel.Results;
 
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Memoria.AI.Llm;
@@ -13,7 +17,9 @@ namespace Memoria.AI.Llm;
 /// <summary>
 /// Provider-agnostic answer grader: builds the prompt + JSON schema and
 /// delegates the structured call to whichever <see cref="ILlmToolClient"/> is
-/// configured (Claude / DeepSeek).
+/// configured (Claude / DeepSeek). Records every call — success or failure —
+/// via the <see cref="AiUsageRecorded"/> notification so admin analytics can
+/// attribute spend per user.
 /// </summary>
 internal sealed class LlmAnswerGrader : IAnswerGrader
 {
@@ -29,13 +35,27 @@ internal sealed class LlmAnswerGrader : IAnswerGrader
 
     private readonly ILlmToolClient _client;
     private readonly AiOptions _options;
+    private readonly IMediator _mediator;
+    private readonly TimeProvider _clock;
+    private readonly ILogger<LlmAnswerGrader> _logger;
 
-    public LlmAnswerGrader(ILlmToolClient client, IOptions<AiOptions> options)
+    public LlmAnswerGrader(
+        ILlmToolClient client,
+        IOptions<AiOptions> options,
+        IMediator mediator,
+        TimeProvider clock,
+        ILogger<LlmAnswerGrader> logger)
     {
         ArgumentNullException.ThrowIfNull(client);
         ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(mediator);
+        ArgumentNullException.ThrowIfNull(clock);
+        ArgumentNullException.ThrowIfNull(logger);
         _client = client;
         _options = options.Value;
+        _mediator = mediator;
+        _clock = clock;
+        _logger = logger;
     }
 
     public async Task<Result<GradingResult>> GradeAsync(GradingRequest request, CancellationToken ct)
@@ -47,7 +67,7 @@ internal sealed class LlmAnswerGrader : IAnswerGrader
             "Reference answer:\n" + request.ReferenceBody + "\n\n" +
             "Student answer:\n" + request.UserAnswer;
 
-        var result = await _client.InvokeToolAsync(
+        var invocation = await _client.InvokeToolAsync(
             _options.GradingModel,
             System,
             user,
@@ -56,9 +76,49 @@ internal sealed class LlmAnswerGrader : IAnswerGrader
             BuildSchema(),
             ct).ConfigureAwait(false);
 
-        return result.IsFailure
-            ? Result<GradingResult>.Failure(result.Error!)
-            : Parse(result.Value);
+        if (invocation.IsFailure)
+        {
+            await PublishUsageAsync(request.UserId, _options.GradingModel, 0, 0, isFailure: true, ct)
+                .ConfigureAwait(false);
+            return Result<GradingResult>.Failure(invocation.Error!);
+        }
+
+        await PublishUsageAsync(
+            request.UserId,
+            invocation.Value!.Model,
+            invocation.Value.InputTokens,
+            invocation.Value.OutputTokens,
+            isFailure: false,
+            ct).ConfigureAwait(false);
+
+        return Parse(invocation.Value.Input);
+    }
+
+    private async Task PublishUsageAsync(
+        Guid userId,
+        string model,
+        int inputTokens,
+        int outputTokens,
+        bool isFailure,
+        CancellationToken ct)
+    {
+        try
+        {
+            await _mediator.Publish(
+                new AiUsageRecorded(
+                    userId,
+                    AiOperation.AnswerGrading,
+                    model,
+                    inputTokens,
+                    outputTokens,
+                    isFailure,
+                    _clock.GetUtcNow().UtcDateTime),
+                ct).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to publish AiUsageRecorded; grading continues");
+        }
     }
 
     private static JsonObject BuildSchema() => new JsonObject

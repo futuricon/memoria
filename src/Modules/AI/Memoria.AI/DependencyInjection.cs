@@ -5,7 +5,9 @@ using Memoria.AI.Contracts.Abstractions;
 using Memoria.AI.Deepseek;
 using Memoria.AI.Llm;
 using Memoria.AI.Options;
+using Memoria.AI.Persistence;
 
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -17,6 +19,7 @@ namespace Memoria.AI;
 /// <c>Ai:Provider</c>: the matching typed <see cref="System.Net.Http.HttpClient"/>
 /// is bound to <c>ILlmToolClient</c>, and the provider-agnostic
 /// <see cref="IAnswerGrader"/> / <see cref="IQuestionCardValidator"/> sit on top.
+/// Also registers the <c>ai</c> EF schema used to persist per-user usage rows.
 /// </summary>
 public static class DependencyInjection
 {
@@ -43,7 +46,24 @@ public static class DependencyInjection
         services.AddScoped<IAnswerGrader, LlmAnswerGrader>();
         services.AddScoped<IQuestionCardValidator, LlmQuestionCardValidator>();
 
+        var connectionString = configuration.GetConnectionString("Postgres")
+            ?? throw new InvalidOperationException("Connection string 'Postgres' is not configured.");
+
+        services.AddDbContext<AiDbContext>(o =>
+            o.UseNpgsql(connectionString, n => n.MigrationsHistoryTable(
+                tableName: "__ef_migrations_history",
+                schema: AiDbContext.SchemaName))
+             .UseSnakeCaseNamingConvention());
+
         return services;
+    }
+
+    /// <summary>Applies pending migrations for <see cref="AiDbContext"/>.</summary>
+    public static async Task MigrateAiModuleAsync(this IServiceProvider services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        var db = services.GetRequiredService<AiDbContext>();
+        await db.Database.MigrateAsync();
     }
 
     private static void ConfigureClaude(IServiceProvider sp, HttpClient http)

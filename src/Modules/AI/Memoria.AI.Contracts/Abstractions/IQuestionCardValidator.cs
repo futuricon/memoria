@@ -11,5 +11,7 @@ namespace Memoria.AI.Contracts.Abstractions;
 /// </summary>
 public interface IQuestionCardValidator
 {
-    Task<Result<QuestionCardValidation>> ValidateAsync(string question, string body, CancellationToken ct);
+    Task<Result<QuestionCardValidation>> ValidateAsync(
+        QuestionCardValidationRequest request,
+        CancellationToken ct);
 }

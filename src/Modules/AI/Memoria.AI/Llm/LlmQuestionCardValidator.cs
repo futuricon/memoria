@@ -1,11 +1,15 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
+using MediatR;
+
 using Memoria.AI.Contracts.Abstractions;
 using Memoria.AI.Contracts.Dtos;
+using Memoria.AI.Contracts.Events;
 using Memoria.AI.Options;
 using Memoria.Shared.Kernel.Results;
 
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Memoria.AI.Llm;
@@ -13,7 +17,9 @@ namespace Memoria.AI.Llm;
 /// <summary>
 /// Provider-agnostic Question-card validator: checks that a card body coherently
 /// answers its title, delegating the structured call to the configured
-/// <see cref="ILlmToolClient"/>.
+/// <see cref="ILlmToolClient"/>. Records every call — success or failure —
+/// via the <see cref="AiUsageRecorded"/> notification so admin analytics can
+/// attribute spend per user.
 /// </summary>
 internal sealed class LlmQuestionCardValidator : IQuestionCardValidator
 {
@@ -29,23 +35,38 @@ internal sealed class LlmQuestionCardValidator : IQuestionCardValidator
 
     private readonly ILlmToolClient _client;
     private readonly AiOptions _options;
+    private readonly IMediator _mediator;
+    private readonly TimeProvider _clock;
+    private readonly ILogger<LlmQuestionCardValidator> _logger;
 
-    public LlmQuestionCardValidator(ILlmToolClient client, IOptions<AiOptions> options)
+    public LlmQuestionCardValidator(
+        ILlmToolClient client,
+        IOptions<AiOptions> options,
+        IMediator mediator,
+        TimeProvider clock,
+        ILogger<LlmQuestionCardValidator> logger)
     {
         ArgumentNullException.ThrowIfNull(client);
         ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(mediator);
+        ArgumentNullException.ThrowIfNull(clock);
+        ArgumentNullException.ThrowIfNull(logger);
         _client = client;
         _options = options.Value;
+        _mediator = mediator;
+        _clock = clock;
+        _logger = logger;
     }
 
-    public async Task<Result<QuestionCardValidation>> ValidateAsync(string question, string body, CancellationToken ct)
+    public async Task<Result<QuestionCardValidation>> ValidateAsync(
+        QuestionCardValidationRequest request,
+        CancellationToken ct)
     {
-        ArgumentNullException.ThrowIfNull(question);
-        ArgumentNullException.ThrowIfNull(body);
+        ArgumentNullException.ThrowIfNull(request);
 
-        var user = "Question:\n" + question + "\n\nReference answer (body):\n" + body;
+        var user = "Question:\n" + request.Question + "\n\nReference answer (body):\n" + request.Body;
 
-        var result = await _client.InvokeToolAsync(
+        var invocation = await _client.InvokeToolAsync(
             _options.ValidationModel,
             System,
             user,
@@ -54,9 +75,49 @@ internal sealed class LlmQuestionCardValidator : IQuestionCardValidator
             BuildSchema(),
             ct).ConfigureAwait(false);
 
-        return result.IsFailure
-            ? Result<QuestionCardValidation>.Failure(result.Error!)
-            : Parse(result.Value);
+        if (invocation.IsFailure)
+        {
+            await PublishUsageAsync(request.UserId, _options.ValidationModel, 0, 0, isFailure: true, ct)
+                .ConfigureAwait(false);
+            return Result<QuestionCardValidation>.Failure(invocation.Error!);
+        }
+
+        await PublishUsageAsync(
+            request.UserId,
+            invocation.Value!.Model,
+            invocation.Value.InputTokens,
+            invocation.Value.OutputTokens,
+            isFailure: false,
+            ct).ConfigureAwait(false);
+
+        return Parse(invocation.Value.Input);
+    }
+
+    private async Task PublishUsageAsync(
+        Guid userId,
+        string model,
+        int inputTokens,
+        int outputTokens,
+        bool isFailure,
+        CancellationToken ct)
+    {
+        try
+        {
+            await _mediator.Publish(
+                new AiUsageRecorded(
+                    userId,
+                    AiOperation.QuestionCardValidation,
+                    model,
+                    inputTokens,
+                    outputTokens,
+                    isFailure,
+                    _clock.GetUtcNow().UtcDateTime),
+                ct).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to publish AiUsageRecorded; validation continues");
+        }
     }
 
     private static JsonObject BuildSchema() => new JsonObject

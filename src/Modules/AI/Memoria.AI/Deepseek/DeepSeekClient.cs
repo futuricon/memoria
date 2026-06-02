@@ -14,10 +14,9 @@ namespace Memoria.AI.Deepseek;
 /// <summary>
 /// Typed-<see cref="HttpClient"/> wrapper over DeepSeek's OpenAI-compatible
 /// Chat Completions API. Forces structured output via a single function and
-/// <c>tool_choice</c>; the function arguments come back as a JSON-encoded string
-/// inside <c>choices[].message.tool_calls[]</c>, which we parse into a
-/// <see cref="JsonElement"/>. Transport/protocol errors map to a failed
-/// <see cref="Result{T}"/> (callers fail-open).
+/// <c>tool_choice</c>; returns the parsed function arguments together with the
+/// usage block reported by the provider. Transport/protocol errors map to a
+/// failed <see cref="Result{T}"/> (callers fail-open).
 /// </summary>
 internal sealed class DeepSeekClient : ILlmToolClient
 {
@@ -44,7 +43,7 @@ internal sealed class DeepSeekClient : ILlmToolClient
         _logger = logger;
     }
 
-    public async Task<Result<JsonElement>> InvokeToolAsync(
+    public async Task<Result<LlmToolInvocation>> InvokeToolAsync(
         string model,
         string system,
         string userMessage,
@@ -58,13 +57,15 @@ internal sealed class DeepSeekClient : ILlmToolClient
         if (string.IsNullOrWhiteSpace(_options.ApiKey))
         {
             _logger.LogWarning("DeepSeek API key is not configured; skipping call to tool {Tool}", toolName);
-            return Result<JsonElement>.Failure(Error.Unexpected(
+            return Result<LlmToolInvocation>.Failure(Error.Unexpected(
                 "ai.not_configured", "AI provider is not configured."));
         }
 
+        var resolvedModel = string.IsNullOrWhiteSpace(model) ? DefaultModel : model;
+
         var body = new JsonObject
         {
-            ["model"] = string.IsNullOrWhiteSpace(model) ? DefaultModel : model,
+            ["model"] = resolvedModel,
             ["max_tokens"] = _options.MaxTokens,
             ["temperature"] = 0,
             ["messages"] = new JsonArray
@@ -103,7 +104,7 @@ internal sealed class DeepSeekClient : ILlmToolClient
         catch (HttpRequestException ex)
         {
             _logger.LogWarning(ex, "DeepSeek request failed (network)");
-            return Result<JsonElement>.Failure(Error.Unexpected("ai.request_failed", "AI request failed."));
+            return Result<LlmToolInvocation>.Failure(Error.Unexpected("ai.request_failed", "AI request failed."));
         }
         catch (TaskCanceledException ex)
         {
@@ -113,7 +114,7 @@ internal sealed class DeepSeekClient : ILlmToolClient
             }
 
             _logger.LogWarning(ex, "DeepSeek request timed out");
-            return Result<JsonElement>.Failure(Error.Unexpected("ai.timeout", "AI request timed out."));
+            return Result<LlmToolInvocation>.Failure(Error.Unexpected("ai.timeout", "AI request timed out."));
         }
 
         using (response)
@@ -124,19 +125,21 @@ internal sealed class DeepSeekClient : ILlmToolClient
             {
                 _logger.LogWarning(
                     "DeepSeek returned {Status}: {Body}", (int)response.StatusCode, Truncate(payload));
-                return Result<JsonElement>.Failure(Error.Unexpected(
+                return Result<LlmToolInvocation>.Failure(Error.Unexpected(
                     "ai.bad_status", "AI provider returned an error status."));
             }
 
-            return ExtractToolArguments(payload, toolName);
+            return ExtractInvocation(payload, toolName, resolvedModel);
         }
     }
 
-    private Result<JsonElement> ExtractToolArguments(string payload, string toolName)
+    private Result<LlmToolInvocation> ExtractInvocation(string payload, string toolName, string resolvedModel)
     {
         try
         {
             using var doc = JsonDocument.Parse(payload);
+
+            JsonElement? toolArgs = null;
 
             if (doc.RootElement.TryGetProperty("choices", out var choices)
                 && choices.ValueKind == JsonValueKind.Array
@@ -151,28 +154,51 @@ internal sealed class DeepSeekClient : ILlmToolClient
                     if (!string.IsNullOrWhiteSpace(arguments))
                     {
                         using var argsDoc = JsonDocument.Parse(arguments);
-                        return Result<JsonElement>.Success(argsDoc.RootElement.Clone());
+                        toolArgs = argsDoc.RootElement.Clone();
                     }
                 }
             }
 
-            _logger.LogWarning(
-                "DeepSeek response had no tool_call for tool {Tool}: {Body}", toolName, Truncate(payload));
-            return Result<JsonElement>.Failure(Error.Unexpected(
-                "ai.no_tool_use", "AI did not return structured output."));
+            if (toolArgs is null)
+            {
+                _logger.LogWarning(
+                    "DeepSeek response had no tool_call for tool {Tool}: {Body}", toolName, Truncate(payload));
+                return Result<LlmToolInvocation>.Failure(Error.Unexpected(
+                    "ai.no_tool_use", "AI did not return structured output."));
+            }
+
+            // OpenAI-compatible usage: { "prompt_tokens": N, "completion_tokens": M }.
+            // Missing/malformed usage doesn't fail the call — usage stays zero and
+            // the dashboard surfaces the gap.
+            var (inputTokens, outputTokens) = ParseUsage(doc.RootElement);
+            return Result<LlmToolInvocation>.Success(
+                new LlmToolInvocation(toolArgs.Value, inputTokens, outputTokens, resolvedModel));
         }
         catch (JsonException ex)
         {
             _logger.LogWarning(ex, "Failed to parse DeepSeek response");
-            return Result<JsonElement>.Failure(Error.Unexpected(
+            return Result<LlmToolInvocation>.Failure(Error.Unexpected(
                 "ai.parse_failed", "Failed to parse AI response."));
         }
         catch (KeyNotFoundException ex)
         {
             _logger.LogWarning(ex, "DeepSeek response missing expected fields");
-            return Result<JsonElement>.Failure(Error.Unexpected(
+            return Result<LlmToolInvocation>.Failure(Error.Unexpected(
                 "ai.parse_failed", "Failed to parse AI response."));
         }
+    }
+
+    private static (int Input, int Output) ParseUsage(JsonElement root)
+    {
+        if (!root.TryGetProperty("usage", out var usage)
+            || usage.ValueKind != JsonValueKind.Object)
+        {
+            return (0, 0);
+        }
+
+        var input = usage.TryGetProperty("prompt_tokens", out var i) && i.TryGetInt32(out var iv) ? iv : 0;
+        var output = usage.TryGetProperty("completion_tokens", out var o) && o.TryGetInt32(out var ov) ? ov : 0;
+        return (input, output);
     }
 
     private static string Truncate(string s) =>

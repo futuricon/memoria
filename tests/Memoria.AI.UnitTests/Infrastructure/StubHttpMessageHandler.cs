@@ -34,7 +34,11 @@ internal sealed class StubHttpMessageHandler : HttpMessageHandler
         };
     }
 
-    public static string ToolUseResponse(string toolName, JsonObject input)
+    public static string ToolUseResponse(
+        string toolName,
+        JsonObject input,
+        int? inputTokens = null,
+        int? outputTokens = null)
     {
         var root = new JsonObject
         {
@@ -49,6 +53,14 @@ internal sealed class StubHttpMessageHandler : HttpMessageHandler
                 },
             },
         };
+        if (inputTokens.HasValue || outputTokens.HasValue)
+        {
+            root["usage"] = new JsonObject
+            {
+                ["input_tokens"] = inputTokens ?? 0,
+                ["output_tokens"] = outputTokens ?? 0,
+            };
+        }
         return root.ToJsonString();
     }
 
@@ -70,7 +82,11 @@ internal sealed class StubHttpMessageHandler : HttpMessageHandler
 
     /// <summary>OpenAI-compatible (DeepSeek) response: a forced function call
     /// whose <c>arguments</c> is a JSON-encoded string.</summary>
-    public static string ToolCallResponse(string toolName, JsonObject arguments)
+    public static string ToolCallResponse(
+        string toolName,
+        JsonObject arguments,
+        int? promptTokens = null,
+        int? completionTokens = null)
     {
         var root = new JsonObject
         {
@@ -95,6 +111,14 @@ internal sealed class StubHttpMessageHandler : HttpMessageHandler
                 },
             },
         };
+        if (promptTokens.HasValue || completionTokens.HasValue)
+        {
+            root["usage"] = new JsonObject
+            {
+                ["prompt_tokens"] = promptTokens ?? 0,
+                ["completion_tokens"] = completionTokens ?? 0,
+            };
+        }
         return root.ToJsonString();
     }
 

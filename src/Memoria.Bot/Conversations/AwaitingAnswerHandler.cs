@@ -116,7 +116,7 @@ internal sealed class AwaitingAnswerHandler : IConversationContinuationHandler
         var messageId = thinking.MessageId;
 
         var grade = await _grader
-            .GradeAsync(new GradingRequest(card.Title, card.Body, answer), ct)
+            .GradeAsync(new GradingRequest(userId, card.Title, card.Body, answer), ct)
             .ConfigureAwait(false);
         if (grade.IsFailure)
         {

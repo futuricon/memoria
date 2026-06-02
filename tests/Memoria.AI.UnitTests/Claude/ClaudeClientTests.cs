@@ -1,10 +1,10 @@
 using System.Net;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 
 using FluentAssertions;
 
 using Memoria.AI.Claude;
+using Memoria.AI.Llm;
 using Memoria.AI.Options;
 using Memoria.AI.UnitTests.Infrastructure;
 using Memoria.Shared.Kernel.Results;
@@ -38,8 +38,8 @@ public sealed class ClaudeClientTests
         ["properties"] = new JsonObject { ["ok"] = new JsonObject { ["type"] = "boolean" } },
     };
 
-    private Task<Result<JsonElement>> Invoke(ClaudeClient sut) =>
-        sut.InvokeToolAsync("claude-test", "system", "user", "submit", "desc", Schema(), CancellationToken.None);
+    private static Task<Result<LlmToolInvocation>> Invoke(ClaudeClient sut, string model = "claude-test") =>
+        sut.InvokeToolAsync(model, "system", "user", "submit", "desc", Schema(), CancellationToken.None);
 
     [Fact]
     public async Task InvokeToolAsyncExtractsToolUseInput()
@@ -52,7 +52,51 @@ public sealed class ClaudeClientTests
         var result = await Invoke(sut);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.GetProperty("score").GetInt32().Should().Be(88);
+        result.Value!.Input.GetProperty("score").GetInt32().Should().Be(88);
+    }
+
+    [Fact]
+    public async Task InvokeToolAsyncExtractsUsageTokensFromResponse()
+    {
+        var handler = new StubHttpMessageHandler(HttpStatusCode.OK,
+            StubHttpMessageHandler.ToolUseResponse(
+                "submit", new JsonObject { ["ok"] = true },
+                inputTokens: 123, outputTokens: 45));
+        var sut = CreateSut(handler);
+
+        var result = await Invoke(sut, model: "claude-test");
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.InputTokens.Should().Be(123);
+        result.Value.OutputTokens.Should().Be(45);
+        result.Value.Model.Should().Be("claude-test");
+    }
+
+    [Fact]
+    public async Task InvokeToolAsyncWithMissingUsageBlockReturnsZeroTokens()
+    {
+        var handler = new StubHttpMessageHandler(HttpStatusCode.OK,
+            StubHttpMessageHandler.ToolUseResponse("submit", new JsonObject { ["ok"] = true }));
+        var sut = CreateSut(handler);
+
+        var result = await Invoke(sut);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.InputTokens.Should().Be(0);
+        result.Value.OutputTokens.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task InvokeToolAsyncFallsBackToDefaultModelWhenModelEmpty()
+    {
+        var handler = new StubHttpMessageHandler(HttpStatusCode.OK,
+            StubHttpMessageHandler.ToolUseResponse("submit", new JsonObject { ["ok"] = true }));
+        var sut = CreateSut(handler);
+
+        var result = await Invoke(sut, model: "");
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.Model.Should().Be(ClaudeClient.DefaultModel);
     }
 
     [Theory]

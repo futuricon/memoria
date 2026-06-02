@@ -90,6 +90,7 @@ try
         await scope.ServiceProvider.MigrateCardsModuleAsync();
         await scope.ServiceProvider.MigrateRemindersModuleAsync();
         await scope.ServiceProvider.MigrateReviewsModuleAsync();
+        await scope.ServiceProvider.MigrateAiModuleAsync();
     }
 
     using (var scope = app.Services.CreateScope())

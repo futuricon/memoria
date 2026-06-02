@@ -1,6 +1,7 @@
 using MediatR;
 
 using Memoria.AI.Contracts.Abstractions;
+using Memoria.AI.Contracts.Dtos;
 using Memoria.Cards.Contracts;
 using Memoria.Cards.Contracts.Commands;
 using Memoria.Cards.Contracts.Dtos;
@@ -105,7 +106,9 @@ internal sealed class AddCardCommandHandler : IRequestHandler<AddCardCommand, Re
     private async Task<Result<Unit>> EnsureQuestionCoherentAsync(AddCardCommand request, CancellationToken ct)
     {
         var validation = await _questionValidator
-            .ValidateAsync(request.Title, request.Body, ct)
+            .ValidateAsync(
+                new QuestionCardValidationRequest(request.UserId, request.Title, request.Body),
+                ct)
             .ConfigureAwait(false);
 
         if (validation.IsFailure)

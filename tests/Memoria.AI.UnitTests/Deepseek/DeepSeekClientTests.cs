@@ -1,10 +1,10 @@
 using System.Net;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 
 using FluentAssertions;
 
 using Memoria.AI.Deepseek;
+using Memoria.AI.Llm;
 using Memoria.AI.Options;
 using Memoria.AI.UnitTests.Infrastructure;
 using Memoria.Shared.Kernel.Results;
@@ -38,8 +38,8 @@ public sealed class DeepSeekClientTests
         ["properties"] = new JsonObject { ["ok"] = new JsonObject { ["type"] = "boolean" } },
     };
 
-    private Task<Result<JsonElement>> Invoke(DeepSeekClient sut) =>
-        sut.InvokeToolAsync("deepseek-chat", "system", "user", "submit", "desc", Schema(), CancellationToken.None);
+    private static Task<Result<LlmToolInvocation>> Invoke(DeepSeekClient sut, string model = "deepseek-chat") =>
+        sut.InvokeToolAsync(model, "system", "user", "submit", "desc", Schema(), CancellationToken.None);
 
     [Fact]
     public async Task InvokeToolAsyncParsesFunctionArgumentsString()
@@ -52,8 +52,52 @@ public sealed class DeepSeekClientTests
         var result = await Invoke(sut);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.GetProperty("score").GetInt32().Should().Be(73);
-        result.Value.GetProperty("verdict").GetString().Should().Be("Partial");
+        result.Value!.Input.GetProperty("score").GetInt32().Should().Be(73);
+        result.Value.Input.GetProperty("verdict").GetString().Should().Be("Partial");
+    }
+
+    [Fact]
+    public async Task InvokeToolAsyncExtractsUsageTokensFromResponse()
+    {
+        var handler = new StubHttpMessageHandler(HttpStatusCode.OK,
+            StubHttpMessageHandler.ToolCallResponse(
+                "submit", new JsonObject { ["ok"] = true },
+                promptTokens: 200, completionTokens: 50));
+        var sut = CreateSut(handler);
+
+        var result = await Invoke(sut, model: "deepseek-chat");
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.InputTokens.Should().Be(200);
+        result.Value.OutputTokens.Should().Be(50);
+        result.Value.Model.Should().Be("deepseek-chat");
+    }
+
+    [Fact]
+    public async Task InvokeToolAsyncWithMissingUsageBlockReturnsZeroTokens()
+    {
+        var handler = new StubHttpMessageHandler(HttpStatusCode.OK,
+            StubHttpMessageHandler.ToolCallResponse("submit", new JsonObject { ["ok"] = true }));
+        var sut = CreateSut(handler);
+
+        var result = await Invoke(sut);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.InputTokens.Should().Be(0);
+        result.Value.OutputTokens.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task InvokeToolAsyncFallsBackToDefaultModelWhenModelEmpty()
+    {
+        var handler = new StubHttpMessageHandler(HttpStatusCode.OK,
+            StubHttpMessageHandler.ToolCallResponse("submit", new JsonObject { ["ok"] = true }));
+        var sut = CreateSut(handler);
+
+        var result = await Invoke(sut, model: "");
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.Model.Should().Be(DeepSeekClient.DefaultModel);
     }
 
     [Theory]
