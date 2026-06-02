@@ -12,6 +12,7 @@ import { RemindersApiService } from '../practice/services/reminders-api.service'
 import { AnalyticsApiService } from './services/analytics-api.service';
 import { HardestTagsWidgetComponent } from './widgets/hardest-tags-widget/hardest-tags-widget.component';
 import { HeatmapWidgetComponent } from './widgets/heatmap-widget/heatmap-widget.component';
+import { PendingRatingsWidgetComponent } from './widgets/pending-ratings-widget/pending-ratings-widget.component';
 import { RatingDistributionWidgetComponent } from './widgets/rating-distribution-widget/rating-distribution-widget.component';
 import { StreakWidgetComponent } from './widgets/streak-widget/streak-widget.component';
 import { StuckCardsWidgetComponent } from './widgets/stuck-cards-widget/stuck-cards-widget.component';
@@ -26,6 +27,7 @@ const TELEGRAM_BANNER_DISMISS_KEY = 'memoria.telegramBannerDismissed';
     GradePillComponent,
     IconComponent,
     RouterLink,
+    PendingRatingsWidgetComponent,
     StreakWidgetComponent,
     RatingDistributionWidgetComponent,
     HeatmapWidgetComponent,

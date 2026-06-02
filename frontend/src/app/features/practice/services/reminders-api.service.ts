@@ -19,6 +19,15 @@ export class RemindersApiService {
     return this.http.get<DueReminderDto[]>(`${this.base}/api/v1/cards/upcoming`, { params });
   }
 
+  /** Reminders already delivered in Telegram but never confirmed/skipped. */
+  pendingRatings(take = 10): Observable<DueReminderDto[]> {
+    const params = new HttpParams().set('take', String(take));
+    return this.http.get<DueReminderDto[]>(
+      `${this.base}/api/v1/cards/pending-ratings`,
+      { params },
+    );
+  }
+
   revealReminder(reminderId: string): Observable<RevealedAnswerDto> {
     return this.http.post<RevealedAnswerDto>(
       `${this.base}/api/v1/reminders/${reminderId}/reveal`,

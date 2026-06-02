@@ -112,6 +112,19 @@ internal static class CardsActivityEndpoints
                 return result.ToHttpResult();
             });
 
+        group.MapGet("/pending-ratings", async (
+                HttpContext ctx,
+                IMediator mediator,
+                CancellationToken ct,
+                [FromQuery] int take = 10) =>
+            {
+                var user = ctx.GetCurrentUser();
+                var result = await mediator
+                    .Send(new GetPendingRatingsForUserQuery(user.Id, take), ct)
+                    .ConfigureAwait(false);
+                return result.ToHttpResult();
+            });
+
         group.MapGet("/worst", async (
                 HttpContext ctx,
                 IMediator mediator,

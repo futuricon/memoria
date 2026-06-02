@@ -1,0 +1,56 @@
+<section class="bg-surface border border-default rounded-xl shadow-card p-5">
+  <div class="flex items-center justify-between mb-3">
+    <div class="flex items-center gap-2">
+      <app-icon name="message-circle" [size]="14" class="text-fg-muted" />
+      <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium">Waiting for your rating</h2>
+    </div>
+    @if (rows().length > 0) {
+      <span class="text-xs text-fg-muted tabular-nums">{{ rows().length }}</span>
+    }
+  </div>
+
+  @if (data.isLoading()) {
+    <div class="skeleton h-4 w-40 mb-2"></div>
+    <div class="skeleton h-4 w-32"></div>
+  } @else if (data.error()) {
+    <p class="text-sm text-danger">Failed to load.</p>
+  } @else if (rows().length === 0) {
+    <p class="text-xs text-fg-muted">Nothing waiting — every delivered card has been rated.</p>
+  } @else {
+    <p class="text-xs text-fg-muted mb-3">
+      Cards the bot sent you but you never rated. Tap a grade to clear it.
+    </p>
+
+    <ul class="space-y-2">
+      @for (row of rows(); track row.reminderId) {
+        @let isBusy = busyReminderId() === row.reminderId;
+        <li class="flex items-center gap-3 p-2 rounded-md border border-default">
+          <div class="flex-1 min-w-0">
+            <a [routerLink]="['/cards']" [queryParams]="{ id: row.cardId }" class="block truncate text-sm font-medium hover:text-brand">
+              {{ row.cardTitle }}
+            </a>
+            <p class="text-[11px] text-fg-muted mt-0.5">Delivered {{ row.waitingFor }}</p>
+          </div>
+          <div class="flex items-center gap-1">
+            @for (b of ratingButtons; track b.rating) {
+              <button
+                type="button"
+                (click)="grade(row.cardId, row.reminderId, b.rating)"
+                [disabled]="isBusy"
+                [class]="'w-8 h-8 rounded-md flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed ' + b.cssClass"
+                [attr.aria-label]="b.rating"
+                [title]="b.rating"
+              >
+                <app-icon [name]="b.icon" [size]="14" />
+              </button>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+
+    @if (error(); as msg) {
+      <p class="text-xs text-danger mt-3">{{ msg }}</p>
+    }
+  }
+</section>
