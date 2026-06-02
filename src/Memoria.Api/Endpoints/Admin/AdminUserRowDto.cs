@@ -34,7 +34,3 @@ public sealed record AdminUserPageDto(
     int PageSize,
     int TotalCount);
 
-/// <summary>
-/// Placeholder shape for the overview endpoint until Phase 3 fills it in.
-/// </summary>
-public sealed record AdminOverviewDto(int Placeholder);

@@ -5,6 +5,9 @@ using Memoria.AI.Contracts.Queries;
 using Memoria.Api.Authentication;
 using Memoria.Api.Configuration;
 using Memoria.Api.Results;
+using Memoria.Cards.Contracts.Queries;
+using Memoria.Reminders.Contracts.Queries;
+using Memoria.Reviews.Contracts.Queries;
 using Memoria.Shared.Kernel.Results;
 using Memoria.Users.Contracts.Abstractions;
 using Memoria.Users.Contracts.Dtos;
@@ -105,10 +108,78 @@ internal static class AdminEndpoints
 
         group.MapGet("/overview", async (
                 HttpContext ctx,
+                IMediator mediator,
                 IAuditLogger audit,
                 CancellationToken ct) =>
             {
                 var admin = ctx.GetCurrentUser();
+
+                // Fan out all module-local KPI queries in parallel — each
+                // round-trips to its own schema, so there's nothing for them
+                // to contend on.
+                var signupsTask = mediator.Send(new GetSignupAndLinkCountsQuery(), ct);
+                var withCardTask = mediator.Send(new GetUsersWithCardCountQuery(), ct);
+                var withReviewTask = mediator.Send(new GetUsersWithReviewCountQuery(), ct);
+                var activeTask = mediator.Send(new GetActiveUserCountsQuery(), ct);
+                var retentionTask = mediator.Send(new GetRetentionCohortsQuery(), ct);
+                var ratingsTask = mediator.Send(new GetGlobalRatingDistributionQuery(), ct);
+                var calibrationTask = mediator.Send(new GetAiCalibrationQuery(), ct);
+                var skipRateTask = mediator.Send(new GetReminderSkipRateQuery(), ct);
+                var spendTask = mediator.Send(new GetAiSpendTotalsQuery(), ct);
+                var spendTrendTask = mediator.Send(new GetAiSpendTrendQuery(), ct);
+                var topSpendersTask = mediator.Send(new GetTopSpendersQuery(), ct);
+                var failureRateTask = mediator.Send(new GetAiFailureRateQuery(), ct);
+
+                await Task.WhenAll(
+                    signupsTask, withCardTask, withReviewTask,
+                    activeTask, retentionTask, ratingsTask, calibrationTask,
+                    skipRateTask, spendTask, spendTrendTask,
+                    topSpendersTask, failureRateTask).ConfigureAwait(false);
+
+                // Any partial failure short-circuits with the first error —
+                // the admin overview is read-only, so half-data is worse
+                // than a clear 4xx/5xx.
+                Error? firstError =
+                    signupsTask.Result.Error
+                    ?? withCardTask.Result.Error
+                    ?? withReviewTask.Result.Error
+                    ?? activeTask.Result.Error
+                    ?? retentionTask.Result.Error
+                    ?? ratingsTask.Result.Error
+                    ?? calibrationTask.Result.Error
+                    ?? skipRateTask.Result.Error
+                    ?? spendTask.Result.Error
+                    ?? spendTrendTask.Result.Error
+                    ?? topSpendersTask.Result.Error
+                    ?? failureRateTask.Result.Error;
+                if (firstError is not null)
+                {
+                    return Result<object>.Failure(firstError).ToHttpResult();
+                }
+
+                var signups = signupsTask.Result.Value!;
+                var active = activeTask.Result.Value!;
+                var spend = spendTask.Result.Value!;
+                var costPerActive = active.Mau == 0
+                    ? 0m
+                    : spend.EstimatedCostUsd / active.Mau;
+
+                var payload = new AdminOverviewPayloadDto(
+                    ActivationFunnel: new ActivationFunnelDto(
+                        Signups: signups.TotalSignups,
+                        TelegramLinked: signups.TelegramLinked,
+                        HasCard: withCardTask.Result.Value,
+                        HasReview: withReviewTask.Result.Value),
+                    ActiveUsers: active,
+                    Retention: retentionTask.Result.Value!,
+                    GlobalRatings: ratingsTask.Result.Value!,
+                    AiCalibration: calibrationTask.Result.Value!,
+                    ReminderSkipRate: skipRateTask.Result.Value!,
+                    AiSpend: spend,
+                    AiSpendTrend: spendTrendTask.Result.Value!,
+                    TopSpenders: topSpendersTask.Result.Value!,
+                    AiFailureRate: failureRateTask.Result.Value!,
+                    CostPerActiveUserUsd: costPerActive);
 
                 await audit.LogAsync(
                     admin.Id,
@@ -117,10 +188,7 @@ internal static class AdminEndpoints
                     metadata: null,
                     ct).ConfigureAwait(false);
 
-                // Phase 3 fills this in with KPI widgets composed via parallel
-                // MediatR sends. For now return a stub so the SPA can wire the
-                // page shell.
-                return Microsoft.AspNetCore.Http.Results.Ok(new AdminOverviewDto(0));
+                return Microsoft.AspNetCore.Http.Results.Ok(payload);
             });
 
         return app;
