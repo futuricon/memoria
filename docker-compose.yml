@@ -40,6 +40,7 @@ services:
       OAuth__GitHub__ClientSecret: ${GITHUB_CLIENT_SECRET:-}
       Cors__AllowedOrigins__0: ${SPA_ORIGIN:-http://localhost:5173}
       Hangfire__AllowedEmails__0: ${HANGFIRE_ADMIN_EMAIL:-}
+      Admin__Emails__0: ${Admin__Emails__0:-}
       Ai__Provider: ${AI_PROVIDER:-Claude}
       Ai__ApiKey: ${AI_API_KEY:-}
       Ai__BaseUrl: ${AI_BASE_URL:-}

@@ -29,6 +29,10 @@ services:
       OAuth__GitHub__ClientSecret: ${GITHUB_CLIENT_SECRET:-}
       Cors__AllowedOrigins__0: ${SPA_ORIGIN:-https://memoria.example.com}
       Hangfire__AllowedEmails__0: ${HANGFIRE_ADMIN_EMAIL:-}
+      # Per-user admin allow-list (case-insensitive). Email match at any
+      # token-issuance handler promotes the user to Role.Admin. Add more
+      # via Admin__Emails__1, __2, … in /opt/memoria/.env.
+      Admin__Emails__0: ${Admin__Emails__0:-}
       # AI grading. Provider = Claude | DeepSeek. Empty key → grading/validation
       # degrade fail-open (app still boots). Leave BASE_URL/models empty to use
       # the provider defaults. Set AI_* in /opt/memoria/.env.
