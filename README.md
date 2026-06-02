@@ -13,7 +13,7 @@
 - **Telegram.Bot** for the bot (long polling)
 - **MediatR** + **FluentValidation** for the CQRS pipeline
 - **Serilog** (Compact JSON to console + rolling file)
-- **JWT** for API auth; **OAuth** (Google + GitHub) for the Hangfire dashboard
+- **JWT** for API auth; **OAuth** (Google + GitHub) for SPA login and the Hangfire dashboard
 - **Polly** for Telegram rate-limit retries
 - **xUnit** + **FluentAssertions** + **NSubstitute** + **NetArchTest** for tests
 
@@ -102,19 +102,27 @@ already whitelists `http://localhost:4200`.
 | Endpoint | Purpose |
 |---|---|
 | `/` | health string `Memoria 0.1.0` |
-| `/healthz` | liveness probe |
-| `/readyz` | readiness probe (Postgres + Hangfire) |
+| `/healthz` / `/readyz` | liveness / readiness (Postgres + Hangfire) |
 | `/swagger` | OpenAPI explorer (Development only) |
 | `/jobs` | Hangfire dashboard (OAuth required) |
-| `/api/v1/auth/*` | telegram-widget / bot-code / email / refresh / telegram-linking/start |
-| `/api/v1/users/me` | profile (GET / PATCH / identities) |
-| `/api/v1/cards*` | CRUD + trash + due-today + upcoming + worst + review |
-| `/api/v1/tags` | tag list |
+| `/api/v1/auth/*` | `email/{start,confirm}`, `telegram-widget`, `telegram-miniapp`, `telegram-linking/start`, `bot-code`, `refresh`, `google/start`, `github/start` |
+| `/api/v1/users/me` | profile GET / PATCH; `/identities` |
+| `/api/v1/timezones` | system timezone catalog for the settings picker |
+| `/api/v1/tags` / `tags/popular` | full alphabetical + top-N by usage |
+| `/api/v1/cards*` | CRUD + `{id}/{pause,unpause}` + `trash/restore/permanent` + `{id}/review` + `{id}/grade-answer` |
+| `/api/v1/cards/{due-today,upcoming,worst,streak,rating-distribution,activity-heatmap,stuck,tag-averages}` | dashboard analytics |
+| `/api/v1/reminders/{id}/{reveal,skip}` | practice flow |
 
 Card list/detail responses include per-card `reviewCount`, `avgRating`
 (0–100, normalized from `Rating` enum), and `avgAiScore` (0–100, from AI-graded
 Question reviews). Stats are merged at the API layer — the Cards module itself
 has no dependency on Reviews.
+
+The SPA also doubles as a **Telegram Mini App**: when opened inside Telegram
+the `tgWebAppData` initData is HMAC-verified by
+[TelegramMiniAppInitDataValidator](src/Memoria.Api/Authentication/TelegramMiniAppInitDataValidator.cs)
+and exchanged for the same JWT pair — the user lands on the dashboard with
+zero clicks.
 
 ## Tests
 
@@ -130,7 +138,7 @@ Backend test projects:
 - `Memoria.Reminders.UnitTests` — Ebbinghaus scheduler, hangfire jobs, port events
 - `Memoria.Reviews.UnitTests` — review entity + record handler (CardTitleSnapshot)
 - `Memoria.Bot.UnitTests` — FSM dialog, parser, notification sender
-- `Memoria.Api.UnitTests` — Telegram widget HMAC validator
+- `Memoria.Api.UnitTests` — Telegram Login Widget + Mini App initData HMAC validators
 - `Memoria.AI.UnitTests` — Claude/DeepSeek adapters
 - `Memoria.ArchitectureTests` — NetArchTest module-boundary rules
 
@@ -154,16 +162,31 @@ src/
    ├─ Memoria.Shared.Kernel/             Result, Error, ValueObject base
    └─ Memoria.Shared.Infrastructure/     EF conventions, MediatR ValidationBehavior,
                                          shared Options (Jwt, Telegram)
-frontend/                       Angular 20 SPA
-├─ src/app/core/
-│  ├─ auth/                     AuthService (signals), interceptor, guard, token storage
-│  ├─ api/                      typed HttpClient wrapper + DTOs
-│  ├─ layout/                   ShellComponent (sidebar + outlet)
-│  └─ ui/                       grade pill, relative-time helpers
+frontend/                       Angular 20 SPA — feature-based architecture
+├─ src/app/app/                 root AppComponent
+├─ src/app/core/                app-wide singletons + cross-cutting plumbing
+│  ├─ guards/                   authGuard
+│  ├─ interceptors/             authInterceptor (+ 401 → refresh-token retry)
+│  ├─ layouts/shell/            ShellComponent (sidebar + outlet, mobile drawer)
+│  ├─ models/                   user.model
+│  └─ services/                 auth, theme, telegram-web-app, token-storage,
+│                               users-api
+├─ src/app/shared/              stateless reusable pieces
+│  ├─ components/               button, confirm-dialog, grade-pill, icon, logo,
+│  │                            theme-toggle, timezone-picker
+│  ├─ models/                   paged-result
+│  └─ utils/                    relative-time
 └─ src/app/features/
-   ├─ auth-pages/login.component.ts        email + Telegram-widget tabs
-   ├─ dashboard/dashboard.component.ts     4 read-only widgets
-   └─ cards/cards-list.component.ts        search + tag filter + pagination
+   ├─ auth-pages/{login, oauth-callback}   email + Telegram-widget tabs +
+   │                                       OAuth fragment-token handoff
+   ├─ cards/{cards-list, add-card-drawer, edit-card-drawer, models, services}
+   ├─ dashboard/{widgets/*, models, services}
+   │                                       5 analytics widgets +
+   │                                       due-today / coming-up / library panels
+   ├─ practice/{models, services}          Note + Question flows, AI grading,
+   │                                       self-grading fallback when AI is down
+   ├─ settings/                            account, identities, prefs, Telegram link
+   └─ trash/{models, services}
 tests/
 ├─ Memoria.ArchitectureTests/   NetArchTest module-boundary rules
 ├─ Memoria.IntegrationTests/    (scaffolded, empty)
@@ -187,10 +210,21 @@ tests/
 **Frontend** ([frontend/](frontend/))
 
 - Standalone components only — no NgModules.
+- `ChangeDetectionStrategy.OnPush` on every component (signals + OnPush by default).
 - Signals only for component state (`signal`, `computed`, `effect`, `resource`).
   No NgRx, no BehaviorSubject-as-state.
-- New control flow (`@if`, `@for`, `@let`). No `*ngIf` / `*ngFor`.
+- New control flow (`@if`, `@for`, `@for ... track`, `@let`, `@switch`). No
+  `*ngIf` / `*ngFor`.
 - `inject()` for DI; never constructor injection.
+- **One folder per component**: `<name>/<name>.component.{ts,html}`. Templates
+  live next to their component class, never inlined.
+- Folder layering: `core/` for app-wide singletons and layouts, `shared/` for
+  stateless reusable components / utils / pipes, `features/<name>/` for
+  feature code with its own `components`, `services`, `models` subfolders.
+- API services are feature-scoped (`features/<name>/services/<name>-api.service.ts`)
+  — no god `ApiClient`. Cross-feature endpoints live in `core/services/`.
+- DTOs in `features/<name>/models/` (or `core/models/` if shared) with
+  `readonly` on every field; server responses are not mutated.
 
 ## License
 
