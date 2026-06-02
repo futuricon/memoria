@@ -1,6 +1,7 @@
 import { Dialog } from "@angular/cdk/dialog";
-import { ChangeDetectionStrategy, Component, computed, inject, resource, signal } from "@angular/core";
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, resource, signal } from "@angular/core";
 import { FormsModule } from "@angular/forms";
+import { Router } from "@angular/router";
 import { firstValueFrom } from "rxjs";
 
 import { CardSummaryDto } from "../models/card.model";
@@ -26,6 +27,41 @@ export class CardsListComponent {
   private readonly cardsApi = inject(CardsApiService);
   private readonly tagsApi = inject(TagsApiService);
   private readonly dialog = inject(Dialog);
+  private readonly router = inject(Router);
+
+  /**
+   * Bound from `?id=<guid>` via `withComponentInputBinding()`. Used as a
+   * deep-link target by widgets (e.g. dashboard "Waiting for your rating")
+   * — when set, we auto-open the edit drawer for that card so the user
+   * actually sees the card body.
+   */
+  readonly id = input<string | undefined>(undefined);
+
+  /** True once the deep-link drawer has been opened — keeps the effect idempotent. */
+  private deepLinkOpened = false;
+
+  constructor() {
+    effect(() => {
+      const cardId = this.id();
+      if (!cardId || this.deepLinkOpened) return;
+      this.deepLinkOpened = true;
+      void this.openDeepLinkedCard(cardId);
+    });
+  }
+
+  private async openDeepLinkedCard(cardId: string): Promise<void> {
+    try {
+      const card = await firstValueFrom(this.cardsApi.getCard(cardId));
+      const ref = openEditDrawer(this.dialog, { card });
+      ref.closed.subscribe(() => {
+        // Strip the query param so reload / back doesn't re-pop the drawer.
+        void this.router.navigate([], { queryParams: { id: null }, queryParamsHandling: "merge" });
+      });
+    } catch {
+      this.actionError.set("Couldn't open that card — it may have been deleted.");
+      void this.router.navigate([], { queryParams: { id: null }, queryParamsHandling: "merge" });
+    }
+  }
 
   readonly search = signal("");
   readonly selectedTags = signal<string[]>([]);
