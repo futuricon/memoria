@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json.Serialization;
 
 using FluentValidation;
 
@@ -40,6 +41,16 @@ try
     });
 
     builder.Services.AddSingleton(TimeProvider.System);
+
+    // Round-trip enums as named strings on the wire (not 0/1/2). The SPA's
+    // TS models treat Rating/Role/CardType as string literals, and we'd
+    // rather have one canonical wire format than annotate every enum
+    // individually. Hits BOTH inbound (POST /review with "rating":"Good")
+    // and outbound (admin DTOs returning "role":"Admin") paths.
+    builder.Services.ConfigureHttpJsonOptions(opts =>
+    {
+        opts.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
     builder.Services.AddMediatR(cfg =>
     {
