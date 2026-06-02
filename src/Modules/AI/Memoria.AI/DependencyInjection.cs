@@ -7,6 +7,7 @@ using Memoria.AI.Llm;
 using Memoria.AI.Options;
 using Memoria.AI.Persistence;
 using Memoria.AI.Pricing;
+using Memoria.AI.Quota;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -48,6 +49,10 @@ public static class DependencyInjection
         services.AddScoped<IQuestionCardValidator, LlmQuestionCardValidator>();
 
         services.AddSingleton<AiModelPricing>();
+
+        services.AddOptions<AiQuotaOptions>()
+            .Bind(configuration.GetSection(AiQuotaOptions.SectionName));
+        services.AddSingleton<IAiQuotaService, AlwaysAllowAiQuotaService>();
 
         var connectionString = configuration.GetConnectionString("Postgres")
             ?? throw new InvalidOperationException("Connection string 'Postgres' is not configured.");

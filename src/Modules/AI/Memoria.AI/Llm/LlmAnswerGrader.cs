@@ -37,6 +37,7 @@ internal sealed class LlmAnswerGrader : IAnswerGrader
     private readonly AiOptions _options;
     private readonly IMediator _mediator;
     private readonly TimeProvider _clock;
+    private readonly IAiQuotaService _quota;
     private readonly ILogger<LlmAnswerGrader> _logger;
 
     public LlmAnswerGrader(
@@ -44,23 +45,37 @@ internal sealed class LlmAnswerGrader : IAnswerGrader
         IOptions<AiOptions> options,
         IMediator mediator,
         TimeProvider clock,
+        IAiQuotaService quota,
         ILogger<LlmAnswerGrader> logger)
     {
         ArgumentNullException.ThrowIfNull(client);
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(mediator);
         ArgumentNullException.ThrowIfNull(clock);
+        ArgumentNullException.ThrowIfNull(quota);
         ArgumentNullException.ThrowIfNull(logger);
         _client = client;
         _options = options.Value;
         _mediator = mediator;
         _clock = clock;
+        _quota = quota;
         _logger = logger;
     }
 
     public async Task<Result<GradingResult>> GradeAsync(GradingRequest request, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(request);
+
+        // Quota check runs BEFORE the LLM round-trip and BEFORE the usage
+        // notification — a quota-blocked call must not appear in spend
+        // analytics, and it must never hit the wire.
+        var quotaCheck = await _quota
+            .EnsureQuotaAvailableAsync(request.UserId, AiOperation.AnswerGrading, ct)
+            .ConfigureAwait(false);
+        if (quotaCheck.IsFailure)
+        {
+            return Result<GradingResult>.Failure(quotaCheck.Error!);
+        }
 
         var user =
             "Question:\n" + request.Question + "\n\n" +

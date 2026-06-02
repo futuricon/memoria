@@ -82,7 +82,18 @@
             <dd class="tabular-nums">{{ r?.lastCallRel ?? 'Never' }}</dd>
           </div>
         </dl>
-        <p class="text-[11px] text-fg-muted mt-3">Quota meter lands in a follow-up (Phase 5 foundation).</p>
+      </section>
+
+      <section class="bg-surface border border-default rounded-xl p-5 md:col-span-2">
+        <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium mb-3">Monthly quota</h2>
+        <div class="flex items-start gap-3 text-sm">
+          <span class="px-2 py-0.5 text-[11px] font-medium rounded bg-surface-hover text-fg-muted mt-0.5">Unmetered</span>
+          <p class="text-fg-secondary">
+            Quota is gated server-side via <code class="text-xs">IAiQuotaService</code>.
+            The default implementation always allows — the real per-user budget meter
+            ships in a follow-up and will populate this widget without a UI change.
+          </p>
+        </div>
       </section>
 
     </div>

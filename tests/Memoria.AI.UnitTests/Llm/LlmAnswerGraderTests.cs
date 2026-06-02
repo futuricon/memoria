@@ -28,11 +28,14 @@ public sealed class LlmAnswerGraderTests
     private readonly IMediator _mediator = Substitute.For<IMediator>();
     private readonly FakeTimeProvider _clock = new(new DateTimeOffset(2026, 6, 1, 12, 0, 0, TimeSpan.Zero));
 
+    private readonly StubAiQuotaService _quota = StubAiQuotaService.AlwaysAllow();
+
     private LlmAnswerGrader CreateSut(FakeLlmToolClient client) =>
         new(client,
             Microsoft.Extensions.Options.Options.Create(new AiOptions()),
             _mediator,
             _clock,
+            _quota,
             NullLogger<LlmAnswerGrader>.Instance);
 
     [Fact]
