@@ -65,6 +65,27 @@ public sealed class Reminder
         MessageId = messageId;
     }
 
+    /// <summary>
+    /// SPA-initiated delivery: the user pulled this reminder up in the
+    /// practice flow before the bot got to it. Transitions Pending →
+    /// Sending → Sent in one shot, leaving <see cref="MessageId"/> null
+    /// (no Telegram message exists). Downstream <see cref="Confirm"/> /
+    /// <see cref="Skip"/> work unchanged. No-op if already Sent (idempotent).
+    /// </summary>
+    public void MarkSentViaSpa(DateTime utcNow)
+    {
+        if (Status is ReminderStatus.Sent) return;
+
+        if (Status is not ReminderStatus.Pending)
+        {
+            throw new InvalidOperationException($"Cannot MarkSentViaSpa reminder in status {Status}");
+        }
+
+        Status = ReminderStatus.Sent;
+        SentAt = utcNow;
+        MessageId = null;
+    }
+
     public void Confirm(DateTime utcNow)
     {
         if (Status is not ReminderStatus.Sent)

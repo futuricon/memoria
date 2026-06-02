@@ -264,8 +264,11 @@ export class PracticeComponent {
   }
 
   private describe(e: unknown, fallback: string): string {
+    // Result<T> failures land as ProblemDetails: { title: code, detail: message }.
+    // Older endpoints / .NET defaults sometimes use `message` instead — read both.
     if (e && typeof e === 'object' && 'error' in e) {
-      const err = (e as { error?: { message?: string } }).error;
+      const err = (e as { error?: { detail?: string; message?: string } }).error;
+      if (err?.detail) return err.detail;
       if (err?.message) return err.message;
     }
     return fallback;

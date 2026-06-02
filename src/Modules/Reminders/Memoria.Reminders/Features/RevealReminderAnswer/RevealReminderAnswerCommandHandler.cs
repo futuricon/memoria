@@ -16,13 +16,17 @@ internal sealed class RevealReminderAnswerCommandHandler
 {
     private readonly RemindersDbContext _db;
     private readonly IMediator _mediator;
+    private readonly TimeProvider _clock;
 
-    public RevealReminderAnswerCommandHandler(RemindersDbContext db, IMediator mediator)
+    public RevealReminderAnswerCommandHandler(
+        RemindersDbContext db, IMediator mediator, TimeProvider clock)
     {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(mediator);
+        ArgumentNullException.ThrowIfNull(clock);
         _db = db;
         _mediator = mediator;
+        _clock = clock;
     }
 
     public async Task<Result<RevealedAnswerDto>> Handle(
@@ -47,7 +51,17 @@ internal sealed class RevealReminderAnswerCommandHandler
                 "reminders.not_owner", "Reminder belongs to another user."));
         }
 
-        if (reminder.Status is not (ReminderStatus.Sent or ReminderStatus.Confirmed or ReminderStatus.Skipped))
+        // SPA-initiated practice: user opened a Pending reminder before
+        // the bot delivered it. Transition Pending → Sent here so the
+        // subsequent Confirm/Skip flow works. The bot's SendReminderJob
+        // skips non-Pending rows, so there's no double-delivery risk
+        // beyond the small race window where both fire concurrently.
+        if (reminder.Status is ReminderStatus.Pending)
+        {
+            reminder.MarkSentViaSpa(_clock.GetUtcNow().UtcDateTime);
+            await _db.SaveChangesAsync(ct).ConfigureAwait(false);
+        }
+        else if (reminder.Status is not (ReminderStatus.Sent or ReminderStatus.Confirmed or ReminderStatus.Skipped))
         {
             return Result<RevealedAnswerDto>.Failure(Error.Conflict(
                 "reminders.cannot_reveal_yet",

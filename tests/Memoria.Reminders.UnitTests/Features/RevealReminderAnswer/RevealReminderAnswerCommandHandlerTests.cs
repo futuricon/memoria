@@ -55,7 +55,7 @@ public sealed class RevealReminderAnswerCommandHandlerTests
             .Send(Arg.Any<GetCardByIdQuery>(), Arg.Any<CancellationToken>())
             .Returns(Result<CardDto>.Success(FakeCardDto(reminder.CardId, "PostgreSQL VACUUM", "vacuum deletes dead tuples")));
 
-        var sut = new RevealReminderAnswerCommandHandler(db, _mediator);
+        var sut = new RevealReminderAnswerCommandHandler(db, _mediator, TimeProvider.System);
 
         var result = await sut.Handle(
             new RevealReminderAnswerCommand(reminder.Id, userId),
@@ -80,7 +80,7 @@ public sealed class RevealReminderAnswerCommandHandlerTests
             .Send(Arg.Any<GetCardByIdQuery>(), Arg.Any<CancellationToken>())
             .Returns(Result<CardDto>.Success(FakeCardDto(reminder.CardId)));
 
-        var sut = new RevealReminderAnswerCommandHandler(db, _mediator);
+        var sut = new RevealReminderAnswerCommandHandler(db, _mediator, TimeProvider.System);
 
         var result = await sut.Handle(
             new RevealReminderAnswerCommand(reminder.Id, userId),
@@ -90,33 +90,40 @@ public sealed class RevealReminderAnswerCommandHandlerTests
     }
 
     [Fact]
-    public async Task HandlePendingReminderReturnsConflict()
+    public async Task HandlePendingReminderTransitionsToSentAndReturnsBody()
     {
+        // SPA-initiated practice: the user opened a Pending reminder before
+        // the bot delivered it. Reveal lazily transitions Pending → Sent
+        // so the subsequent grade flow works.
         await using var db = RemindersDbContextTestFactory.Create();
         var userId = Guid.NewGuid();
         var reminder = NewPendingReminder(userId);
         db.Reminders.Add(reminder);
         await db.SaveChangesAsync();
 
-        var sut = new RevealReminderAnswerCommandHandler(db, _mediator);
+        _mediator
+            .Send(Arg.Any<GetCardByIdQuery>(), Arg.Any<CancellationToken>())
+            .Returns(Result<CardDto>.Success(FakeCardDto(reminder.CardId)));
+
+        var sut = new RevealReminderAnswerCommandHandler(db, _mediator, TimeProvider.System);
 
         var result = await sut.Handle(
             new RevealReminderAnswerCommand(reminder.Id, userId),
             CancellationToken.None);
 
-        result.IsFailure.Should().BeTrue();
-        result.Error!.Type.Should().Be(ErrorType.Conflict);
-        result.Error.Code.Should().Be("reminders.cannot_reveal_yet");
-
-        await _mediator.DidNotReceive()
-            .Send(Arg.Any<GetCardByIdQuery>(), Arg.Any<CancellationToken>());
+        result.IsSuccess.Should().BeTrue();
+        // Status mutated to Sent, MessageId null (no Telegram delivery).
+        var persisted = await db.Reminders.FindAsync(reminder.Id);
+        persisted!.Status.Should().Be(ReminderStatus.Sent);
+        persisted.MessageId.Should().BeNull();
+        persisted.SentAt.Should().NotBeNull();
     }
 
     [Fact]
     public async Task HandleUnknownReminderReturnsNotFound()
     {
         await using var db = RemindersDbContextTestFactory.Create();
-        var sut = new RevealReminderAnswerCommandHandler(db, _mediator);
+        var sut = new RevealReminderAnswerCommandHandler(db, _mediator, TimeProvider.System);
 
         var result = await sut.Handle(
             new RevealReminderAnswerCommand(Guid.NewGuid(), Guid.NewGuid()),
@@ -136,7 +143,7 @@ public sealed class RevealReminderAnswerCommandHandlerTests
         db.Reminders.Add(reminder);
         await db.SaveChangesAsync();
 
-        var sut = new RevealReminderAnswerCommandHandler(db, _mediator);
+        var sut = new RevealReminderAnswerCommandHandler(db, _mediator, TimeProvider.System);
 
         var result = await sut.Handle(
             new RevealReminderAnswerCommand(reminder.Id, attacker),
@@ -162,7 +169,7 @@ public sealed class RevealReminderAnswerCommandHandlerTests
             .Send(Arg.Any<GetCardByIdQuery>(), Arg.Any<CancellationToken>())
             .Returns(Result<CardDto>.Failure(Error.NotFound("cards.not_found", "soft-deleted")));
 
-        var sut = new RevealReminderAnswerCommandHandler(db, _mediator);
+        var sut = new RevealReminderAnswerCommandHandler(db, _mediator, TimeProvider.System);
 
         var result = await sut.Handle(
             new RevealReminderAnswerCommand(reminder.Id, userId),
