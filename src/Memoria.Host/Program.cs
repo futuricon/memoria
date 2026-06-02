@@ -47,6 +47,7 @@ try
         cfg.RegisterServicesFromAssembly(typeof(Memoria.Cards.DependencyInjection).Assembly);
         cfg.RegisterServicesFromAssembly(typeof(Memoria.Reminders.DependencyInjection).Assembly);
         cfg.RegisterServicesFromAssembly(typeof(Memoria.Reviews.DependencyInjection).Assembly);
+        cfg.RegisterServicesFromAssembly(typeof(Memoria.AI.DependencyInjection).Assembly);
     });
 
     builder.Services.AddValidatorsFromAssembly(
