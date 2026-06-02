@@ -23,4 +23,12 @@ public sealed class AiOptions
     public string ValidationModel { get; init; } = string.Empty;
     public int MaxTokens { get; init; } = 1024;
     public int TimeoutSeconds { get; init; } = 30;
+
+    /// <summary>
+    /// Per-model billing rates (USD per 1 000 000 tokens), keyed by model name
+    /// (matching what <c>AiUsage.Model</c> stores). Unknown models map to 0 —
+    /// the dashboard surfaces this as "unpriced", easy to spot. Missing keys
+    /// are not validated so list-price drift doesn't crash startup.
+    /// </summary>
+    public Dictionary<string, AiModelPriceOptions> Pricing { get; init; } = new(StringComparer.OrdinalIgnoreCase);
 }

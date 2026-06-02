@@ -17,6 +17,7 @@ internal sealed class UsersDbContext : DbContext
     public DbSet<UserIdentity> Identities => Set<UserIdentity>();
     public DbSet<VerificationCode> VerificationCodes => Set<VerificationCode>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<AuditEntry> AuditLog => Set<AuditEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

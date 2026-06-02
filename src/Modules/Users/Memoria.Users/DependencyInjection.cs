@@ -6,7 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 using Memoria.Shared.Infrastructure.Options;
+using Memoria.Users.Audit;
 using Memoria.Users.Contracts.Abstractions;
+using Memoria.Users.Jobs;
 using Memoria.Users.Options;
 using Memoria.Users.Persistence;
 using Memoria.Users.Services;
@@ -59,6 +61,9 @@ public static class DependencyInjection
 
         services.AddSingleton<VerificationCodeService>();
         services.AddSingleton<JwtTokenIssuer>();
+
+        services.AddScoped<IAuditLogger, AuditLogger>();
+        services.AddScoped<AuditLogPruneJob>();
 
         if (!string.IsNullOrWhiteSpace(emailOptions.ApiKey))
         {

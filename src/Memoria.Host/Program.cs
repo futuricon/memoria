@@ -18,6 +18,7 @@ using Memoria.Reminders;
 using Memoria.Reviews;
 using Memoria.Shared.Infrastructure.Behaviors;
 using Memoria.Users;
+using Memoria.Users.Jobs;
 
 using Microsoft.Extensions.Options;
 
@@ -101,6 +102,12 @@ try
             recurringJobId: "purge-expired-soft-deletes",
             methodCall: j => j.ExecuteAsync(CancellationToken.None),
             cronExpression: cardsOptions.PurgeCronExpression,
+            options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+        recurring.AddOrUpdate<AuditLogPruneJob>(
+            recurringJobId: "prune-audit-log",
+            methodCall: j => j.ExecuteAsync(CancellationToken.None),
+            cronExpression: "0 3 * * *",
             options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
     }
 

@@ -3,6 +3,7 @@ using global::Hangfire;
 using Memoria.Api.Authentication;
 using Memoria.Api.Configuration;
 using Memoria.Api.Endpoints;
+using Memoria.Api.Endpoints.Admin;
 using Memoria.Api.Hangfire;
 using Memoria.Api.Middleware;
 
@@ -156,6 +157,7 @@ public static class DependencyInjection
         app.MapRemindersEndpoints();
         app.MapTagsEndpoints();
         app.MapTimeZonesEndpoints();
+        app.MapAdminEndpoints();
 
         return app;
     }
