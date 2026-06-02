@@ -1,11 +1,26 @@
-<section class="bg-surface border border-default rounded-xl shadow-card p-5">
+<section
+  class="border rounded-xl shadow-card p-5 transition-colors"
+  [style.background]="hasPending() ? 'color-mix(in srgb, var(--color-warning) 10%, transparent)' : 'var(--color-surface)'"
+  [style.border-color]="hasPending() ? 'color-mix(in srgb, var(--color-warning) 55%, transparent)' : 'var(--color-border)'"
+>
   <div class="flex items-center justify-between mb-3">
     <div class="flex items-center gap-2">
-      <app-icon name="message-circle" [size]="14" class="text-fg-muted" />
-      <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium">Waiting for your rating</h2>
+      <app-icon
+        [name]="hasPending() ? 'flame' : 'message-circle'"
+        [size]="14"
+        [class.text-warning]="hasPending()"
+        [class.text-fg-muted]="!hasPending()"
+      />
+      <h2
+        class="text-[11px] uppercase tracking-wider font-medium"
+        [class.text-warning]="hasPending()"
+        [class.text-fg-muted]="!hasPending()"
+      >
+        Waiting for your rating
+      </h2>
     </div>
-    @if (rows().length > 0) {
-      <span class="text-xs text-fg-muted tabular-nums">{{ rows().length }}</span>
+    @if (hasPending()) {
+      <span class="text-xs tabular-nums font-medium text-warning">{{ rows().length }}</span>
     }
   </div>
 
@@ -14,43 +29,23 @@
     <div class="skeleton h-4 w-32"></div>
   } @else if (data.error()) {
     <p class="text-sm text-danger">Failed to load.</p>
-  } @else if (rows().length === 0) {
-    <p class="text-xs text-fg-muted">Nothing waiting — every delivered card has been rated.</p>
+  } @else if (!hasPending()) {
+    <p class="text-xs text-fg-muted">Every delivered card has been rated.</p>
   } @else {
-    <p class="text-xs text-fg-muted mb-3">
-      Cards the bot sent you but you never rated. Tap a grade to clear it.
-    </p>
-
-    <ul class="space-y-2">
+    <ul class="space-y-1.5 mb-4">
       @for (row of rows(); track row.reminderId) {
-        @let isBusy = busyReminderId() === row.reminderId;
-        <li class="flex items-center gap-3 p-2 rounded-md border border-default">
-          <div class="flex-1 min-w-0">
-            <a [routerLink]="['/cards']" [queryParams]="{ id: row.cardId }" class="block truncate text-sm font-medium hover:text-brand">
-              {{ row.cardTitle }}
-            </a>
-            <p class="text-[11px] text-fg-muted mt-0.5">Delivered {{ row.waitingFor }}</p>
-          </div>
-          <div class="flex items-center gap-1">
-            @for (b of ratingButtons; track b.rating) {
-              <button
-                type="button"
-                (click)="grade(row.cardId, row.reminderId, b.rating)"
-                [disabled]="isBusy"
-                [class]="'w-8 h-8 rounded-md flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed ' + b.cssClass"
-                [attr.aria-label]="b.rating"
-                [title]="b.rating"
-              >
-                <app-icon [name]="b.icon" [size]="14" />
-              </button>
-            }
-          </div>
+        <li class="flex items-baseline justify-between gap-3 min-w-0">
+          <span class="truncate text-sm font-medium text-fg">{{ row.cardTitle }}</span>
+          <span class="text-[11px] text-fg-muted shrink-0 tabular-nums">{{ row.waitingFor }}</span>
         </li>
       }
     </ul>
-
-    @if (error(); as msg) {
-      <p class="text-xs text-danger mt-3">{{ msg }}</p>
-    }
+    <a
+      routerLink="/practice"
+      class="inline-flex items-center gap-1.5 px-3 h-9 bg-brand text-brand-on text-sm font-medium rounded-md hover:bg-brand-400 transition-colors"
+    >
+      Rate now
+      <app-icon name="arrow-right" [size]="14" />
+    </a>
   }
 </section>

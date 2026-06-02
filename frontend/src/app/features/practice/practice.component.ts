@@ -74,10 +74,29 @@ export class PracticeComponent {
     this.phase.set('loading-queue');
     this.error.set(null);
     try {
-      const due = await firstValueFrom(this.remindersApi.dueToday());
-      this.queue.set(due);
+      // Surface already-delivered-but-unrated reminders FIRST. The user
+      // saw these in Telegram and got distracted; if we don't put them
+      // up front, they stay invisible and the spaced-repetition timeline
+      // for those cards keeps slipping. Pending due-today follows.
+      const [pending, due] = await Promise.all([
+        firstValueFrom(this.remindersApi.pendingRatings(50)),
+        firstValueFrom(this.remindersApi.dueToday()),
+      ]);
+
+      // Dedupe by reminderId in case a status race ever lets one slip
+      // into both buckets — pending wins because it's the older signal.
+      const seen = new Set<string>();
+      const combined: DueReminderDto[] = [];
+      for (const r of pending) {
+        if (seen.add(r.reminderId)) combined.push(r);
+      }
+      for (const r of due) {
+        if (seen.add(r.reminderId)) combined.push(r);
+      }
+
+      this.queue.set(combined);
       this.queueIndex.set(0);
-      if (due.length === 0) {
+      if (combined.length === 0) {
         this.phase.set('done');
       } else {
         await this.loadCurrent();
