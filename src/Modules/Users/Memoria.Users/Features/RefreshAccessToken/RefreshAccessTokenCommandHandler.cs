@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
+using Memoria.Shared.Infrastructure.Options;
 using Memoria.Shared.Kernel.Results;
 using Memoria.Users.Contracts.Commands;
 using Memoria.Users.Contracts.Dtos;
@@ -16,15 +18,22 @@ internal sealed class RefreshAccessTokenCommandHandler
     private readonly UsersDbContext _db;
     private readonly JwtTokenIssuer _jwt;
     private readonly TimeProvider _clock;
+    private readonly AdminOptions _adminOptions;
 
-    public RefreshAccessTokenCommandHandler(UsersDbContext db, JwtTokenIssuer jwt, TimeProvider clock)
+    public RefreshAccessTokenCommandHandler(
+        UsersDbContext db,
+        JwtTokenIssuer jwt,
+        TimeProvider clock,
+        IOptions<AdminOptions> adminOptions)
     {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(jwt);
         ArgumentNullException.ThrowIfNull(clock);
+        ArgumentNullException.ThrowIfNull(adminOptions);
         _db = db;
         _jwt = jwt;
         _clock = clock;
+        _adminOptions = adminOptions.Value;
     }
 
     public async Task<Result<JwtTokenPairDto>> Handle(
@@ -62,6 +71,7 @@ internal sealed class RefreshAccessTokenCommandHandler
                 "users.not_found", "User not found."));
         }
 
+        user.MarkTokenIssued(now, _adminOptions.Emails);
         var pair = _jwt.Issue(user);
         var newToken = new RefreshToken(
             userId: user.Id,

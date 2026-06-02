@@ -32,7 +32,8 @@ public sealed class AuthenticateOAuthCommandHandlerTests
     private AuthenticateOAuthCommandHandler CreateSut(Persistence.UsersDbContext db) => new(
         db,
         new JwtTokenIssuer(Microsoft.Extensions.Options.Options.Create(_jwtOptions), _clock),
-        _clock);
+        _clock,
+        Microsoft.Extensions.Options.Options.Create(new Memoria.Shared.Infrastructure.Options.AdminOptions()));
 
     [Fact]
     public async Task HandleWithNewProviderAndNoMatchingEmailRegistersUser()

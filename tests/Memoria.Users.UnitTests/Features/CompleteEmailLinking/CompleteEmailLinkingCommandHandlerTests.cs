@@ -43,7 +43,8 @@ public sealed class CompleteEmailLinkingCommandHandlerTests
         _codes,
         new JwtTokenIssuer(Microsoft.Extensions.Options.Options.Create(_jwtOptions), _clock),
         _clock,
-        Microsoft.Extensions.Options.Options.Create(_codeOptions));
+        Microsoft.Extensions.Options.Options.Create(_codeOptions),
+        Microsoft.Extensions.Options.Options.Create(new Memoria.Shared.Infrastructure.Options.AdminOptions()));
 
     private VerificationCode IssueCode(UsersDbContext db, string plain, Guid? userId = null)
     {

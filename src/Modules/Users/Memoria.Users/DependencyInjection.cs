@@ -49,6 +49,10 @@ public static class DependencyInjection
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddOptions<AdminOptions>()
+            .Bind(configuration.GetSection(AdminOptions.SectionName))
+            .ValidateOnStart();
+
         var emailSection = configuration.GetSection(EmailOptions.SectionName);
         services.AddOptions<EmailOptions>().Bind(emailSection);
         var emailOptions = emailSection.Get<EmailOptions>() ?? new EmailOptions();

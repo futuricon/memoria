@@ -50,7 +50,7 @@ public sealed class RefreshAccessTokenCommandHandlerTests
         db.RefreshTokens.Add(stored);
         await db.SaveChangesAsync();
 
-        var sut = new RefreshAccessTokenCommandHandler(db, _jwt, _clock);
+        var sut = new RefreshAccessTokenCommandHandler(db, _jwt, _clock, Microsoft.Extensions.Options.Options.Create(new AdminOptions()));
         var result = await sut.Handle(new RefreshAccessTokenCommand(plainRefresh), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
@@ -80,7 +80,7 @@ public sealed class RefreshAccessTokenCommandHandlerTests
         db.RefreshTokens.Add(stored);
         await db.SaveChangesAsync();
 
-        var sut = new RefreshAccessTokenCommandHandler(db, _jwt, _clock);
+        var sut = new RefreshAccessTokenCommandHandler(db, _jwt, _clock, Microsoft.Extensions.Options.Options.Create(new AdminOptions()));
         var result = await sut.Handle(new RefreshAccessTokenCommand(plainRefresh), CancellationToken.None);
 
         result.IsFailure.Should().BeTrue();
@@ -103,7 +103,7 @@ public sealed class RefreshAccessTokenCommandHandlerTests
         db.RefreshTokens.Add(stored);
         await db.SaveChangesAsync();
 
-        var sut = new RefreshAccessTokenCommandHandler(db, _jwt, _clock);
+        var sut = new RefreshAccessTokenCommandHandler(db, _jwt, _clock, Microsoft.Extensions.Options.Options.Create(new AdminOptions()));
         var result = await sut.Handle(new RefreshAccessTokenCommand(plainRefresh), CancellationToken.None);
 
         result.IsFailure.Should().BeTrue();
@@ -114,7 +114,7 @@ public sealed class RefreshAccessTokenCommandHandlerTests
     public async Task HandleWithUnknownTokenReturnsUnauthorized()
     {
         await using var db = UsersDbContextTestFactory.Create();
-        var sut = new RefreshAccessTokenCommandHandler(db, _jwt, _clock);
+        var sut = new RefreshAccessTokenCommandHandler(db, _jwt, _clock, Microsoft.Extensions.Options.Options.Create(new AdminOptions()));
 
         var result = await sut.Handle(new RefreshAccessTokenCommand("totally-unknown-token"), CancellationToken.None);
 

@@ -78,6 +78,7 @@ internal sealed class JwtTokenIssuer
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Name, user.DisplayName),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N")),
+            new(ClaimTypes.Role, user.Role.ToString()),
         };
 
         if (!string.IsNullOrEmpty(user.Email))

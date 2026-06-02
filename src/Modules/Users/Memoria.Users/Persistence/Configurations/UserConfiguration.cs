@@ -21,6 +21,13 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.QuietHoursEnd);
         builder.Property(u => u.CreatedAt).IsRequired();
         builder.Property(u => u.DeletedAt);
+        builder.Property(u => u.Role)
+            .HasConversion<string>()
+            .HasMaxLength(16)
+            .IsRequired()
+            .HasDefaultValue(Contracts.Dtos.Role.User);
+        builder.Property(u => u.LastSeenAt);
+        builder.Property(u => u.IsBlocked).IsRequired().HasDefaultValue(false);
 
         builder.HasIndex(u => u.Email).IsUnique().HasFilter("email IS NOT NULL");
         builder.HasIndex(u => u.DeletedAt);

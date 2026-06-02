@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using System.Text;
 
 using Memoria.Shared.Infrastructure.Options;
+using Memoria.Users.Contracts.Dtos;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
@@ -44,7 +46,10 @@ internal static class JwtBearerConfiguration
                 };
             });
 
-        services.AddAuthorization();
+        services.AddAuthorizationBuilder()
+            .AddPolicy("admin", p =>
+                p.RequireAuthenticatedUser()
+                 .RequireClaim(ClaimTypes.Role, nameof(Role.Admin)));
         return services;
     }
 }

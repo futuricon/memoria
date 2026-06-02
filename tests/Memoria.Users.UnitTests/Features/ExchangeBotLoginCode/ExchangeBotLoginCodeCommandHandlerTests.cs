@@ -140,5 +140,7 @@ public sealed class ExchangeBotLoginCodeCommandHandlerTests
     }
 
     private ExchangeBotLoginCodeCommandHandler CreateSut(UsersDbContext db) =>
-        new(db, _codes, _jwt, _clock, Microsoft.Extensions.Options.Options.Create(_options));
+        new(db, _codes, _jwt, _clock,
+            Microsoft.Extensions.Options.Options.Create(_options),
+            Microsoft.Extensions.Options.Options.Create(new Memoria.Shared.Infrastructure.Options.AdminOptions()));
 }

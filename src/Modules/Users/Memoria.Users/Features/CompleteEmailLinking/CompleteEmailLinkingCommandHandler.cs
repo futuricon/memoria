@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
+using Memoria.Shared.Infrastructure.Options;
 using Memoria.Shared.Kernel.Results;
 using Memoria.Users.Contracts.Commands;
 using Memoria.Users.Contracts.Dtos;
@@ -20,24 +21,28 @@ internal sealed class CompleteEmailLinkingCommandHandler
     private readonly JwtTokenIssuer _jwt;
     private readonly TimeProvider _clock;
     private readonly VerificationCodeOptions _options;
+    private readonly AdminOptions _adminOptions;
 
     public CompleteEmailLinkingCommandHandler(
         UsersDbContext db,
         VerificationCodeService codes,
         JwtTokenIssuer jwt,
         TimeProvider clock,
-        IOptions<VerificationCodeOptions> options)
+        IOptions<VerificationCodeOptions> options,
+        IOptions<AdminOptions> adminOptions)
     {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(codes);
         ArgumentNullException.ThrowIfNull(jwt);
         ArgumentNullException.ThrowIfNull(clock);
         ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(adminOptions);
         _db = db;
         _codes = codes;
         _jwt = jwt;
         _clock = clock;
         _options = options.Value;
+        _adminOptions = adminOptions.Value;
     }
 
     public async Task<Result<JwtTokenPairDto>> Handle(
@@ -162,6 +167,7 @@ internal sealed class CompleteEmailLinkingCommandHandler
         }
 
         match.MarkConsumed(now);
+        user.MarkTokenIssued(now, _adminOptions.Emails);
         var pair = _jwt.Issue(user);
         var refreshTokenEntity = new RefreshToken(
             userId: user.Id,
