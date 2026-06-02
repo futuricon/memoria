@@ -114,71 +114,70 @@ internal static class AdminEndpoints
             {
                 var admin = ctx.GetCurrentUser();
 
-                // Fan out all module-local KPI queries in parallel — each
-                // round-trips to its own schema, so there's nothing for them
-                // to contend on.
-                var signupsTask = mediator.Send(new GetSignupAndLinkCountsQuery(), ct);
-                var withCardTask = mediator.Send(new GetUsersWithCardCountQuery(), ct);
-                var withReviewTask = mediator.Send(new GetUsersWithReviewCountQuery(), ct);
-                var activeTask = mediator.Send(new GetActiveUserCountsQuery(), ct);
-                var retentionTask = mediator.Send(new GetRetentionCohortsQuery(), ct);
-                var ratingsTask = mediator.Send(new GetGlobalRatingDistributionQuery(), ct);
-                var calibrationTask = mediator.Send(new GetAiCalibrationQuery(), ct);
-                var skipRateTask = mediator.Send(new GetReminderSkipRateQuery(), ct);
-                var spendTask = mediator.Send(new GetAiSpendTotalsQuery(), ct);
-                var spendTrendTask = mediator.Send(new GetAiSpendTrendQuery(), ct);
-                var topSpendersTask = mediator.Send(new GetTopSpendersQuery(), ct);
-                var failureRateTask = mediator.Send(new GetAiFailureRateQuery(), ct);
+                // Sequential awaits, NOT Task.WhenAll. Several handlers share
+                // the same scoped DbContext per request (Users / AI / Reviews
+                // each have multiple sends here), and EF Core throws on
+                // concurrent operations against one DbContext instance. The
+                // admin overview is opened by hand a few times a day — paying
+                // ~50ms of serial latency is the right trade for not having
+                // to introduce IDbContextFactory across every module.
+                var signups = await mediator.Send(new GetSignupAndLinkCountsQuery(), ct).ConfigureAwait(false);
+                if (signups.IsFailure) return Result<object>.Failure(signups.Error!).ToHttpResult();
 
-                await Task.WhenAll(
-                    signupsTask, withCardTask, withReviewTask,
-                    activeTask, retentionTask, ratingsTask, calibrationTask,
-                    skipRateTask, spendTask, spendTrendTask,
-                    topSpendersTask, failureRateTask).ConfigureAwait(false);
+                var withCard = await mediator.Send(new GetUsersWithCardCountQuery(), ct).ConfigureAwait(false);
+                if (withCard.IsFailure) return Result<object>.Failure(withCard.Error!).ToHttpResult();
 
-                // Any partial failure short-circuits with the first error —
-                // the admin overview is read-only, so half-data is worse
-                // than a clear 4xx/5xx.
-                Error? firstError =
-                    signupsTask.Result.Error
-                    ?? withCardTask.Result.Error
-                    ?? withReviewTask.Result.Error
-                    ?? activeTask.Result.Error
-                    ?? retentionTask.Result.Error
-                    ?? ratingsTask.Result.Error
-                    ?? calibrationTask.Result.Error
-                    ?? skipRateTask.Result.Error
-                    ?? spendTask.Result.Error
-                    ?? spendTrendTask.Result.Error
-                    ?? topSpendersTask.Result.Error
-                    ?? failureRateTask.Result.Error;
-                if (firstError is not null)
-                {
-                    return Result<object>.Failure(firstError).ToHttpResult();
-                }
+                var withReview = await mediator.Send(new GetUsersWithReviewCountQuery(), ct).ConfigureAwait(false);
+                if (withReview.IsFailure) return Result<object>.Failure(withReview.Error!).ToHttpResult();
 
-                var signups = signupsTask.Result.Value!;
-                var active = activeTask.Result.Value!;
-                var spend = spendTask.Result.Value!;
-                var costPerActive = active.Mau == 0
+                var active = await mediator.Send(new GetActiveUserCountsQuery(), ct).ConfigureAwait(false);
+                if (active.IsFailure) return Result<object>.Failure(active.Error!).ToHttpResult();
+
+                var retention = await mediator.Send(new GetRetentionCohortsQuery(), ct).ConfigureAwait(false);
+                if (retention.IsFailure) return Result<object>.Failure(retention.Error!).ToHttpResult();
+
+                var ratings = await mediator.Send(new GetGlobalRatingDistributionQuery(), ct).ConfigureAwait(false);
+                if (ratings.IsFailure) return Result<object>.Failure(ratings.Error!).ToHttpResult();
+
+                var calibration = await mediator.Send(new GetAiCalibrationQuery(), ct).ConfigureAwait(false);
+                if (calibration.IsFailure) return Result<object>.Failure(calibration.Error!).ToHttpResult();
+
+                var skipRate = await mediator.Send(new GetReminderSkipRateQuery(), ct).ConfigureAwait(false);
+                if (skipRate.IsFailure) return Result<object>.Failure(skipRate.Error!).ToHttpResult();
+
+                var spend = await mediator.Send(new GetAiSpendTotalsQuery(), ct).ConfigureAwait(false);
+                if (spend.IsFailure) return Result<object>.Failure(spend.Error!).ToHttpResult();
+
+                var spendTrend = await mediator.Send(new GetAiSpendTrendQuery(), ct).ConfigureAwait(false);
+                if (spendTrend.IsFailure) return Result<object>.Failure(spendTrend.Error!).ToHttpResult();
+
+                var topSpenders = await mediator.Send(new GetTopSpendersQuery(), ct).ConfigureAwait(false);
+                if (topSpenders.IsFailure) return Result<object>.Failure(topSpenders.Error!).ToHttpResult();
+
+                var failureRate = await mediator.Send(new GetAiFailureRateQuery(), ct).ConfigureAwait(false);
+                if (failureRate.IsFailure) return Result<object>.Failure(failureRate.Error!).ToHttpResult();
+
+                var activeCounts = active.Value!;
+                var spendTotals = spend.Value!;
+                var costPerActive = activeCounts.Mau == 0
                     ? 0m
-                    : spend.EstimatedCostUsd / active.Mau;
+                    : spendTotals.EstimatedCostUsd / activeCounts.Mau;
 
                 var payload = new AdminOverviewPayloadDto(
                     ActivationFunnel: new ActivationFunnelDto(
-                        Signups: signups.TotalSignups,
-                        TelegramLinked: signups.TelegramLinked,
-                        HasCard: withCardTask.Result.Value,
-                        HasReview: withReviewTask.Result.Value),
-                    ActiveUsers: active,
-                    Retention: retentionTask.Result.Value!,
-                    GlobalRatings: ratingsTask.Result.Value!,
-                    AiCalibration: calibrationTask.Result.Value!,
-                    ReminderSkipRate: skipRateTask.Result.Value!,
-                    AiSpend: spend,
-                    AiSpendTrend: spendTrendTask.Result.Value!,
-                    TopSpenders: topSpendersTask.Result.Value!,
-                    AiFailureRate: failureRateTask.Result.Value!,
+                        Signups: signups.Value!.TotalSignups,
+                        TelegramLinked: signups.Value.TelegramLinked,
+                        HasCard: withCard.Value,
+                        HasReview: withReview.Value),
+                    ActiveUsers: activeCounts,
+                    Retention: retention.Value!,
+                    GlobalRatings: ratings.Value!,
+                    AiCalibration: calibration.Value!,
+                    ReminderSkipRate: skipRate.Value!,
+                    AiSpend: spendTotals,
+                    AiSpendTrend: spendTrend.Value!,
+                    TopSpenders: topSpenders.Value!,
+                    AiFailureRate: failureRate.Value!,
                     CostPerActiveUserUsd: costPerActive);
 
                 await audit.LogAsync(
