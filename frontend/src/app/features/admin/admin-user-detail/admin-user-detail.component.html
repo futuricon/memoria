@@ -49,6 +49,18 @@
             <dt class="text-fg-muted">Last seen</dt>
             <dd class="tabular-nums">{{ r?.lastSeenRel ?? 'Never' }}</dd>
           </div>
+          <div class="flex justify-between gap-3 items-start">
+            <dt class="text-fg-muted">Signed in via</dt>
+            <dd class="flex flex-wrap justify-end gap-1">
+              @if (u.identities.length === 0) {
+                <span class="text-fg-muted text-xs">—</span>
+              } @else {
+                @for (provider of u.identities; track provider) {
+                  <span class="px-2 py-0.5 text-[11px] font-medium rounded bg-surface-hover text-fg-secondary">{{ provider }}</span>
+                }
+              }
+            </dd>
+          </div>
           @if (u.deletedAt) {
             <div class="flex justify-between gap-3">
               <dt class="text-fg-muted">Deleted at</dt>

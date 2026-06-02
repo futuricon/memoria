@@ -77,6 +77,7 @@ internal static class AdminEndpoints
                             u.LastSeenAt,
                             u.IsBlocked,
                             u.DeletedAt,
+                            u.Identities,
                             t?.TotalInputTokens ?? 0,
                             t?.TotalOutputTokens ?? 0,
                             t?.EstimatedCostUsd ?? 0m,

@@ -60,10 +60,14 @@ internal sealed class GetUsersPageQueryHandler
 
         var totalCount = await query.CountAsync(ct).ConfigureAwait(false);
 
-        var items = await query
+        // Pull the page first, then join identities in a single second
+        // round-trip. Cleaner than nesting Identities through Select() with
+        // ToList() inside it (which EF can't always translate).
+        var pageItems = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(u => new AdminUserSummaryDto(
+            .Select(u => new
+            {
                 u.Id,
                 u.DisplayName,
                 u.Email,
@@ -71,9 +75,34 @@ internal sealed class GetUsersPageQueryHandler
                 u.CreatedAt,
                 u.LastSeenAt,
                 u.IsBlocked,
-                u.DeletedAt))
+                u.DeletedAt,
+            })
             .ToListAsync(ct)
             .ConfigureAwait(false);
+
+        var ids = pageItems.Select(u => u.Id).ToList();
+        var identitiesByUser = await _db.Identities
+            .Where(i => ids.Contains(i.UserId))
+            .OrderBy(i => i.LinkedAt)
+            .Select(i => new { i.UserId, Provider = i.Provider.ToString() })
+            .ToListAsync(ct)
+            .ConfigureAwait(false);
+
+        var providerMap = identitiesByUser
+            .GroupBy(x => x.UserId)
+            .ToDictionary(g => g.Key, g => (IReadOnlyList<string>)g.Select(x => x.Provider).ToList());
+
+        var items = pageItems.Select(u => new AdminUserSummaryDto(
+            u.Id,
+            u.DisplayName,
+            u.Email,
+            u.Role,
+            u.CreatedAt,
+            u.LastSeenAt,
+            u.IsBlocked,
+            u.DeletedAt,
+            providerMap.TryGetValue(u.Id, out var p) ? p : Array.Empty<string>()))
+            .ToList();
 
         return Result<PagedResult<AdminUserSummaryDto>>.Success(
             new PagedResult<AdminUserSummaryDto>(items, page, pageSize, totalCount));

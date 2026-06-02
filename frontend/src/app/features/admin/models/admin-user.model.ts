@@ -15,6 +15,7 @@ export interface AdminUserRowDto {
   readonly lastSeenAt: string | null;
   readonly isBlocked: boolean;
   readonly deletedAt: string | null;
+  readonly identities: ReadonlyArray<string>;
   readonly totalInputTokens: number;
   readonly totalOutputTokens: number;
   readonly estimatedCostUsd: number;
