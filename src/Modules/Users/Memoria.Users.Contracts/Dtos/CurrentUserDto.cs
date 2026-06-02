@@ -11,4 +11,5 @@ public sealed record CurrentUserDto(
     string TimeZoneId,
     TimeOnly? QuietHoursStart,
     TimeOnly? QuietHoursEnd,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    Role Role);

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 
+import { adminGuard } from './core/guards/admin.guard';
 import { authGuard } from './core/guards/auth.guard';
 
 export const APP_ROUTES: Routes = [
@@ -54,6 +55,12 @@ export const APP_ROUTES: Routes = [
           import('./features/settings/settings.component').then(
             (m) => m.SettingsComponent,
           ),
+      },
+      {
+        path: 'admin',
+        canActivate: [adminGuard],
+        loadChildren: () =>
+          import('./features/admin/admin.routes').then((m) => m.ADMIN_ROUTES),
       },
     ],
   },

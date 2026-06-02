@@ -33,7 +33,8 @@ internal sealed class GetCurrentUserQueryHandler
                 u.TimeZoneId,
                 u.QuietHoursStart,
                 u.QuietHoursEnd,
-                u.CreatedAt))
+                u.CreatedAt,
+                u.Role))
             .FirstOrDefaultAsync(ct)
             .ConfigureAwait(false);
 

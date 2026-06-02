@@ -4,7 +4,12 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
+import { UserRole } from '../models/user.model';
 import { TokenBundle, tokenStorage } from './token-storage';
+
+// JwtTokenIssuer puts the role under ClaimTypes.Role, which serializes
+// to this verbose URI in the wire JWT.
+const ROLE_CLAIM = 'http://schemas.microsoft.com/ws/2008/06/identity/claims/role';
 
 interface TelegramWidgetPayload {
   id: number;
@@ -35,6 +40,22 @@ export class AuthService {
 
   readonly isAuthenticated = computed(() => this._tokens() !== null);
   readonly accessToken = computed(() => this._tokens()?.accessToken ?? null);
+
+  /**
+   * Role decoded from the JWT payload — avoids a /users/me round-trip just
+   * to gate UI. The middle segment of a JWT is unsigned base64url JSON;
+   * trusting it here is fine because every protected endpoint re-validates
+   * the signature server-side anyway.
+   */
+  readonly role = computed<UserRole>(() => {
+    const token = this._tokens()?.accessToken;
+    if (!token) return 'User';
+    const payload = decodeJwtPayload(token);
+    const claim = payload?.[ROLE_CLAIM];
+    return claim === 'Admin' ? 'Admin' : 'User';
+  });
+
+  readonly isAdmin = computed(() => this.role() === 'Admin');
 
   async startEmail(email: string): Promise<void> {
     await firstValueFrom(
@@ -149,5 +170,18 @@ export class AuthService {
   private applyTokens(b: TokenBundle): void {
     tokenStorage.write(b);
     this._tokens.set(b);
+  }
+}
+
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  try {
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+    const json = atob(padded);
+    return JSON.parse(json) as Record<string, unknown>;
+  } catch {
+    return null;
   }
 }

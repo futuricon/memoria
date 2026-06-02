@@ -1,3 +1,5 @@
+export type UserRole = 'User' | 'Admin';
+
 export interface CurrentUserDto {
   readonly id: string;
   readonly displayName: string;
@@ -6,6 +8,7 @@ export interface CurrentUserDto {
   readonly quietHoursStart: string | null;
   readonly quietHoursEnd: string | null;
   readonly createdAt: string;
+  readonly role: UserRole;
 }
 
 export interface UserIdentityDto {

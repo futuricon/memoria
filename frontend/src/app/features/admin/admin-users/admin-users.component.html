@@ -1,0 +1,128 @@
+<div class="px-4 md:px-8 py-6 md:py-8 max-w-7xl mx-auto">
+  <header class="mb-4 md:mb-6 flex items-center justify-between flex-wrap gap-3">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">Users</h1>
+      <p class="text-fg-secondary mt-1 text-sm">Metadata + spend. No reviews, no card content.</p>
+    </div>
+    <a routerLink="/admin" class="text-sm text-fg-secondary hover:text-fg flex items-center gap-1.5">
+      <app-icon name="arrow-left" [size]="14" />
+      Overview
+    </a>
+  </header>
+
+  <div class="flex items-center gap-3 mb-4 flex-wrap">
+    <div class="relative flex-1 min-w-[200px] max-w-md">
+      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted">
+        <app-icon name="search" [size]="14" />
+      </span>
+      <input
+        type="search"
+        placeholder="Search name or email"
+        (input)="onSearchInput($any($event.target).value)"
+        class="w-full h-10 pl-9 pr-3 bg-surface border border-default rounded-md text-sm placeholder:text-fg-muted focus:outline-none focus:ring-2 focus:ring-brand-soft"
+      />
+    </div>
+    <div class="flex items-center gap-1">
+      <span class="text-xs text-fg-muted mr-1">Sort:</span>
+      @for (opt of [
+        { key: 'CreatedAtDesc', label: 'Newest' },
+        { key: 'LastSeenAtDesc', label: 'Recently active' },
+        { key: 'DisplayNameAsc', label: 'Name' },
+      ]; track opt.key) {
+        <button
+          type="button"
+          (click)="setSort($any(opt.key))"
+          [class.bg-brand-soft]="sort() === opt.key"
+          [class.text-fg]="sort() === opt.key"
+          [class.text-fg-secondary]="sort() !== opt.key"
+          class="px-2.5 h-8 rounded-md text-xs hover:bg-surface-hover border border-transparent"
+        >
+          {{ opt.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="bg-surface border border-default rounded-xl shadow-card overflow-hidden">
+    @if (page.isLoading()) {
+      <div class="p-8 flex justify-center text-fg-muted">
+        <app-icon name="loader" [size]="20" class="animate-spin" />
+      </div>
+    } @else if (page.error()) {
+      <p class="p-6 text-sm text-danger">Failed to load users.</p>
+    } @else if (rowsWithRel().length === 0) {
+      <p class="p-6 text-sm text-fg-muted">No users match.</p>
+    } @else {
+      <table class="w-full text-sm">
+        <thead class="text-fg-muted text-[11px] uppercase tracking-wider bg-surface-hover">
+          <tr>
+            <th class="text-left px-4 py-2.5 font-medium">User</th>
+            <th class="text-left px-4 py-2.5 font-medium">Role</th>
+            <th class="text-left px-4 py-2.5 font-medium">Created</th>
+            <th class="text-left px-4 py-2.5 font-medium">Last seen</th>
+            <th class="text-right px-4 py-2.5 font-medium">AI spend</th>
+            <th class="text-right px-4 py-2.5 font-medium">AI calls</th>
+            <th class="text-left px-4 py-2.5 font-medium">Last AI call</th>
+            <th class="text-left px-4 py-2.5 font-medium">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of rowsWithRel(); track u.id) {
+            <tr class="border-t border-default hover:bg-surface-hover">
+              <td class="px-4 py-3">
+                <a [routerLink]="['/admin/users', u.id]" class="hover:underline">
+                  <div class="font-medium text-fg">{{ u.displayName }}</div>
+                  @if (u.email) {
+                    <div class="text-xs text-fg-muted">{{ u.email }}</div>
+                  } @else {
+                    <div class="text-xs text-fg-muted font-mono">{{ u.shortId }}…</div>
+                  }
+                </a>
+              </td>
+              <td class="px-4 py-3">
+                @if (u.role === 'Admin') {
+                  <span class="px-2 py-0.5 text-[11px] font-medium rounded bg-brand-soft text-brand">Admin</span>
+                } @else {
+                  <span class="text-xs text-fg-muted">User</span>
+                }
+              </td>
+              <td class="px-4 py-3 text-xs text-fg-secondary tabular-nums">
+                {{ u.createdAt | date: 'yyyy-MM-dd' }}
+              </td>
+              <td class="px-4 py-3 text-xs text-fg-secondary">
+                {{ u.lastSeenRel ?? '—' }}
+              </td>
+              <td class="px-4 py-3 text-right tabular-nums font-medium">
+                ${{ u.estimatedCostUsd | number: '1.2-4' }}
+              </td>
+              <td class="px-4 py-3 text-right tabular-nums text-fg-secondary">
+                {{ u.callCount | number }}
+              </td>
+              <td class="px-4 py-3 text-xs text-fg-secondary">
+                {{ u.lastCallRel ?? '—' }}
+              </td>
+              <td class="px-4 py-3">
+                @if (u.deletedAt) {
+                  <span class="text-xs text-fg-muted">Deleted</span>
+                } @else if (u.isBlocked) {
+                  <span class="px-2 py-0.5 text-[11px] font-medium rounded bg-danger text-fg-on-danger">Blocked</span>
+                } @else {
+                  <span class="text-xs text-success">Active</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+
+  <div class="flex items-center justify-between mt-4 text-sm text-fg-muted">
+    <p>{{ totalCount() | number }} users</p>
+    <div class="flex items-center gap-2">
+      <app-button size="sm" variant="secondary" [disabled]="!canPrev()" (click)="prevPage()" leadingIcon="chevron-left">Prev</app-button>
+      <span class="tabular-nums">Page {{ pageNum() }} / {{ totalPages() }}</span>
+      <app-button size="sm" variant="secondary" [disabled]="!canNext()" (click)="nextPage()" trailingIcon="chevron-right">Next</app-button>
+    </div>
+  </div>
+</div>

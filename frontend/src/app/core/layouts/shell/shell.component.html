@@ -48,6 +48,17 @@
           <span>{{ item.label }}</span>
         </a>
       }
+      @if (auth.isAdmin()) {
+        <a
+          [routerLink]="adminNavItem.path"
+          routerLinkActive="!bg-brand-soft !text-fg border border-brand-soft"
+          class="flex items-center gap-2.5 px-3 py-2 mt-3 rounded-md text-fg-secondary hover:bg-surface-hover hover:text-fg border border-transparent transition-colors"
+          (click)="closeSidebar()"
+        >
+          <app-icon [name]="adminNavItem.icon" [size]="16" />
+          <span>{{ adminNavItem.label }}</span>
+        </a>
+      }
     </nav>
 
     <div

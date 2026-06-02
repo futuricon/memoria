@@ -1,0 +1,243 @@
+<div class="px-4 md:px-8 py-6 md:py-8 max-w-7xl mx-auto">
+  <header class="mb-6 md:mb-8 flex items-center justify-between flex-wrap gap-3">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">Admin</h1>
+      <p class="text-fg-secondary mt-1 text-sm">Operator view. Aggregates only — no user content.</p>
+    </div>
+    <div class="flex items-center gap-2 text-sm">
+      <a routerLink="/admin/users" class="px-3 py-1.5 rounded-md border border-default text-fg-secondary hover:bg-surface-hover">Users</a>
+      <a href="/jobs" target="_blank" rel="noopener" class="px-3 py-1.5 rounded-md border border-default text-fg-secondary hover:bg-surface-hover">Jobs</a>
+    </div>
+  </header>
+
+  @if (overview.isLoading()) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+        <div class="bg-surface border border-default rounded-xl p-5">
+          <div class="skeleton h-3 w-24 mb-3"></div>
+          <div class="skeleton h-10 w-32"></div>
+        </div>
+      }
+    </div>
+  } @else if (overview.error()) {
+    <p class="text-sm text-danger">Failed to load admin overview.</p>
+  } @else if (overview.value(); as d) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+      <!-- Active users -->
+      <section class="bg-surface border border-default rounded-xl shadow-card p-5">
+        <div class="flex items-center gap-2 mb-2">
+          <app-icon name="gauge" [size]="14" class="text-fg-muted" />
+          <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium">Active users</h2>
+        </div>
+        <div class="flex items-baseline gap-5">
+          <div>
+            <p class="text-4xl font-semibold tabular-nums text-brand">{{ d.activeUsers.dau }}</p>
+            <p class="text-xs text-fg-muted mt-0.5">DAU</p>
+          </div>
+          <div>
+            <p class="text-2xl font-medium tabular-nums text-fg-secondary">{{ d.activeUsers.wau }}</p>
+            <p class="text-xs text-fg-muted mt-0.5">WAU</p>
+          </div>
+          <div>
+            <p class="text-2xl font-medium tabular-nums text-fg-secondary">{{ d.activeUsers.mau }}</p>
+            <p class="text-xs text-fg-muted mt-0.5">MAU</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- AI spend -->
+      <section class="bg-surface border border-default rounded-xl shadow-card p-5">
+        <div class="flex items-center gap-2 mb-2">
+          <app-icon name="sparkles" [size]="14" class="text-fg-muted" />
+          <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium">AI spend · 30d</h2>
+        </div>
+        <p class="text-4xl font-semibold tabular-nums text-brand">${{ d.aiSpend.estimatedCostUsd | number: '1.2-2' }}</p>
+        <p class="text-xs text-fg-muted mt-1">{{ d.aiSpend.callCount | number }} calls · ${{ d.costPerActiveUserUsd | number: '1.4-4' }}/active user</p>
+      </section>
+
+      <!-- AI failure rate -->
+      <section class="bg-surface border border-default rounded-xl shadow-card p-5">
+        <div class="flex items-center gap-2 mb-2">
+          <app-icon name="x-circle" [size]="14" class="text-fg-muted" />
+          <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium">AI failure rate · 30d</h2>
+        </div>
+        <p class="text-4xl font-semibold tabular-nums" [class.text-danger]="d.aiFailureRate.failureRate > 0.05" [class.text-brand]="d.aiFailureRate.failureRate <= 0.05">
+          {{ d.aiFailureRate.failureRate | percent: '1.1-2' }}
+        </p>
+        <p class="text-xs text-fg-muted mt-1">{{ d.aiFailureRate.failedCalls }} of {{ d.aiFailureRate.totalCalls }} calls</p>
+      </section>
+
+      <!-- Activation funnel -->
+      <section class="bg-surface border border-default rounded-xl shadow-card p-5 md:col-span-2 lg:col-span-2">
+        <div class="flex items-center gap-2 mb-3">
+          <app-icon name="trending-up" [size]="14" class="text-fg-muted" />
+          <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium">Activation funnel</h2>
+        </div>
+        @let funnel = d.activationFunnel;
+        @let rates = funnelRates();
+        <div class="grid grid-cols-4 gap-3 text-sm">
+          <div>
+            <p class="text-2xl font-semibold tabular-nums">{{ funnel.signups }}</p>
+            <p class="text-xs text-fg-muted mt-0.5">Signups</p>
+          </div>
+          <div>
+            <p class="text-2xl font-semibold tabular-nums">{{ funnel.telegramLinked }}</p>
+            <p class="text-xs text-fg-muted mt-0.5">Telegram linked</p>
+            @if (rates) {
+              <p class="text-[11px] text-fg-muted mt-0.5">{{ rates.linkedRate | percent: '1.0-1' }}</p>
+            }
+          </div>
+          <div>
+            <p class="text-2xl font-semibold tabular-nums">{{ funnel.hasCard }}</p>
+            <p class="text-xs text-fg-muted mt-0.5">First card</p>
+            @if (rates) {
+              <p class="text-[11px] text-fg-muted mt-0.5">{{ rates.cardRate | percent: '1.0-1' }}</p>
+            }
+          </div>
+          <div>
+            <p class="text-2xl font-semibold tabular-nums">{{ funnel.hasReview }}</p>
+            <p class="text-xs text-fg-muted mt-0.5">First review</p>
+            @if (rates) {
+              <p class="text-[11px] text-fg-muted mt-0.5">{{ rates.reviewRate | percent: '1.0-1' }}</p>
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- Retention -->
+      <section class="bg-surface border border-default rounded-xl shadow-card p-5">
+        <div class="flex items-center gap-2 mb-3">
+          <app-icon name="rotate-ccw" [size]="14" class="text-fg-muted" />
+          <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium">Retention · {{ d.retention.signups }} signups</h2>
+        </div>
+        @let r = retentionRates();
+        @if (r) {
+          <div class="grid grid-cols-3 gap-3 text-sm">
+            <div>
+              <p class="text-2xl font-semibold tabular-nums">{{ r.d1 | percent: '1.0-0' }}</p>
+              <p class="text-xs text-fg-muted">D1</p>
+            </div>
+            <div>
+              <p class="text-2xl font-semibold tabular-nums">{{ r.d7 | percent: '1.0-0' }}</p>
+              <p class="text-xs text-fg-muted">D7</p>
+            </div>
+            <div>
+              <p class="text-2xl font-semibold tabular-nums">{{ r.d30 | percent: '1.0-0' }}</p>
+              <p class="text-xs text-fg-muted">D30</p>
+            </div>
+          </div>
+        } @else {
+          <p class="text-xs text-fg-muted">Not enough cohort data yet.</p>
+        }
+      </section>
+
+      <!-- Global rating distribution -->
+      <section class="bg-surface border border-default rounded-xl shadow-card p-5 md:col-span-2 lg:col-span-2">
+        <div class="flex items-center gap-2 mb-3">
+          <app-icon name="trophy" [size]="14" class="text-fg-muted" />
+          <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium">Global ratings · 30d</h2>
+        </div>
+        @let shares = ratingShares();
+        @if (shares) {
+          <div class="flex w-full h-3 rounded-full overflow-hidden bg-surface-hover">
+            <div class="bg-danger" [style.width.%]="shares.forgot * 100"></div>
+            <div class="bg-warning" [style.width.%]="shares.hard * 100"></div>
+            <div class="bg-brand" [style.width.%]="shares.good * 100"></div>
+            <div class="bg-success" [style.width.%]="shares.easy * 100"></div>
+          </div>
+          <div class="grid grid-cols-4 gap-2 mt-3 text-xs">
+            <div><span class="text-danger font-medium">{{ shares.forgot | percent: '1.0-0' }}</span> <span class="text-fg-muted">Forgot</span></div>
+            <div><span class="text-warning font-medium">{{ shares.hard | percent: '1.0-0' }}</span> <span class="text-fg-muted">Hard</span></div>
+            <div><span class="text-brand font-medium">{{ shares.good | percent: '1.0-0' }}</span> <span class="text-fg-muted">Good</span></div>
+            <div><span class="text-success font-medium">{{ shares.easy | percent: '1.0-0' }}</span> <span class="text-fg-muted">Easy</span></div>
+          </div>
+        } @else {
+          <p class="text-xs text-fg-muted">No reviews in the window.</p>
+        }
+      </section>
+
+      <!-- Reminder engagement -->
+      <section class="bg-surface border border-default rounded-xl shadow-card p-5">
+        <div class="flex items-center gap-2 mb-3">
+          <app-icon name="send" [size]="14" class="text-fg-muted" />
+          <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium">Reminders · 30d</h2>
+        </div>
+        @let sk = skipShares();
+        @if (sk) {
+          <p class="text-3xl font-semibold tabular-nums text-brand">{{ sk.confirmedRate | percent: '1.0-1' }}</p>
+          <p class="text-xs text-fg-muted mt-1">Confirmation rate · {{ d.reminderSkipRate.total }} delivered</p>
+          <div class="grid grid-cols-3 gap-2 mt-3 text-xs">
+            <div><span class="text-fg-secondary font-medium">{{ sk.sentRate | percent: '1.0-0' }}</span> <span class="text-fg-muted">No reply</span></div>
+            <div><span class="text-warning font-medium">{{ sk.skippedRate | percent: '1.0-0' }}</span> <span class="text-fg-muted">Skipped</span></div>
+            <div><span class="text-danger font-medium">{{ sk.failedRate | percent: '1.0-0' }}</span> <span class="text-fg-muted">Failed</span></div>
+          </div>
+        } @else {
+          <p class="text-xs text-fg-muted">No reminders delivered yet.</p>
+        }
+      </section>
+
+      <!-- AI calibration -->
+      <section class="bg-surface border border-default rounded-xl shadow-card p-5 md:col-span-2 lg:col-span-3">
+        <div class="flex items-center gap-2 mb-3">
+          <app-icon name="gauge" [size]="14" class="text-fg-muted" />
+          <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium">AI calibration · 90d</h2>
+        </div>
+        <p class="text-xs text-fg-muted mb-3">User-picked rating across AI-score buckets. If the threshold is well-tuned, low scores should skew Forgot/Hard and high scores Good/Easy.</p>
+        <div class="grid grid-cols-5 gap-2 text-xs">
+          @for (bucket of d.aiCalibration; track bucket.lowerInclusive) {
+            <div class="bg-surface-hover rounded-md p-3">
+              <p class="font-semibold text-sm">{{ bucket.lowerInclusive }}–{{ bucket.upperExclusive }}</p>
+              <p class="text-fg-muted mb-2">{{ bucket.total }} reviews</p>
+              @if (bucket.total > 0) {
+                <div class="space-y-1">
+                  <div><span class="text-danger">F:</span> {{ bucket.forgot }}</div>
+                  <div><span class="text-warning">H:</span> {{ bucket.hard }}</div>
+                  <div><span class="text-brand">G:</span> {{ bucket.good }}</div>
+                  <div><span class="text-success">E:</span> {{ bucket.easy }}</div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- Top spenders -->
+      <section class="bg-surface border border-default rounded-xl shadow-card p-5 md:col-span-2 lg:col-span-3">
+        <div class="flex items-center gap-2 mb-3">
+          <app-icon name="trending-up" [size]="14" class="text-fg-muted" />
+          <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium">Top spenders · lifetime</h2>
+        </div>
+        @if (d.topSpenders.length === 0) {
+          <p class="text-xs text-fg-muted">No AI calls yet.</p>
+        } @else {
+          <table class="w-full text-sm">
+            <thead class="text-fg-muted text-[11px] uppercase tracking-wider">
+              <tr class="border-b border-default">
+                <th class="text-left py-2 font-medium">User</th>
+                <th class="text-right py-2 font-medium">Cost</th>
+                <th class="text-right py-2 font-medium">Calls</th>
+                <th class="text-right py-2 font-medium">Input tokens</th>
+                <th class="text-right py-2 font-medium">Output tokens</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of d.topSpenders; track row.userId) {
+                <tr class="border-b border-default last:border-0">
+                  <td class="py-2">
+                    <a [routerLink]="['/admin/users', row.userId]" class="text-brand hover:underline font-mono text-xs">{{ row.userId.substring(0, 8) }}…</a>
+                  </td>
+                  <td class="py-2 text-right tabular-nums font-medium">${{ row.estimatedCostUsd | number: '1.2-2' }}</td>
+                  <td class="py-2 text-right tabular-nums text-fg-secondary">{{ row.callCount | number }}</td>
+                  <td class="py-2 text-right tabular-nums text-fg-secondary">{{ row.totalInputTokens | number }}</td>
+                  <td class="py-2 text-right tabular-nums text-fg-secondary">{{ row.totalOutputTokens | number }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </section>
+
+    </div>
+  }
+</div>

@@ -1,0 +1,92 @@
+<div class="px-4 md:px-8 py-6 md:py-8 max-w-4xl mx-auto">
+  <a routerLink="/admin/users" class="text-sm text-fg-secondary hover:text-fg flex items-center gap-1.5 mb-4">
+    <app-icon name="arrow-left" [size]="14" />
+    Back to users
+  </a>
+
+  @if (summary.isLoading()) {
+    <div class="bg-surface border border-default rounded-xl p-6">
+      <div class="skeleton h-6 w-48 mb-3"></div>
+      <div class="skeleton h-4 w-64"></div>
+    </div>
+  } @else if (summary.error()) {
+    <p class="text-sm text-danger">Failed to load user.</p>
+  } @else if (summary.value(); as u) {
+    <header class="bg-surface border border-default rounded-xl p-6 mb-6 flex items-start justify-between gap-3 flex-wrap">
+      <div>
+        <h1 class="text-2xl font-semibold tracking-tight">{{ u.displayName }}</h1>
+        @if (u.email) {
+          <p class="text-sm text-fg-secondary mt-1">{{ u.email }}</p>
+        }
+        <p class="text-xs text-fg-muted mt-1 font-mono">{{ u.id }}</p>
+      </div>
+      <div class="flex items-center gap-2">
+        @if (u.role === 'Admin') {
+          <span class="px-2 py-0.5 text-[11px] font-medium rounded bg-brand-soft text-brand">Admin</span>
+        }
+        @if (u.deletedAt) {
+          <span class="px-2 py-0.5 text-[11px] font-medium rounded bg-surface-hover text-fg-muted">Deleted</span>
+        } @else if (u.isBlocked) {
+          <span class="px-2 py-0.5 text-[11px] font-medium rounded bg-danger text-fg-on-danger">Blocked</span>
+        } @else {
+          <span class="px-2 py-0.5 text-[11px] font-medium rounded bg-surface-hover text-success">Active</span>
+        }
+      </div>
+    </header>
+
+    @let r = relTimes();
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      <section class="bg-surface border border-default rounded-xl p-5">
+        <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium mb-3">Account</h2>
+        <dl class="text-sm space-y-2">
+          <div class="flex justify-between gap-3">
+            <dt class="text-fg-muted">Created</dt>
+            <dd class="tabular-nums">{{ u.createdAt | date: 'yyyy-MM-dd HH:mm' }} <span class="text-fg-muted text-xs">({{ r?.createdRel }})</span></dd>
+          </div>
+          <div class="flex justify-between gap-3">
+            <dt class="text-fg-muted">Last seen</dt>
+            <dd class="tabular-nums">{{ r?.lastSeenRel ?? 'Never' }}</dd>
+          </div>
+          @if (u.deletedAt) {
+            <div class="flex justify-between gap-3">
+              <dt class="text-fg-muted">Deleted at</dt>
+              <dd class="tabular-nums">{{ u.deletedAt | date: 'yyyy-MM-dd HH:mm' }}</dd>
+            </div>
+          }
+        </dl>
+      </section>
+
+      <section class="bg-surface border border-default rounded-xl p-5">
+        <h2 class="text-[11px] uppercase tracking-wider text-fg-muted font-medium mb-3">AI usage · lifetime</h2>
+        <dl class="text-sm space-y-2">
+          <div class="flex justify-between gap-3">
+            <dt class="text-fg-muted">Estimated cost</dt>
+            <dd class="tabular-nums font-medium">${{ u.estimatedCostUsd | number: '1.4-4' }}</dd>
+          </div>
+          <div class="flex justify-between gap-3">
+            <dt class="text-fg-muted">Calls</dt>
+            <dd class="tabular-nums">{{ u.callCount | number }}</dd>
+          </div>
+          <div class="flex justify-between gap-3">
+            <dt class="text-fg-muted">Input tokens</dt>
+            <dd class="tabular-nums">{{ u.totalInputTokens | number }}</dd>
+          </div>
+          <div class="flex justify-between gap-3">
+            <dt class="text-fg-muted">Output tokens</dt>
+            <dd class="tabular-nums">{{ u.totalOutputTokens | number }}</dd>
+          </div>
+          <div class="flex justify-between gap-3">
+            <dt class="text-fg-muted">Last call</dt>
+            <dd class="tabular-nums">{{ r?.lastCallRel ?? 'Never' }}</dd>
+          </div>
+        </dl>
+        <p class="text-[11px] text-fg-muted mt-3">Quota meter lands in a follow-up (Phase 5 foundation).</p>
+      </section>
+
+    </div>
+  } @else {
+    <p class="text-sm text-fg-muted">User not found.</p>
+  }
+</div>

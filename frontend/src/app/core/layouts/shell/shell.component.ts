@@ -16,7 +16,7 @@ import { ThemeToggleComponent } from "../../../shared/components/theme-toggle/th
 interface NavItem {
   path: string;
   label: string;
-  icon: "layout-dashboard" | "play" | "list" | "trash-2" | "settings";
+  icon: "layout-dashboard" | "play" | "list" | "trash-2" | "settings" | "gauge";
   exact?: boolean;
 }
 
@@ -35,7 +35,7 @@ interface NavItem {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ShellComponent {
-  private readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
   readonly sidebarOpen = signal(false);
@@ -47,6 +47,13 @@ export class ShellComponent {
     { path: "/trash", label: "Trash", icon: "trash-2" },
     { path: "/settings", label: "Settings", icon: "settings" },
   ];
+
+  /** Separate list so we can render it conditionally without splitting @for. */
+  readonly adminNavItem: NavItem = {
+    path: "/admin",
+    label: "Admin",
+    icon: "gauge",
+  };
 
   constructor() {
     // Close mobile drawer whenever a navigation completes (covers anchor +
