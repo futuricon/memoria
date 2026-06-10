@@ -6,6 +6,8 @@ using MediatR;
 
 using Memoria.Shared.Kernel.Results;
 
+using Microsoft.Extensions.Logging;
+
 namespace Memoria.Shared.Infrastructure.Behaviors;
 
 /// <summary>
@@ -22,11 +24,16 @@ public sealed class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<
     where TRequest : notnull
 {
     private readonly IEnumerable<IValidator<TRequest>> _validators;
+    private readonly ILogger<ValidationBehavior<TRequest, TResponse>> _logger;
 
-    public ValidationBehavior(IEnumerable<IValidator<TRequest>> validators)
+    public ValidationBehavior(
+        IEnumerable<IValidator<TRequest>> validators,
+        ILogger<ValidationBehavior<TRequest, TResponse>> logger)
     {
         ArgumentNullException.ThrowIfNull(validators);
+        ArgumentNullException.ThrowIfNull(logger);
         _validators = validators;
+        _logger = logger;
     }
 
     public async Task<TResponse> Handle(
@@ -55,6 +62,12 @@ public sealed class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<
         {
             return await next().ConfigureAwait(false);
         }
+
+        _logger.LogWarning(
+            "Validation failed for {RequestType} with {ErrorCount} error(s): {Errors}",
+            typeof(TRequest).Name,
+            failures.Count,
+            failures.Select(f => $"{f.PropertyName}: {f.ErrorMessage}"));
 
         var firstFailure = failures[0];
         var error = Error.Validation(
