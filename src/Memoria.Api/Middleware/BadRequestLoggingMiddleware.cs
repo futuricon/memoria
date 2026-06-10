@@ -1,3 +1,5 @@
+using System.Text;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
@@ -11,10 +13,9 @@ namespace Memoria.Api.Middleware;
 /// <see cref="GlobalExceptionHandler"/> never sees it and the only trace
 /// would be the generic Serilog request-logging line.
 /// <para>
-/// This middleware emits a <c>Warning</c> with method + path + query so
-/// these silent client errors are findable in logs. Other 4xx (401, 403,
-/// 429) already have their own logging pipelines and are intentionally
-/// ignored here to keep noise down.
+/// This middleware buffers the response body so the ProblemDetails payload
+/// (or FluentValidation error message surfaced via <c>ValidationBehavior</c>)
+/// is captured and emitted as a <c>Warning</c> alongside method + path.
 /// </para>
 /// </summary>
 internal sealed class BadRequestLoggingMiddleware
@@ -34,15 +35,33 @@ internal sealed class BadRequestLoggingMiddleware
     {
         ArgumentNullException.ThrowIfNull(http);
 
-        await _next(http).ConfigureAwait(false);
+        var originalBody = http.Response.Body;
+        using var buffer = new MemoryStream();
+        http.Response.Body = buffer;
+
+        try
+        {
+            await _next(http).ConfigureAwait(false);
+        }
+        finally
+        {
+            buffer.Position = 0;
+            await buffer.CopyToAsync(originalBody).ConfigureAwait(false);
+            http.Response.Body = originalBody;
+        }
 
         if (http.Response.StatusCode == StatusCodes.Status400BadRequest)
         {
+            buffer.Position = 0;
+            var body = await new StreamReader(buffer, Encoding.UTF8, leaveOpen: true).ReadToEndAsync()
+                .ConfigureAwait(false);
+
             _logger.LogWarning(
-                "Bad request: {Method} {Path}{QueryString} returned 400",
+                "Bad request: {Method} {Path}{QueryString} returned 400 — {Body}",
                 http.Request.Method,
                 http.Request.Path.Value,
-                http.Request.QueryString.HasValue ? http.Request.QueryString.Value : string.Empty);
+                http.Request.QueryString.HasValue ? http.Request.QueryString.Value : string.Empty,
+                body);
         }
     }
 }
