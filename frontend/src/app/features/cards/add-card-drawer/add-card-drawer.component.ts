@@ -44,7 +44,7 @@ export class AddCardDrawerComponent {
   readonly parsedTags = computed<string[]>(() =>
     this.tagsRawSig()
       .split(',')
-      .map((t) => t.trim())
+      .map((t) => t.trim().replace(/^#+/, ''))
       .filter((t) => t.length > 0));
 
   readonly canSubmit = computed<boolean>(() =>
